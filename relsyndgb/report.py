@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from relsyndgb.single_column.distance.hellinger_distance import HellingerDistance
-from relsyndgb.single_column.statistical.chi_square_test import ChiSquareTest
+from relsyndgb.metrics.single_column.distance import HellingerDistance
+from relsyndgb.metrics.single_column.statistical import ChiSquareTest
 
 class Report():
 
@@ -28,7 +28,7 @@ class Report():
             "multi_table_metrics": {},
         }
 
-    def generate(self, **kwargs):
+    def generate(self):
         
         # TODO: Validate the input data
 
@@ -41,18 +41,14 @@ class Report():
                             self.real_data[table][column],
                             self.synthetic_data[table][column],
                         )
-                        # self.results["single_col_metrics"][metric.name][table][column] = metric.compute(
-                        #     self.real_data[table][column],
-                        #     self.synthetic_data[table][column],
-                        # )
 
             # single_table_metrics
             for metric in self.single_table_metrics:
-                self.results["single_table_metrics"][metric.name][table] = metric.compute(
+                self.results["single_table_metrics"].setdefault(metric.name, {})[table] = metric.compute(
                     self.real_data[table],
                     self.synthetic_data[table],
                 )
 
-        return self.results
+        self.report_datetime = datetime.now()
 
-        
+        return self.results

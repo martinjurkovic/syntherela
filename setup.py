@@ -6,7 +6,6 @@ LONG_DESCRIPTION = "RELSYNDGB - A Python package for evaluating synthetic relati
 
 # Setting up
 setup(
-    # the name must match the folder name "verysimplemodule"
     name="relsyndgb",
     version=VERSION,
     author="Martin Jurkovic, Valter Hudovernik",
