@@ -1,17 +1,22 @@
 from relsyndgb.base import StatisticalBaseMetric
+from relsyndgb.single_column.base import SingleColumnMetric
 
 import numpy as np
 import pandas as pd
 
-class HellingerDistance(StatisticalBaseMetric):
+class HellingerDistance(StatisticalBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.name = "HellingerDistance"
+
+    def is_applicable(self, column_type):
+        return column_type in ["categorical", "numerical"]
 
     def get_histograms(
         self,
-        original, synthetic, nbins: int = 10, 
-        normalize: bool = False, continouous: bool = False
+        original, synthetic,
+        normalize: bool = False, 
     ) -> dict:
         """Get percentual frequencies or counts for each possible real categorical value.
 
@@ -23,7 +28,7 @@ class HellingerDistance(StatisticalBaseMetric):
             original = pd.to_numeric(pd.to_datetime(original), errors = 'coerce', downcast='integer')
             synthetic = pd.to_numeric(pd.to_datetime(synthetic), errors = 'coerce', downcast='integer')
             
-        if original.dtype == 'object':  # categorical
+        if original.dtype.name in ("object", "category"):  # categorical
             gt = original.value_counts().to_dict()
             synth = synthetic.value_counts().to_dict()
             # add missing values with smoothing constant to avoid division by zero
@@ -33,7 +38,9 @@ class HellingerDistance(StatisticalBaseMetric):
             for val in synth:
                 if val not in gt:
                     gt[val] = 0
-        elif continouous:
+        elif np.issubdtype(original.dtype, np.number):  # continuous
+            original = original.dropna()
+            synthetic = synthetic.dropna()
             gt_vals, bins = np.histogram(original, bins='doane', 
                 range=(min(min(original), min(synthetic)),
                     max(max(original), max(synthetic))))
@@ -64,7 +71,7 @@ class HellingerDistance(StatisticalBaseMetric):
                     for t in zip(p,q)])/np.sqrt(2.)
 
 
-    def compute(self, orig_col, synth_col, nbins=10):
+    def compute(self, orig_col, synth_col):
         """Compute this metric.
 
         Args:
@@ -77,6 +84,6 @@ class HellingerDistance(StatisticalBaseMetric):
             Union[float, tuple[float]]:
                 Metric output or outputs.
         """
-        gt_freq, synth_freq = self.get_histograms(orig_col, synth_col, nbins=nbins, normalize=True)
+        gt_freq, synth_freq = self.get_histograms(orig_col, synth_col, normalize=True)
 
         return self.hellinger(gt_freq, synth_freq)

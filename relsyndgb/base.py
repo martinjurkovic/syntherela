@@ -1,9 +1,13 @@
 from sdmetrics.base import BaseMetric
 import sdv
 
+
 class StatisticalBaseMetric(BaseMetric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    def is_applicable(self, column_type):
+        raise NotImplementedError()
 
 class DistanceBaseMetric(BaseMetric):
     def __init__(self, **kwargs):

@@ -1,16 +1,21 @@
 from relsyndgb.base import StatisticalBaseMetric
+from relsyndgb.single_column.base import SingleColumnMetric
 
 import pandas as pd
 from scipy.stats import chi2_contingency
 
 
-class ChiSquareTest(StatisticalBaseMetric):
+class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.name = "ChiSquareTest"
+
+    def is_applicable(self, column_type):
+        return column_type == "categorical"
 
     def validate_column(self, column):
-        if column.dtype != 'object':
+        if column.dtype.name not in ("object", "category"):
             raise ValueError(f"ChiSquareTest can only be applied to categorical columns, but column {column.name} is of type {column.dtype}")
 
     def compute(self, orig_column, synth_column):
