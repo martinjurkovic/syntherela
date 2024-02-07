@@ -1,8 +1,7 @@
-from relsyndgb.base import StatisticalBaseMetric
-from relsyndgb.single_column.base import SingleColumnMetric
-
 import pandas as pd
 from scipy.stats import chi2_contingency
+
+from relsyndgb.metrics.base import SingleColumnMetric, StatisticalBaseMetric
 
 
 class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
@@ -11,31 +10,19 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         super().__init__(**kwargs)
         self.name = "ChiSquareTest"
 
-    def is_applicable(self, column_type):
+    @staticmethod
+    def is_applicable(column_type):
         return column_type == "categorical"
 
-    def validate_column(self, column):
+    @staticmethod
+    def validate(column):
         if column.dtype.name not in ("object", "category"):
             raise ValueError(f"ChiSquareTest can only be applied to categorical columns, but column {column.name} is of type {column.dtype}")
-
-    def compute(self, orig_column, synth_column):
-        """Compute this metric.
-
-        Args:
-            real_data:
-                The values from the real dataset.
-            synthetic_data:
-                The values from the synthetic dataset.
-
-        Returns:
-            Union[float, tuple[float]]:
-                Metric output or outputs.
-        """
-        self.validate_column(orig_column)
-        self.validate_column(synth_column)
-
-        orig_col = pd.Categorical(orig_column)
-        synth_col = pd.Categorical(synth_column, categories=orig_col.categories)
+    
+    @staticmethod
+    def compute_metric(real_data, synthetic_data):
+        orig_col = pd.Categorical(real_data)
+        synth_col = pd.Categorical(synthetic_data, categories=orig_col.categories)
         freq_orig = orig_col.value_counts()
         freq_synth = synth_col.value_counts()
         freq_synth = freq_synth / freq_synth.sum() * freq_orig.sum()

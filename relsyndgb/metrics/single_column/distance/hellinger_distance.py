@@ -1,23 +1,21 @@
-from relsyndgb.base import StatisticalBaseMetric
-from relsyndgb.single_column.base import SingleColumnMetric
-
 import numpy as np
 import pandas as pd
 
-class HellingerDistance(StatisticalBaseMetric, SingleColumnMetric):
+from relsyndgb.metrics.base import SingleColumnMetric, DistanceBaseMetric
+
+
+class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "HellingerDistance"
 
-    def is_applicable(self, column_type):
+    @staticmethod
+    def is_applicable(column_type):
         return column_type in ["categorical", "numerical"]
 
-    def get_histograms(
-        self,
-        original, synthetic,
-        normalize: bool = False, 
-    ) -> dict:
+    @staticmethod
+    def get_histograms(original, synthetic,normalize = False):
         """Get percentual frequencies or counts for each possible real categorical value.
 
         Returns:
@@ -66,12 +64,13 @@ class HellingerDistance(StatisticalBaseMetric, SingleColumnMetric):
 
         return frequencies
     
-    def hellinger(self, p, q):
+    @staticmethod
+    def hellinger(p, q):
         return sum([(np.sqrt(t[0])-np.sqrt(t[1]))*(np.sqrt(t[0])-np.sqrt(t[1]))\
                     for t in zip(p,q)])/np.sqrt(2.)
 
-
-    def compute(self, orig_col, synth_col):
+    @classmethod
+    def compute_metric(cls, orig_col, synth_col):
         """Compute this metric.
 
         Args:
@@ -84,6 +83,5 @@ class HellingerDistance(StatisticalBaseMetric, SingleColumnMetric):
             Union[float, tuple[float]]:
                 Metric output or outputs.
         """
-        gt_freq, synth_freq = self.get_histograms(orig_col, synth_col, normalize=True)
-
-        return self.hellinger(gt_freq, synth_freq)
+        gt_freq, synth_freq = cls.get_histograms(orig_col, synth_col, normalize=True)
+        return cls.hellinger(gt_freq, synth_freq)
