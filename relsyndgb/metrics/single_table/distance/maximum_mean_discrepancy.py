@@ -3,11 +3,13 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn import metrics
+from sdmetrics.goal import Goal
 
 class MaximumMeanDiscrepancy(DistanceBaseMetric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "MaximumMeanDiscrepancy"
+        self.goal = Goal.MINIMIZE
 
     @staticmethod
     def compute(original_table, sythetic_table, metadata, kernel='linear', **kwargs):
