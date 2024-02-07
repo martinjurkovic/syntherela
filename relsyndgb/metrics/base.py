@@ -23,13 +23,13 @@ class StatisticalBaseMetric(BaseMetric):
         raise NotImplementedError()
 
     @staticmethod
-    def compute_metric(real_data, synthetic_data):
+    def compute(real_data, synthetic_data):
         """
         This method is used to compute the actual metric value between two samples.
         """
         raise NotImplementedError()
     
-    def compute(self, real_data, synthetic_data):
+    def run(self, real_data, synthetic_data):
         """Compute this metric.
 
         Args:
@@ -44,7 +44,7 @@ class StatisticalBaseMetric(BaseMetric):
         """
         self.validate(real_data)
         self.validate(synthetic_data)
-        return self.compute_metric(real_data, synthetic_data)
+        return self.compute(real_data, synthetic_data)
 
 
 class DistanceBaseMetric(BaseMetric):
@@ -52,18 +52,18 @@ class DistanceBaseMetric(BaseMetric):
         super().__init__(**kwargs)
 
     @staticmethod
-    def compute_metric(real_data, synthetic_data):
+    def compute(real_data, synthetic_data):
         """
         This method is used to compute the actual metric value between two samples.
         """
         raise NotImplementedError()
 
-    def compute(self, real_data, synthetic_data):
+    def run(self, real_data, synthetic_data):
         """ Compute the reference confidence intervals using bootstrap on the real data
         and compute the matric value on real vs synthetic data."""
         reference_ci = self.bootstrap_reference_conf_int(real_data)
         # TODO: bootstrap is only for uncertainty estimation, should also return SE?
-        value = self.compute_metric(real_data, synthetic_data)
+        value = self.compute(real_data, synthetic_data)
         return value, reference_ci
 
 
@@ -78,7 +78,7 @@ class DistanceBaseMetric(BaseMetric):
             sample1 = real_data.sample(frac=1, replace = True)
             sample2 = synthetic_data.sample(frac=1, replace = True)
             # compute the metric
-            val = self.compute_metric(sample1, sample2)
+            val = self.compute(sample1, sample2)
             values.append(val)
 
         if self.goal == Goal.MAXIMIZE:
@@ -102,7 +102,7 @@ class DistanceBaseMetric(BaseMetric):
             sample1 = real_data.sample(frac=0.5, replace = True)
             sample2 = real_data.sample(frac=0.5, replace = True)
             # compute the metric
-            val = self.compute_metric(sample1, sample2)
+            val = self.compute(sample1, sample2)
             values.append(val)
 
         if self.goal == Goal.MAXIMIZE:
@@ -118,7 +118,7 @@ class DetectionBaseMetric(BaseMetric):
         super().__init__(**kwargs)
 
     @staticmethod
-    def compute_metric(real_data, synthetic_data):
+    def compute(real_data, synthetic_data):
         """
         This method is used to compute the actual metric value between two samples.
         """
@@ -129,3 +129,20 @@ class DetectionBaseMetric(BaseMetric):
         """ Compute the p-value of the metric using the binomial test. """
         test = binomtest(x, n, 0.5, alternative='greater')
         return test.statistic, test.pvalue
+    
+    def run(self, real_data, synthetic_data):
+        """Compute this metric.
+
+        Args:
+            real_data:
+                The values from the real dataset.
+            synthetic_data:
+                The values from the synthetic dataset.
+
+        Returns:
+            Union[float, tuple[float]]:
+                Metric output or outputs.
+        """
+        accuracy = self.compute(real_data, synthetic_data)
+        n = len(real_data)
+        return self.binomial_test(accuracy * n, n)

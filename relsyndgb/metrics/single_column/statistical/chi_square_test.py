@@ -20,7 +20,7 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
             raise ValueError(f"ChiSquareTest can only be applied to categorical columns, but column {column.name} is of type {column.dtype}")
     
     @staticmethod
-    def compute_metric(real_data, synthetic_data):
+    def compute(real_data, synthetic_data):
         orig_col = pd.Categorical(real_data)
         synth_col = pd.Categorical(synthetic_data, categories=orig_col.categories)
         freq_orig = orig_col.value_counts()

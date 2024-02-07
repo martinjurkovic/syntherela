@@ -15,7 +15,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
         return column_type in ["categorical", "numerical"]
 
     @staticmethod
-    def get_histograms(original, synthetic,normalize = False):
+    def get_histograms(original, synthetic, normalize = False):
         """Get percentual frequencies or counts for each possible real categorical value.
 
         Returns:
@@ -70,7 +70,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
                     for t in zip(p,q)])/np.sqrt(2.)
 
     @classmethod
-    def compute_metric(cls, orig_col, synth_col):
+    def compute(cls, orig_col, synth_col):
         """Compute this metric.
 
         Args:
