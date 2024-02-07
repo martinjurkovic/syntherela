@@ -70,7 +70,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
                     for t in zip(p,q)])/np.sqrt(2.)
 
     @classmethod
-    def compute(cls, orig_col, synth_col):
+    def compute(cls, orig_col, synth_col, **kwargs):
         """Compute this metric.
 
         Args:

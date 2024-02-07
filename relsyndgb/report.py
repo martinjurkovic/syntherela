@@ -2,6 +2,7 @@ from datetime import datetime
 
 from relsyndgb.metrics.single_column.distance import HellingerDistance
 from relsyndgb.metrics.single_column.statistical import ChiSquareTest
+from relsyndgb.metrics.single_table.distance import MaximumMeanDiscrepancy
 
 class Report():
 
@@ -11,7 +12,7 @@ class Report():
                 metadata,
                 report_name, 
                 single_col_metrics = [ChiSquareTest(), HellingerDistance()], 
-                single_table_metrics = [], 
+                single_table_metrics = [MaximumMeanDiscrepancy()], 
                 multi_table_metrics = [],
                 ):
         self.real_data = real_data
@@ -36,17 +37,19 @@ class Report():
             # single_col_metrics
             for column, column_info in self.metadata.tables[table].columns.items():
                 for metric in self.single_col_metrics:
-                    if metric.is_applicable(column_info["sdtype"]):
-                        self.results["single_col_metrics"].setdefault(metric.name, {}).setdefault(table, {})[column] = metric.run(
-                            self.real_data[table][column],
-                            self.synthetic_data[table][column],
-                        )
+                    if not metric.is_applicable(column_info["sdtype"]):
+                        continue
+                    self.results["single_col_metrics"].setdefault(metric.name, {}).setdefault(table, {})[column] = metric.run(
+                        self.real_data[table][column],
+                        self.synthetic_data[table][column],
+                    )
 
             # single_table_metrics
             for metric in self.single_table_metrics:
                 self.results["single_table_metrics"].setdefault(metric.name, {})[table] = metric.run(
                     self.real_data[table],
                     self.synthetic_data[table],
+                    metadata = self.metadata.to_dict()['tables'][table],
                 )
 
         self.report_datetime = datetime.now()
