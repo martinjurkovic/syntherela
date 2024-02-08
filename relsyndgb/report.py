@@ -1,8 +1,10 @@
 from datetime import datetime
+from sklearn.linear_model import LogisticRegression
 
 from relsyndgb.metrics.single_column.distance import HellingerDistance
 from relsyndgb.metrics.single_column.statistical import ChiSquareTest
 from relsyndgb.metrics.single_table.distance import MaximumMeanDiscrepancy
+from relsyndgb.metrics.single_column.detection import SingleColumnDetection
 
 class Report():
 
@@ -11,7 +13,10 @@ class Report():
                 synthetic_data, 
                 metadata,
                 report_name, 
-                single_col_metrics = [ChiSquareTest(), HellingerDistance()], 
+                single_col_metrics = [
+                    ChiSquareTest(), 
+                    HellingerDistance(),
+                    SingleColumnDetection(classifier_cls=LogisticRegression, classifier_args={"solver": "lbfgs"})],
                 single_table_metrics = [MaximumMeanDiscrepancy()], 
                 multi_table_metrics = [],
                 ):
@@ -42,6 +47,7 @@ class Report():
                     self.results["single_col_metrics"].setdefault(metric.name, {}).setdefault(table, {})[column] = metric.run(
                         self.real_data[table][column],
                         self.synthetic_data[table][column],
+                        metadata = 'TODO',
                     )
 
             # single_table_metrics

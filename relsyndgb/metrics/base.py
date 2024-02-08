@@ -1,8 +1,13 @@
 import numpy as np
 from scipy.stats import binomtest
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedKFold
 
 from sdmetrics.goal import Goal
 from sdmetrics.base import BaseMetric
+from sdmetrics.utils import HyperTransformer
 
 
 class SingleColumnMetric(BaseMetric):
@@ -114,15 +119,41 @@ class DistanceBaseMetric(BaseMetric):
 
 
 class DetectionBaseMetric(BaseMetric):
-    def __init__(self, **kwargs):
+    def __init__(self, classifier_cls, classifier_args = {}, **kwargs):
         super().__init__(**kwargs)
+        self.classifier_cls = classifier_cls
+        self.classifier_args = classifier_args
 
-    @staticmethod
-    def compute(real_data, synthetic_data):
-        """
-        This method is used to compute the actual metric value between two samples.
-        """
-        raise NotImplementedError()
+    def prepare_data(self, real_data, synthetic_data, metadata):
+        ht = HyperTransformer()
+        transformed_real_data = ht.fit_transform(real_data).to_numpy()
+        transformed_synthetic_data = ht.transform(synthetic_data).to_numpy()
+        X = np.concatenate([transformed_real_data, transformed_synthetic_data])
+        y = np.hstack([
+            np.ones(len(transformed_real_data)), np.zeros(len(transformed_synthetic_data))
+        ])
+        if np.isin(X, [np.inf, -np.inf]).any():
+            X[np.isin(X, [np.inf, -np.inf])] = np.nan
+        return X, y
+    
+    def compute(self, real_data, synthetic_data, metadata, **kwargs):
+
+        model = Pipeline([
+            ('imputer', SimpleImputer()),
+            ('scaler', StandardScaler()),
+            ('clf', self.classifier_cls(**self.classifier_args))
+        ])
+
+        X, y = self.prepare_data(real_data, synthetic_data, metadata)
+        scores = []
+        kf = StratifiedKFold(n_splits=3, shuffle=True)
+        for train_index, test_index in kf.split(X, y):
+            model.fit(X[train_index], y[train_index])
+            probs = model.predict_proba(X[test_index])
+            y_pred = probs.argmax(axis=1)
+            acc = (y[test_index] == y_pred).mean()
+            scores.append(acc)
+        return np.mean(scores)
 
     @staticmethod
     def binomial_test(x, n):
@@ -130,7 +161,8 @@ class DetectionBaseMetric(BaseMetric):
         test = binomtest(x, n, 0.5, alternative='greater')
         return test.statistic, test.pvalue
     
-    def run(self, real_data, synthetic_data):
+
+    def run(self, real_data, synthetic_data, metadata, **kwargs):
         """Compute this metric.
 
         Args:
@@ -143,6 +175,6 @@ class DetectionBaseMetric(BaseMetric):
             Union[float, tuple[float]]:
                 Metric output or outputs.
         """
-        accuracy = self.compute(real_data, synthetic_data)
-        n = len(real_data)
-        return self.binomial_test(accuracy * n, n)
+        accuracy = self.compute(real_data, synthetic_data, metadata=metadata, **kwargs)
+        n = len(real_data) + len(synthetic_data)
+        return self.binomial_test(int(accuracy * n), n)
