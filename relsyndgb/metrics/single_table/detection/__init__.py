@@ -1,0 +1,1 @@
+from .single_table_detection import SingleTableDetection

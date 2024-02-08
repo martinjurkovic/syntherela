@@ -1,6 +1,3 @@
-import numpy as np
-from relsyndgb.data import merge_children
-
 from relsyndgb.metrics.base import DetectionBaseMetric, SingleColumnMetric
 
 

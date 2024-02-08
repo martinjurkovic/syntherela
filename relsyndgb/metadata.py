@@ -23,3 +23,9 @@ class Metadata(MultiTableMetadata):
     def get_foreign_keys(self, parent_table_name, child_table_name):
         return self._get_foreign_keys(parent_table_name, child_table_name)
     
+
+def drop_ids(table, metadata):
+    for column, column_info in metadata['columns'].items():
+        if column_info['sdtype'] == 'id':
+            table = table.drop(columns = column, axis=1)
+    return table

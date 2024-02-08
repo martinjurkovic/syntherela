@@ -4,11 +4,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
-
 from sdmetrics.goal import Goal
 from sdmetrics.base import BaseMetric
 from sdmetrics.utils import HyperTransformer
-
 
 class SingleColumnMetric(BaseMetric):
     def __init__(self, **kwargs):
@@ -124,7 +122,8 @@ class DetectionBaseMetric(BaseMetric):
         self.classifier_cls = classifier_cls
         self.classifier_args = classifier_args
 
-    def prepare_data(self, real_data, synthetic_data, metadata):
+    @staticmethod
+    def prepare_data(real_data, synthetic_data, metadata):
         ht = HyperTransformer()
         transformed_real_data = ht.fit_transform(real_data).to_numpy()
         transformed_synthetic_data = ht.transform(synthetic_data).to_numpy()
