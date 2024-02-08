@@ -1,10 +1,7 @@
 from datetime import datetime
-from sklearn.linear_model import LogisticRegression
 
-from relsyndgb.metrics.single_column.distance import HellingerDistance
 from relsyndgb.metrics.single_column.statistical import ChiSquareTest
 from relsyndgb.metrics.single_table.distance import MaximumMeanDiscrepancy
-from relsyndgb.metrics.single_column.detection import SingleColumnDetection
 
 class Report():
 
@@ -15,11 +12,14 @@ class Report():
                 report_name, 
                 single_col_metrics = [
                     ChiSquareTest(), 
-                    HellingerDistance(),
-                    SingleColumnDetection(classifier_cls=LogisticRegression, classifier_args={"solver": "lbfgs"})],
-                single_table_metrics = [MaximumMeanDiscrepancy()], 
+                   ],
+                single_table_metrics = [
+                    MaximumMeanDiscrepancy(),
+                    ], 
                 multi_table_metrics = [],
                 ):
+        metadata.validate_data(real_data)
+        metadata.validate_data(synthetic_data)
         self.real_data = real_data
         self.synthetic_data = synthetic_data
         self.metadata = metadata
@@ -33,11 +33,12 @@ class Report():
             "single_table_metrics": {},
             "multi_table_metrics": {},
         }
+        
 
     def generate(self):
-        
-        # TODO: Validate the input data
-
+        """
+        Generate the report.
+        """
         for table in self.metadata.get_tables():
             # single_col_metrics
             for column, column_info in self.metadata.tables[table].columns.items():
