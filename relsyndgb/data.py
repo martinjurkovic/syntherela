@@ -42,3 +42,8 @@ def download_sdv_relational_datasets():
         # TODO: data/downloads or data/original
         download_demo('multi_table', dataset_name, output_folder_name=f'data/downloads/{dataset_name}')
         print('Done.')
+
+
+def denormalize_tables(tables, metadata):
+    pass    
+    

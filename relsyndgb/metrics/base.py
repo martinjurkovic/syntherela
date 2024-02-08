@@ -123,7 +123,7 @@ class DetectionBaseMetric(BaseMetric):
         self.classifier_args = classifier_args
 
     @staticmethod
-    def prepare_data(real_data, synthetic_data, metadata):
+    def prepare_data(real_data, synthetic_data, **kwargs):
         ht = HyperTransformer()
         transformed_real_data = ht.fit_transform(real_data).to_numpy()
         transformed_synthetic_data = ht.transform(synthetic_data).to_numpy()
@@ -143,7 +143,7 @@ class DetectionBaseMetric(BaseMetric):
             ('clf', self.classifier_cls(**self.classifier_args))
         ])
 
-        X, y = self.prepare_data(real_data, synthetic_data, metadata)
+        X, y = self.prepare_data(real_data, synthetic_data, metadata=metadata)
         scores = []
         kf = StratifiedKFold(n_splits=3, shuffle=True)
         for train_index, test_index in kf.split(X, y):
