@@ -43,7 +43,63 @@ def download_sdv_relational_datasets():
         download_demo('multi_table', dataset_name, output_folder_name=f'data/downloads/{dataset_name}')
         print('Done.')
 
-
 def denormalize_tables(tables, metadata):
-    pass    
+    relationships = metadata.relationships.copy()
+    denormalized_table = tables[relationships[0]['parent_table_name']]
+    already_merged_tables = [relationships[0]['parent_table_name']]
+
+    while len(relationships) > 0:
+        if relationships[0]['parent_table_name'] in already_merged_tables:
+            parent_table = denormalized_table
+            child_table = tables[relationships[0]['child_table_name']]
+            already_merged_tables.append(relationships[0]['child_table_name'])
+
+        elif relationships[0]['child_table_name'] in already_merged_tables:
+            parent_table = tables[relationships[0]['parent_table_name']]
+            child_table = denormalized_table
+            already_merged_tables.append(relationships[0]['parent_table_name'])
+        else:
+            relationships.append(relationships.pop(0))
+            continue
+        
+        denormalized_table = parent_table.merge(
+            child_table,
+            left_on=relationships[0]['parent_primary_key'],
+            right_on=relationships[0]['child_foreign_key'],
+            suffixes=(None, f"_{relationships[0]['child_table_name']}"),
+            how='outer',
+        )
+
+        # Drop the foreign key column with suffix from the denormalized table
+        for column, column_info in metadata.tables[relationships[0]['child_table_name']].columns.items():
+            if column_info['sdtype'] != 'id':
+                continue
+            denormalized_table = drop_column_if_in_table(denormalized_table, f"{column}_{relationships[0]['child_table_name']}")
+
+        relationships.pop(0)
+    
+    return denormalized_table
+
+def drop_column_if_in_table(table, column):
+    if column in table.columns:
+        table = table.drop(columns = column, axis=1)
+    return table
+
+def make_column_names_unique(real_data, synthetic_data, metadata):  
+    for table_name in metadata.get_tables():
+        if not real_data[table_name].columns.equals(synthetic_data[table_name].columns):
+            raise ValueError("Real and synthetic data column names are not the same")
+        
+        table_metadata = metadata.tables[table_name].to_dict()
+
+        for column in table_metadata['columns']:
+            real_data[table_name] = real_data[table_name].rename(columns={column: f"{table_name}_{column}"})
+            synthetic_data[table_name] = synthetic_data[table_name].rename(columns={column: f"{table_name}_{column}"})
+            metadata = metadata.rename_column(table_name, column, f"{table_name}_{column}")
+
+    metadata.validate()
+    metadata.validate_data(real_data)
+    metadata.validate_data(synthetic_data)
+
+    return real_data, synthetic_data, metadata
     
