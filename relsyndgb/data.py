@@ -4,7 +4,7 @@ import pandas as pd
 from sdv.datasets.demo import get_available_demos, download_demo
 
 
-def load_tables(data_path, metadata):
+def load_tables(data_path, metadata, remove_sdv_columns=True):
     tables = {}
     for file_name in os.listdir(data_path):
         if not file_name.endswith('.csv'):
@@ -24,6 +24,25 @@ def load_tables(data_path, metadata):
         tables[table_name] = table
     return tables
 
+def remove_sdv_columns(tables, metadata, update_metadata=True):
+    """
+    "_v1" Versions of the relational demo datasets in SDV have some columns that are not present in the original datasets.
+    We created this function to remove these columns from the tables and the metadata.
+    We have also created the following issue in the SDV repo which adresses this problem: https://github.com/sdv-dev/SDV/issues/1776
+    """
+    for table_name, table in tables.items():
+        for column in table.columns:
+            if any(prefix in column for prefix in ['add_numerical', 'nb_rows_in', 'min(', 'max(', 'sum(']):
+                table = table.drop(columns = column, axis=1)
+
+                if not update_metadata:
+                    continue
+                metadata.tables[table_name].columns.pop(column)
+
+        tables[table_name] = table
+    metadata.validate()
+    metadata.validate_data(tables)
+    return tables, metadata
 
 def save_tables(tables, path):
     # create directory if not exists
