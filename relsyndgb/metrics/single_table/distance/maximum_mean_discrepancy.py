@@ -12,6 +12,16 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
         self.goal = Goal.MINIMIZE
 
     @staticmethod
+    def is_applicable(metadata):
+        """
+        Check if the table contains at least one column that is not an id.
+        """
+        for column_name in metadata['columns'].keys():
+            if metadata['columns'][column_name]['sdtype'] == 'numerical':
+                return True
+        return False
+
+    @staticmethod
     def compute(original_table, sythetic_table, metadata, kernel='linear', **kwargs):
         """
         Code for MaximumMeanDiscrepancy metric modified from:
@@ -39,8 +49,6 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
                 ("scaler", StandardScaler()),
                 ]
         )
-        if len(orig.columns) == 0:
-            return -1
         orig = pipe.fit_transform(orig)
         synth = pipe.transform(synth)
         

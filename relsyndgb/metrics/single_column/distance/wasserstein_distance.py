@@ -14,14 +14,11 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
-        return column_type in ["numerical", "datetime"]
+        return column_type in ["categorical"]
 
     @staticmethod
     def compute(orig_col, synth_col, **kwargs):
-        if orig_col.dtype == 'datetime64[ns]':
-            orig_col = orig_col.astype('int64')
-            synth_col = synth_col.astype('int64')
+        gt_freq, synth_freq = get_histograms(
+            orig_col, synth_col, normalize=False)
+        return wasserstein_distance(gt_freq, synth_freq)
 
-        orig_col = orig_col.dropna()
-        synth_col = synth_col.dropna()
-        return wasserstein_distance(orig_col, synth_col)
