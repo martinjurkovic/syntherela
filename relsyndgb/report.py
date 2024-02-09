@@ -53,11 +53,20 @@ class Report():
 
             # single_table_metrics
             for metric in self.single_table_metrics:
+                if not metric.is_applicable(self.metadata.to_dict()['tables'][table]):
+                        continue
                 self.results["single_table_metrics"].setdefault(metric.name, {})[table] = metric.run(
                     self.real_data[table],
                     self.synthetic_data[table],
                     metadata = self.metadata.to_dict()['tables'][table],
                 )
+
+        for metric in self.multi_table_metrics:
+            self.results["multi_table_metrics"][metric.name] = metric.run(
+                self.real_data,
+                self.synthetic_data,
+                metadata = self.metadata,
+            )
 
         self.report_datetime = datetime.now()
 

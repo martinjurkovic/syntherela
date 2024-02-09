@@ -1,11 +1,11 @@
-from relsyndgb.metrics.base import DistanceBaseMetric
+from relsyndgb.metrics.base import DistanceBaseMetric, SingleTableMetric
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn import metrics
 from sdmetrics.goal import Goal
 
-class MaximumMeanDiscrepancy(DistanceBaseMetric):
+class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "MaximumMeanDiscrepancy"

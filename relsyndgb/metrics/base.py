@@ -16,6 +16,20 @@ class SingleColumnMetric(BaseMetric):
     def is_applicable(column_type):
         raise NotImplementedError()
     
+class SingleTableMetric(BaseMetric):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def is_applicable(metadata):
+        """
+        Check if the table contains at least one column that is not an id.
+        """
+        for column_name in metadata['columns'].keys():
+            if metadata['columns'][column_name]['sdtype'] != 'id':
+                return True
+        return False
+    
 
 class StatisticalBaseMetric(BaseMetric):
     def __init__(self, **kwargs):
@@ -117,10 +131,11 @@ class DistanceBaseMetric(BaseMetric):
 
 
 class DetectionBaseMetric(BaseMetric):
-    def __init__(self, classifier_cls, classifier_args = {}, **kwargs):
+    def __init__(self, classifier_cls, classifier_args = {}, random_state = None, **kwargs):
         super().__init__(**kwargs)
         self.classifier_cls = classifier_cls
         self.classifier_args = classifier_args
+        self.random_state = random_state
 
     @staticmethod
     def prepare_data(real_data, synthetic_data, **kwargs):
@@ -145,14 +160,13 @@ class DetectionBaseMetric(BaseMetric):
 
         X, y = self.prepare_data(real_data, synthetic_data, metadata=metadata)
         scores = []
-        kf = StratifiedKFold(n_splits=3, shuffle=True)
+        kf = StratifiedKFold(n_splits=3, shuffle=True, random_state=self.random_state)
         for train_index, test_index in kf.split(X, y):
             model.fit(X[train_index], y[train_index])
             probs = model.predict_proba(X[test_index])
             y_pred = probs.argmax(axis=1)
-            acc = (y[test_index] == y_pred).mean()
-            scores.append(acc)
-        return np.mean(scores)
+            scores.extend(list((y[test_index] == y_pred).astype(int)))
+        return scores
 
     @staticmethod
     def binomial_test(x, n):
@@ -174,6 +188,7 @@ class DetectionBaseMetric(BaseMetric):
             Union[float, tuple[float]]:
                 Metric output or outputs.
         """
-        accuracy = self.compute(real_data, synthetic_data, metadata=metadata, **kwargs)
-        n = len(real_data) + len(synthetic_data)
-        return self.binomial_test(int(accuracy * n), n)
+        scores = self.compute(real_data, synthetic_data, metadata=metadata, **kwargs)
+        _, bin_test_p_val = self.binomial_test(sum(scores), len(scores))
+        standard_error = np.std(scores) / np.sqrt(len(scores))
+        return { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : bin_test_p_val }
