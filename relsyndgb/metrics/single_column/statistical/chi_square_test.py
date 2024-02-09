@@ -1,5 +1,6 @@
 import pandas as pd
 from scipy.stats import chi2_contingency
+from sdmetrics.goal import Goal
 
 from relsyndgb.metrics.base import SingleColumnMetric, StatisticalBaseMetric
 
@@ -9,6 +10,7 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "ChiSquareTest"
+        self.goal = Goal.MINIMIZE
 
     @staticmethod
     def is_applicable(column_type):

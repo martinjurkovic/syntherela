@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from sdmetrics.goal import Goal
 
 from relsyndgb.metrics.base import SingleColumnMetric, DistanceBaseMetric
 from relsyndgb.metrics.single_column.distance.utils import get_histograms
@@ -10,6 +11,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "HellingerDistance"
+        self.goal = Goal.MINIMIZE
 
     @staticmethod
     def is_applicable(column_type):

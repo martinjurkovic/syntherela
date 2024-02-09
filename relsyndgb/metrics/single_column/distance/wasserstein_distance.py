@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
+from scipy.stats import wasserstein_distance
+from sdmetrics.goal import Goal
 
 from relsyndgb.metrics.base import SingleColumnMetric, DistanceBaseMetric
-from scipy.stats import wasserstein_distance
 from relsyndgb.metrics.single_column.distance.utils import get_histograms
 
 
@@ -11,6 +12,7 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "WassersteinDistance"
+        self.goal = Goal.MINIMIZE
 
     @staticmethod
     def is_applicable(column_type):
