@@ -1,3 +1,5 @@
+import pandas as pd
+
 from relsyndgb.metrics.base import DistanceBaseMetric, SingleTableMetric
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -40,8 +42,8 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
                 orig.drop(col, axis=1, inplace=True)
                 synth.drop(col, axis=1, inplace=True)
             elif "datetime" in str(orig[col].dtype):
-                orig[col] = orig[col].astype("int64")
-                synth[col] = synth[col].astype("int64")
+                orig[col] =  pd.to_numeric(orig[col])
+                synth[col] =  pd.to_numeric(synth[col])
 
         # standardize the values
         pipe = Pipeline([
@@ -49,6 +51,8 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
                 ("scaler", StandardScaler()),
                 ]
         )
+        
+        # TODO: should we fit the imputer on the combined data first?
         orig = pipe.fit_transform(orig)
         synth = pipe.transform(synth)
         
