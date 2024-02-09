@@ -14,7 +14,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
-        return column_type in ["categorical"]
+        return column_type in ["categorical", "numerical", "datetime"]
 
     @staticmethod
     def compute(orig_col, synth_col, normalize_histograms=True, bins='doane', **kwargs):
