@@ -1,5 +1,9 @@
 from datetime import datetime
+import json
+import os
+from pathlib import Path
 
+from relsyndgb.utils import NpEncoder
 from relsyndgb.metrics.single_column.statistical import ChiSquareTest
 from relsyndgb.metrics.single_table.distance import MaximumMeanDiscrepancy
 
@@ -71,3 +75,26 @@ class Report():
         self.report_datetime = datetime.now()
 
         return self.results
+    
+    def print_results(self):
+        """
+        Print the results.
+        """
+        print(json.dumps(self.results, sort_keys=True, indent=4, cls=NpEncoder))
+    
+    def save_results(self, path, filename=None):
+        """
+        Save the results to a file.
+        """
+        path = Path(path)
+
+        if filename is None:
+            filename = f"{self.report_name}_{self.report_datetime.strftime('%Y_%m_%d')}.json"
+
+        path = path / filename
+
+        
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+        with open(path, 'w') as f:
+            json.dump(self.results, f, sort_keys=True, indent=4, cls=NpEncoder)
