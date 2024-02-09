@@ -14,10 +14,9 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
     def is_applicable(column_type):
         return column_type == "categorical"
 
-    @staticmethod
-    def validate(column):
+    def validate(self, column):
         if column.dtype.name not in ("object", "category"):
-            raise ValueError(f"ChiSquareTest can only be applied to categorical columns, but column {column.name} is of type {column.dtype}")
+            raise ValueError(f"{self.name} can only be applied to categorical columns, but column {column.name} is of type {column.dtype}")
     
     @staticmethod
     def compute(real_data, synthetic_data):
