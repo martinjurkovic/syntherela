@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy.stats import binomtest
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -140,7 +141,9 @@ class DetectionBaseMetric(BaseMetric):
     @staticmethod
     def prepare_data(real_data, synthetic_data, **kwargs):
         ht = HyperTransformer()
-        transformed_real_data = ht.fit_transform(real_data).to_numpy()
+        combined_data = pd.concat([real_data, synthetic_data])
+        ht.fit(combined_data)
+        transformed_real_data = ht.transform(real_data).to_numpy()
         transformed_synthetic_data = ht.transform(synthetic_data).to_numpy()
         X = np.concatenate([transformed_real_data, transformed_synthetic_data])
         y = np.hstack([
