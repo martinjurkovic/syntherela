@@ -1,7 +1,7 @@
 # Directories
 data
 checkpoints
-experiments/evaluation/results
+experiments
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
