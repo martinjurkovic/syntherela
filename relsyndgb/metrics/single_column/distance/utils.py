@@ -15,7 +15,7 @@ def get_histograms(original, synthetic, normalize = True, bins='doane'):
     if original.dtype.name in ("object", "category"):  # categorical
         gt = original.value_counts().to_dict()
         synth = synthetic.value_counts().to_dict()
-        # add missing values with smoothing constant to avoid division by zero
+        # TODO: get rid of these loops for performance
         for val in gt:
             if val not in synth:
                 synth[val] = 0
@@ -25,9 +25,9 @@ def get_histograms(original, synthetic, normalize = True, bins='doane'):
     elif np.issubdtype(original.dtype, np.number):  # continuous
         original = original.dropna()
         synthetic = synthetic.dropna()
-        gt_vals, bin_vals = np.histogram(original, bins=bins, 
-            range=(min(min(original), min(synthetic)),
-                max(max(original), max(synthetic))))
+        combined = pd.concat([original, synthetic])
+        bin_vals = np.histogram_bin_edges(combined, bins=bins)
+        gt_vals, bin_vals = np.histogram(original, bins=bin_vals)
         synth_vals, _ = np.histogram(synthetic, bins=bin_vals)
         gt = {k: v  for k, v in zip(bin_vals, gt_vals)}
         synth = {k: v for k, v in zip(bin_vals, synth_vals)}

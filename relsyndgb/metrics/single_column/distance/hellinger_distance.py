@@ -6,6 +6,8 @@ from relsyndgb.metrics.base import SingleColumnMetric, DistanceBaseMetric
 from relsyndgb.metrics.single_column.distance.utils import get_histograms
 
 
+_SQRT2 = np.sqrt(2)
+
 class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
@@ -19,8 +21,8 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
     
     @staticmethod
     def hellinger(p, q):
-        return sum([(np.sqrt(t[0])-np.sqrt(t[1]))*(np.sqrt(t[0])-np.sqrt(t[1]))\
-                    for t in zip(p,q)])/np.sqrt(2.)
+        return np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2)) / _SQRT2
+   
 
     @classmethod
     def compute(cls, orig_col, synth_col, normalize_histograms=True, bins='doane', **kwargs):
