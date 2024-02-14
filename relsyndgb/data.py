@@ -4,7 +4,7 @@ import pandas as pd
 from sdv.datasets.demo import get_available_demos, download_demo
 
 
-def load_tables(data_path, metadata, remove_sdv_columns=True):
+def load_tables(data_path, metadata):
     tables = {}
     for file_name in os.listdir(data_path):
         if not file_name.endswith('.csv'):
@@ -45,7 +45,6 @@ def remove_sdv_columns(tables, metadata, update_metadata=True):
     return tables, metadata
 
 def save_tables(tables, path):
-    # create directory if not exists
     if not os.path.exists(path):
         os.makedirs(path)
     for table_name, table in tables.items():
