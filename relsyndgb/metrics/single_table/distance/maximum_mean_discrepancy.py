@@ -52,8 +52,9 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
                 ]
         )
         
-        # TODO: should we fit the imputer on the combined data first?
-        orig = pipe.fit_transform(orig)
+        combined = pd.concat([orig, synth])
+        pipe.fit(combined)
+        orig = pipe.transform(orig)
         synth = pipe.transform(synth)
         
         if kernel == "linear":
