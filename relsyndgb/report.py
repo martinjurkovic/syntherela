@@ -26,6 +26,11 @@ class Report():
         metadata.validate_data(synthetic_data)
         self.real_data = real_data
         self.synthetic_data = synthetic_data
+
+        # reorder synthetic data columns to match real data
+        for table in metadata.get_tables():
+            self.synthetic_data[table] = self.synthetic_data[table][self.real_data[table].columns]
+            assert (self.real_data[table].columns == self.synthetic_data[table].columns).all(), f"Columns in real and synthetic data do not match for table {table}"
         self.metadata = metadata
         self.report_name = report_name
         self.single_col_metrics = single_col_metrics
@@ -37,7 +42,7 @@ class Report():
             "single_table_metrics": {},
             "multi_table_metrics": {},
         }
-        
+
 
     def generate(self):
         """
