@@ -15,6 +15,7 @@ setup(
     packages=find_packages("."),
     package_dir={"": "."},
     install_requires=[
+        "sdv==1.9.0",
         "sdmetrics==0.13.0",
         ],
     keywords=["python", "relsyndgb", "synthetic data", "relational data", "evaluation", "benchmark"],
