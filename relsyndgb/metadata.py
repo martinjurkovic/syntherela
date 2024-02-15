@@ -47,6 +47,12 @@ class Metadata(MultiTableMetadata):
             if relationship['child_table_name'] == table_name and relationship['child_foreign_key'] == old_column_name:
                 relationship['child_foreign_key'] = new_column_name
         return self
+    
+    def get_root_tables(self):
+        root_tables = set(self.tables.keys())
+        for relation in self.relationships:
+            root_tables.discard(relation['child_table_name'])
+        return list(root_tables)
 
 def drop_ids(table, metadata: dict):
     for column, column_info in metadata['columns'].items():
