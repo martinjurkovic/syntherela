@@ -64,8 +64,7 @@ def drop_ids(table, metadata: dict):
 def convert_metadata_to_v0(metadata):
     metadata_v1 = metadata.to_dict()
     metadata_v0 = {
-        'tables': {},
-        'relationships': []
+        'tables': {}
     }
     for table_name, table_info in metadata_v1['tables'].items():
 

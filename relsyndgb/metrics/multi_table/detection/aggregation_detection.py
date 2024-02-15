@@ -37,13 +37,29 @@ class SingleTableAggregationDetection(AggregationDetection, DetectionBaseMetric,
         super().__init__(classifier_cls, classifier_args, **kwargs)
         self.name = f"SingleTableAggregationDetection-{classifier_cls.__name__}"
 
+    @staticmethod
+    def is_applicable(metadata, table):
+        """
+        Check if the table contains at least one column that is not an id.
+        And if the table has a relationship with another table.
+        """
+        nonid = False
+        table_metadata = metadata.tables[table].to_dict()
+        for column_name in table_metadata['columns'].keys():
+            if table_metadata['columns'][column_name]['sdtype'] != 'id':
+                nonid = True
+                break
+        has_children = len(metadata.get_children(table)) > 0
+        return nonid and has_children
+    
+    
     def run(self, real_data, synthetic_data, metadata, **kwargs):
         real_data_with_aggregations, metadata = self.add_aggregations(real_data, deepcopy(metadata))
         synthetic_data_with_aggregations, _ = self.add_aggregations(synthetic_data, metadata, update_metadata=False)
         results = {}
         for table in metadata.get_tables():
             table_metadata = metadata.tables[table].to_dict()
-            if not self.is_applicable(table_metadata):
+            if not self.is_applicable(metadata, table):
                 continue
             real_data_with_aggregations[table] = drop_ids(real_data_with_aggregations[table], table_metadata)
             synthetic_data_with_aggregations[table] = drop_ids(synthetic_data_with_aggregations[table], table_metadata)

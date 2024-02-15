@@ -1,11 +1,12 @@
 import pandas as pd
-
-from relsyndgb.metrics.base import DistanceBaseMetric, SingleTableMetric
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
 from sklearn import metrics
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
 from sdmetrics.goal import Goal
+
+from relsyndgb.metadata import drop_ids
+from relsyndgb.metrics.base import DistanceBaseMetric, SingleTableMetric
 
 class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
     def __init__(self, **kwargs):
@@ -35,8 +36,8 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
         orig = original_table.copy()
         synth = sythetic_table.copy()
 
-        orig.drop(metadata['primary_key'], axis=1, inplace=True)
-        synth.drop(metadata['primary_key'], axis=1, inplace=True)
+        orig = drop_ids(orig, metadata)
+        synth = drop_ids(synth, metadata)
         for col in orig.columns:
             if orig[col].dtype.name in ("object", "category"):
                 orig.drop(col, axis=1, inplace=True)
