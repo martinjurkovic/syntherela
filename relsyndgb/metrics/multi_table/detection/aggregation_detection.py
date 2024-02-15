@@ -48,10 +48,7 @@ class SingleTableAggregationDetection(AggregationDetection, DetectionBaseMetric,
             real_data_with_aggregations[table] = drop_ids(real_data_with_aggregations[table], table_metadata)
             synthetic_data_with_aggregations[table] = drop_ids(synthetic_data_with_aggregations[table], table_metadata)
             
-            scores = self.compute(real_data_with_aggregations[table], synthetic_data_with_aggregations[table], metadata=metadata, **kwargs)
-            _, bin_test_p_val = self.binomial_test(sum(scores), len(scores))
-            standard_error = np.std(scores) / np.sqrt(len(scores))
-            results[table] = { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : bin_test_p_val }
+            results[table] = super().run(real_data_with_aggregations[table], synthetic_data_with_aggregations[table], metadata=metadata, **kwargs)
         return results
 
 

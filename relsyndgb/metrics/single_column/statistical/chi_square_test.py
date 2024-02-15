@@ -31,4 +31,4 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         # calculate the chi-square test
         statistic, pval, _, _ = chi2_contingency([freq_orig, freq_synth]) 
 
-        return statistic, pval
+        return {"statistic": statistic, "p_value": pval}

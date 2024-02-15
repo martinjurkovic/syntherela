@@ -194,4 +194,4 @@ class DetectionBaseMetric(BaseMetric):
         scores = self.compute(real_data, synthetic_data, metadata=metadata, **kwargs)
         _, bin_test_p_val = self.binomial_test(sum(scores), len(scores))
         standard_error = np.std(scores) / np.sqrt(len(scores))
-        return { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : bin_test_p_val }
+        return { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : np.round(bin_test_p_val, decimals=16) }
