@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import pandas as pd
 from scipy.stats import binomtest
@@ -7,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sdmetrics.goal import Goal
 from sdmetrics.base import BaseMetric
-from sdmetrics.utils import HyperTransformer
+from relsyndgb.utils import CustomHyperTransformer
 
 class SingleColumnMetric(BaseMetric):
     def __init__(self, **kwargs):
@@ -16,7 +18,8 @@ class SingleColumnMetric(BaseMetric):
     @staticmethod
     def is_applicable(column_type):
         raise NotImplementedError()
-    
+
+
 class SingleTableMetric(BaseMetric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -82,11 +85,10 @@ class DistanceBaseMetric(BaseMetric):
         reference_ci = self.bootstrap_reference_conf_int(real_data, **kwargs)
         # TODO: bootstrap is only for uncertainty estimation, should also return SE?
         value = self.compute(real_data, synthetic_data, **kwargs)
-        return value, reference_ci
+        return {'value': value, 'reference_ci': reference_ci}
 
 
-    # TODO: m=2 for DEBUGGING, should be m=100
-    def bootstrap_conf_int(self, real_data, synthetic_data, m=2, alpha=0.05, **kwargs):
+    def bootstrap_conf_int(self, real_data, synthetic_data, m=100, alpha=0.05, **kwargs):
         """ Compute the quantile confidence interval of the metric
         using the bootstrap method. 
         """
@@ -106,19 +108,16 @@ class DistanceBaseMetric(BaseMetric):
         else:
             return (np.quantile(values, alpha/2), np.quantile(values, 1-alpha/2))
         
+
     def bootstrap_reference_conf_int(self, real_data, m=100, alpha=0.05, **kwargs):
         """ Compute the quantile confidence interval of the metric
         on the original data using subsampling to estimate the reference
         using the bootstrap method.
-
-        'Large sample confidence regions based on sub-samples under minimal assumptions. 
-        Politis, D. N.; Romano, J. P. (1994). Annals of Statistics, 22, 2031-2050.9'
         """
         values = []
         for _ in range(m):
-            # draw 2 samples with replacement of size 0.5 * n
-            sample1 = real_data.sample(frac=0.5, replace = True)
-            sample2 = real_data.sample(frac=0.5, replace = True)
+            sample1 = real_data.sample(frac=1, replace = True, random_state=m)
+            sample2 = real_data.sample(frac=1, replace = True, random_state=m+1)
             # compute the metric
             val = self.compute(sample1, sample2, **kwargs)
             values.append(val)
@@ -137,15 +136,24 @@ class DetectionBaseMetric(BaseMetric):
         self.classifier_cls = classifier_cls
         self.classifier_args = classifier_args
         self.random_state = random_state
+        self.classifiers = []
 
-    @staticmethod
-    def prepare_data(real_data, synthetic_data, **kwargs):
-        ht = HyperTransformer()
+
+    def prepare_data(self, real_data: Union[pd.DataFrame, pd.Series], synthetic_data : Union[pd.DataFrame, pd.Series], **kwargs):
+        if isinstance(real_data, pd.DataFrame):
+            assert real_data.columns.equals(synthetic_data.columns), "Columns of real and synthetic data do not match"
+        
+        # sample the same number of rows from the real and synthetic data
+        n = min(len(real_data), len(synthetic_data))
+        real_data = real_data.sample(n, random_state=self.random_state)
+        synthetic_data = synthetic_data.sample(n, random_state=self.random_state + 1 if self.random_state else None)
+
+        ht = CustomHyperTransformer()
         combined_data = pd.concat([real_data, synthetic_data])
         ht.fit(combined_data)
-        transformed_real_data = ht.transform(real_data).to_numpy()
-        transformed_synthetic_data = ht.transform(synthetic_data).to_numpy()
-        X = np.concatenate([transformed_real_data, transformed_synthetic_data])
+        transformed_real_data = ht.transform(real_data)
+        transformed_synthetic_data = ht.transform(synthetic_data)
+        X = pd.concat([transformed_real_data, transformed_synthetic_data])
         y = np.hstack([
             np.ones(len(transformed_real_data)), np.zeros(len(transformed_synthetic_data))
         ])
@@ -163,18 +171,20 @@ class DetectionBaseMetric(BaseMetric):
 
         X, y = self.prepare_data(real_data, synthetic_data, metadata=metadata)
         scores = []
-        kf = StratifiedKFold(n_splits=3, shuffle=True, random_state=self.random_state)
+        kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=self.random_state)
         for train_index, test_index in kf.split(X, y):
-            model.fit(X[train_index], y[train_index])
-            probs = model.predict_proba(X[test_index])
+            model.fit(X.iloc[train_index], y[train_index])
+            probs = model.predict_proba(X.iloc[test_index])
             y_pred = probs.argmax(axis=1)
             scores.extend(list((y[test_index] == y_pred).astype(int)))
+            model['clf'].feature_names = X.columns.to_list()
+            self.classifiers.append(model['clf'])
         return scores
 
     @staticmethod
-    def binomial_test(x, n):
+    def binomial_test(x, n, p=0.5):
         """ Compute the p-value of the metric using the binomial test. """
-        test = binomtest(x, n, 0.5, alternative='greater')
+        test = binomtest(x, n, p, alternative='greater')
         return test.statistic, test.pvalue
     
 
@@ -195,3 +205,22 @@ class DetectionBaseMetric(BaseMetric):
         _, bin_test_p_val = self.binomial_test(sum(scores), len(scores))
         standard_error = np.std(scores) / np.sqrt(len(scores))
         return { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : np.round(bin_test_p_val, decimals=16) }
+    
+
+    def feature_importance(self):
+        if not len(self.classifiers):
+            raise ValueError('No classifiers have been trained.')
+        if not hasattr(self.classifiers[0], 'feature_importances_'):
+            raise ValueError('The classifier does not have a feature_importances_ attribute.')
+            
+        features = dict()
+        for model in self.classifiers:
+            for feature, importance in zip(model.feature_names, model.feature_importances_):
+                if feature not in features:
+                    features[feature] = []
+                features[feature].append(importance)
+
+        features = {k: np.array(v) for k, v in features.items()}
+
+        return dict(sorted(features.items(), key=lambda x: np.mean(x[1]), reverse=True))
+    
