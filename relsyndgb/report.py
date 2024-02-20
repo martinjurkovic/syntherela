@@ -3,6 +3,8 @@ import json
 import os
 from pathlib import Path
 
+from tqdm import tqdm
+
 from relsyndgb.utils import NpEncoder
 from relsyndgb.metrics.single_column.statistical import ChiSquareTest
 from relsyndgb.metrics.single_table.distance import MaximumMeanDiscrepancy
@@ -14,7 +16,7 @@ class Report():
                 synthetic_data, 
                 metadata,
                 report_name, 
-                single_col_metrics = [
+                single_column_metrics = [
                     ChiSquareTest(), 
                    ],
                 single_table_metrics = [
@@ -33,12 +35,12 @@ class Report():
             assert (self.real_data[table].columns == self.synthetic_data[table].columns).all(), f"Columns in real and synthetic data do not match for table {table}"
         self.metadata = metadata
         self.report_name = report_name
-        self.single_col_metrics = single_col_metrics
+        self.single_column_metrics = single_column_metrics
         self.single_table_metrics = single_table_metrics
         self.multi_table_metrics = multi_table_metrics
         self.report_datetime = datetime.now()
         self.results = {
-            "single_col_metrics": {},
+            "single_column_metrics": {},
             "single_table_metrics": {},
             "multi_table_metrics": {},
         }
@@ -48,34 +50,46 @@ class Report():
         """
         Generate the report.
         """
-        for table in self.metadata.get_tables():
-            # single_col_metrics
-            for column, column_info in self.metadata.tables[table].columns.items():
-                for metric in self.single_col_metrics:
-                    if not metric.is_applicable(column_info["sdtype"]):
-                        continue
-                    self.results["single_col_metrics"].setdefault(metric.name, {}).setdefault(table, {})[column] = metric.run(
-                        self.real_data[table][column],
-                        self.synthetic_data[table][column],
-                        metadata = 'TODO',
+        column_count = sum([len(self.real_data[table].columns) for table in self.metadata.get_tables()])
+        table_count = len(self.metadata.get_tables())
+
+        # single_column_metrics
+        with tqdm(total=len(self.single_column_metrics) * column_count, desc="Running Single Column Metrics") as pbar:
+            for table in self.metadata.get_tables():
+                for metric in self.single_column_metrics:
+                    for column, column_info in self.metadata.tables[table].columns.items():
+                        if not metric.is_applicable(column_info["sdtype"]):
+                            pbar.update(1)
+                            continue
+                        self.results["single_column_metrics"].setdefault(metric.name, {}).setdefault(table, {})[column] = metric.run(
+                            self.real_data[table][column],
+                            self.synthetic_data[table][column],
+                            metadata = 'TODO',
+                        )
+                        pbar.update(1)
+                    
+        # single_table_metrics
+        with tqdm(total=len(self.single_table_metrics) * table_count, desc="Running Single Table Metrics") as pbar:
+            for table in self.metadata.get_tables():
+                for metric in self.single_table_metrics:
+                    if not metric.is_applicable(self.metadata.to_dict()['tables'][table]):
+                            pbar.update(1)
+                            continue
+                    self.results["single_table_metrics"].setdefault(metric.name, {})[table] = metric.run(
+                        self.real_data[table],
+                        self.synthetic_data[table],
+                        metadata = self.metadata.to_dict()['tables'][table],
                     )
+                    pbar.update(1)
 
-            # single_table_metrics
-            for metric in self.single_table_metrics:
-                if not metric.is_applicable(self.metadata.to_dict()['tables'][table]):
-                        continue
-                self.results["single_table_metrics"].setdefault(metric.name, {})[table] = metric.run(
-                    self.real_data[table],
-                    self.synthetic_data[table],
-                    metadata = self.metadata.to_dict()['tables'][table],
-                )
-
-        for metric in self.multi_table_metrics:
+        # multi_table_metrics
+        for metric in tqdm(self.multi_table_metrics, desc="Running Multi Table Metrics"):
             self.results["multi_table_metrics"][metric.name] = metric.run(
                 self.real_data,
                 self.synthetic_data,
                 metadata = self.metadata,
             )
+
 
         self.report_datetime = datetime.now()
 
@@ -108,7 +122,7 @@ class Report():
         """
         Get the metric instance.
         """
-        for metric in self.single_col_metrics + self.single_table_metrics + self.multi_table_metrics:
+        for metric in self.single_column_metrics + self.single_table_metrics + self.multi_table_metrics:
             if metric.name == metric_name:
                 return metric
-        raise ValueError(f"Metric with name \"{metric_name}\" not found in the report. Available metrics: {[metric.name for metric in self.single_col_metrics + self.single_table_metrics + self.multi_table_metrics]}")
+        raise ValueError(f"Metric with name \"{metric_name}\" not found in the report. Available metrics: {[metric.name for metric in self.single_column_metrics + self.single_table_metrics + self.multi_table_metrics]}")
