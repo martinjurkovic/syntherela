@@ -67,7 +67,7 @@ class Report():
                             self.results["single_column_metrics"].setdefault(metric.name, {}).setdefault(table, {})[column] = metric.run(
                                 self.real_data[table][column],
                                 self.synthetic_data[table][column],
-                                metadata = 'TODO',
+                                metadata = self.metadata.to_dict()['tables'][table]['columns'][column],  
                             )
                             pbar.update(1)
                     

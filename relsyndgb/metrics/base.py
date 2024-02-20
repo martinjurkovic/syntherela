@@ -1,3 +1,5 @@
+import re
+import warnings
 from copy import deepcopy
 from typing import Union
 
@@ -16,6 +18,13 @@ from relsyndgb.utils import CustomHyperTransformer
 class SingleColumnMetric(BaseMetric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    @staticmethod
+    def is_constant(column: pd.Series):
+        constant = column.nunique() == 1
+        if constant:
+            warnings.warn(f"Column {column.name} is constant.")
+        return constant
 
     @staticmethod
     def is_applicable(column_type):
@@ -81,6 +90,7 @@ class DistanceBaseMetric(BaseMetric):
         """
         raise NotImplementedError()
 
+
     def run(self, real_data, synthetic_data, **kwargs):
         """ Compute the reference confidence intervals using bootstrap on the real data
         and compute the matric value on real vs synthetic data."""
@@ -88,7 +98,8 @@ class DistanceBaseMetric(BaseMetric):
         boostrap_mean, bootstrap_se = self.bootstrap_metric_estimate(real_data, synthetic_data, **kwargs)
         value = self.compute(real_data, synthetic_data, **kwargs)
         return {'value': value, 'reference_ci': reference_ci, 'bootstrap_mean': boostrap_mean, 'bootstrap_se': bootstrap_se}
-    
+
+
     def boostrap_metric_values(self, data1, data2, m=100, random_state=None, **kwargs):
         # get random_state from kwargs
         if random_state is None:
@@ -157,6 +168,7 @@ class DetectionBaseMetric(BaseMetric):
             X[np.isin(X, [np.inf, -np.inf])] = np.nan
         return X, y
     
+    
     def compute(self, real_data, synthetic_data, metadata, **kwargs):
 
         
@@ -174,8 +186,10 @@ class DetectionBaseMetric(BaseMetric):
             probs = model.predict_proba(X.iloc[test_index])
             y_pred = probs.argmax(axis=1)
             scores.extend(list((y[test_index] == y_pred).astype(int)))
-            model['clf'].feature_names = X.columns.to_list()
             self.classifiers.append(deepcopy(model['clf']))
+        # save the data for feature importance methods
+        self.X = X
+        self.y = y
         return scores
 
     @staticmethod
@@ -211,8 +225,9 @@ class DetectionBaseMetric(BaseMetric):
             raise ValueError('The classifier does not have a feature_importances_ attribute.')
             
         features = dict()
+        feature_names = self.X.columns
         for model in self.classifiers:
-            for feature, importance in zip(model.feature_names, model.feature_importances_):
+            for feature, importance in zip(feature_names, model.feature_importances_):
                 if feature not in features:
                     features[feature] = []
                 features[feature].append(importance)
@@ -221,8 +236,8 @@ class DetectionBaseMetric(BaseMetric):
         if combine_categorical:
             feature_names = dict()
             for feature in features.keys():
-                # keep everything before last underscore
-                if '_' not in feature:
+                # check if the feature is one-hot encoded
+                if not re.search('_[0-9]+$', feature):
                     continue
                 feature_name = '_'.join(feature.split('_')[:-1])
                 if feature_name not in feature_names:
@@ -294,3 +309,6 @@ class DetectionBaseMetric(BaseMetric):
         legend = labels_handles[::-1]
         ax.legend(*legend)
     
+
+    def partial_dependence(self):
+        pass

@@ -23,3 +23,8 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         gt_freq, synth_freq = get_histograms(
             orig_col, synth_col, normalize=normalize_histograms, bins=bins)
         return jensenshannon(gt_freq, synth_freq)
+    
+    def run(self, real_data, synthetic_data, **kwargs):
+        if self.is_constant(real_data):
+            return {'value': 0, 'reference_ci': 0, 'bootstrap_mean': 0, 'bootstrap_se': 0}
+        return super().run(real_data, synthetic_data, **kwargs)
