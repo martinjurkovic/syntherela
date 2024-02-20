@@ -54,41 +54,50 @@ class Report():
         table_count = len(self.metadata.get_tables())
 
         # single_column_metrics
-        with tqdm(total=len(self.single_column_metrics) * column_count, desc="Running Single Column Metrics") as pbar:
-            for table in self.metadata.get_tables():
-                for metric in self.single_column_metrics:
-                    for column, column_info in self.metadata.tables[table].columns.items():
-                        if not metric.is_applicable(column_info["sdtype"]):
+        if len(self.single_column_metrics) == 0:
+            print("No single column metrics to run. Skipping.")
+        else:
+            with tqdm(total=len(self.single_column_metrics) * column_count, desc="Running Single Column Metrics") as pbar:
+                for table in self.metadata.get_tables():
+                    for metric in self.single_column_metrics:
+                        for column, column_info in self.metadata.tables[table].columns.items():
+                            if not metric.is_applicable(column_info["sdtype"]):
+                                pbar.update(1)
+                                continue
+                            self.results["single_column_metrics"].setdefault(metric.name, {}).setdefault(table, {})[column] = metric.run(
+                                self.real_data[table][column],
+                                self.synthetic_data[table][column],
+                                metadata = 'TODO',
+                            )
                             pbar.update(1)
-                            continue
-                        self.results["single_column_metrics"].setdefault(metric.name, {}).setdefault(table, {})[column] = metric.run(
-                            self.real_data[table][column],
-                            self.synthetic_data[table][column],
-                            metadata = 'TODO',
-                        )
-                        pbar.update(1)
                     
         # single_table_metrics
-        with tqdm(total=len(self.single_table_metrics) * table_count, desc="Running Single Table Metrics") as pbar:
-            for table in self.metadata.get_tables():
-                for metric in self.single_table_metrics:
-                    if not metric.is_applicable(self.metadata.to_dict()['tables'][table]):
-                            pbar.update(1)
-                            continue
-                    self.results["single_table_metrics"].setdefault(metric.name, {})[table] = metric.run(
-                        self.real_data[table],
-                        self.synthetic_data[table],
-                        metadata = self.metadata.to_dict()['tables'][table],
-                    )
-                    pbar.update(1)
+        if len(self.single_table_metrics) == 0:
+            print("No single table metrics to run. Skipping.")
+        else:
+            with tqdm(total=len(self.single_table_metrics) * table_count, desc="Running Single Table Metrics") as pbar:
+                for table in self.metadata.get_tables():
+                    for metric in self.single_table_metrics:
+                        if not metric.is_applicable(self.metadata.to_dict()['tables'][table]):
+                                pbar.update(1)
+                                continue
+                        self.results["single_table_metrics"].setdefault(metric.name, {})[table] = metric.run(
+                            self.real_data[table],
+                            self.synthetic_data[table],
+                            metadata = self.metadata.to_dict()['tables'][table],
+                        )
+                        pbar.update(1)
 
         # multi_table_metrics
-        for metric in tqdm(self.multi_table_metrics, desc="Running Multi Table Metrics"):
-            self.results["multi_table_metrics"][metric.name] = metric.run(
-                self.real_data,
-                self.synthetic_data,
-                metadata = self.metadata,
-            )
+        if len(self.multi_table_metrics) == 0:
+            print("No multi table metrics to run. Skipping.")
+        else:
+            for metric in tqdm(self.multi_table_metrics, desc="Running Multi Table Metrics"):
+                self.results["multi_table_metrics"][metric.name] = metric.run(
+                    self.real_data,
+                    self.synthetic_data,
+                    metadata = self.metadata,
+                )
 
 
         self.report_datetime = datetime.now()
