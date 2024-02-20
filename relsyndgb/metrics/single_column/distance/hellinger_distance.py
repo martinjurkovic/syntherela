@@ -38,5 +38,5 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
             Union[float, tuple[float]]:
                 Metric output or outputs.
         """
-        gt_freq, synth_freq = get_histograms(orig_col, synth_col, normalize=normalize_histograms, bins='doane')
+        gt_freq, synth_freq = get_histograms(orig_col, synth_col, normalize=normalize_histograms, bins=bins)
         return cls.hellinger(gt_freq, synth_freq)
