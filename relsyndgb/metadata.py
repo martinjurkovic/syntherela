@@ -1,3 +1,4 @@
+import pandas as pd
 from sdv.metadata import MultiTableMetadata
 
 
@@ -54,7 +55,7 @@ class Metadata(MultiTableMetadata):
             root_tables.discard(relation['child_table_name'])
         return list(root_tables)
 
-def drop_ids(table, metadata: dict):
+def drop_ids(table: pd.DataFrame, metadata: dict):
     for column, column_info in metadata['columns'].items():
         if column_info['sdtype'] == 'id' and column in table.columns:
             table = table.drop(columns = column, axis=1)
