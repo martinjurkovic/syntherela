@@ -85,44 +85,37 @@ class DistanceBaseMetric(BaseMetric):
         """ Compute the reference confidence intervals using bootstrap on the real data
         and compute the matric value on real vs synthetic data."""
         reference_ci = self.bootstrap_reference_conf_int(real_data, **kwargs)
-        # TODO: bootstrap is only for uncertainty estimation, should also return SE?
+        boostrap_mean, bootstrap_se = self.bootstrap_metric_estimate(real_data, synthetic_data, **kwargs)
         value = self.compute(real_data, synthetic_data, **kwargs)
-        return {'value': value, 'reference_ci': reference_ci}
-
-
-    def bootstrap_conf_int(self, real_data, synthetic_data, m=100, alpha=0.05, **kwargs):
-        """ Compute the quantile confidence interval of the metric
-        using the bootstrap method. 
-        """
+        return {'value': value, 'reference_ci': reference_ci, 'bootstrap_mean': boostrap_mean, 'bootstrap_se': bootstrap_se}
+    
+    def boostrap_metric_values(self, data1, data2, m=100, random_state=None, **kwargs):
+        # get random_state from kwargs
+        if random_state is None:
+            random_state = 0
         values = []
-        for _ in range(m):
+        for i in range(m):
             # draw 2 samples with replacement of size 0.5 * n
-            sample1 = real_data.sample(frac=1, replace = True)
-            sample2 = synthetic_data.sample(frac=1, replace = True)
+            sample1 = data1.sample(frac=1, replace = True, random_state=random_state+i)
+            sample2 = data2.sample(frac=1, replace = True, random_state=random_state+i+1)
             # compute the metric
             val = self.compute(sample1, sample2, **kwargs)
             values.append(val)
+        return values
 
-        if self.goal == Goal.MAXIMIZE:
-            return (np.quantile(values, q=0), np.quantile(values, q=1-alpha))
-        elif self.goal == Goal.MINIMIZE:
-            return (np.quantile(values, alpha), np.quantile(values, 1))
-        else:
-            return (np.quantile(values, alpha/2), np.quantile(values, 1-alpha/2))
+
+    def bootstrap_metric_estimate(self, real_data, synthetic_data, m=100, **kwargs):
+        """ Compute the bootstrap mean and standard error estimates.
+        """
+        values = self.boostrap_metric_values(real_data, synthetic_data, m=m, **kwargs)
+        return np.mean(values), np.std(values) / np.sqrt(m)
         
 
     def bootstrap_reference_conf_int(self, real_data, m=100, alpha=0.05, **kwargs):
         """ Compute the quantile confidence interval of the metric
-        on the original data using subsampling to estimate the reference
-        using the bootstrap method.
+            on the original data using the bootstrap method.
         """
-        values = []
-        for _ in range(m):
-            sample1 = real_data.sample(frac=1, replace = True, random_state=m)
-            sample2 = real_data.sample(frac=1, replace = True, random_state=m+1)
-            # compute the metric
-            val = self.compute(sample1, sample2, **kwargs)
-            values.append(val)
+        values = self.boostrap_metric_values(real_data, real_data, m=m, **kwargs)
 
         if self.goal == Goal.MAXIMIZE:
             return (np.quantile(values, q=0), np.quantile(values, q=1-alpha))
