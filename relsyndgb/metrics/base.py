@@ -1,7 +1,9 @@
+from copy import deepcopy
 from typing import Union
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from scipy.stats import binomtest
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -131,11 +133,12 @@ class DistanceBaseMetric(BaseMetric):
 
 
 class DetectionBaseMetric(BaseMetric):
-    def __init__(self, classifier_cls, classifier_args = {}, random_state = None, **kwargs):
+    def __init__(self, classifier_cls, classifier_args = {}, random_state = None, folds=10, **kwargs):
         super().__init__(**kwargs)
         self.classifier_cls = classifier_cls
         self.classifier_args = classifier_args
         self.random_state = random_state
+        self.folds = folds
         self.classifiers = []
 
 
@@ -163,22 +166,23 @@ class DetectionBaseMetric(BaseMetric):
     
     def compute(self, real_data, synthetic_data, metadata, **kwargs):
 
-        model = Pipeline([
-            ('imputer', SimpleImputer()),
-            ('scaler', StandardScaler()),
-            ('clf', self.classifier_cls(**self.classifier_args))
-        ])
+        
 
         X, y = self.prepare_data(real_data, synthetic_data, metadata=metadata)
         scores = []
-        kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=self.random_state)
+        kf = StratifiedKFold(n_splits=self.folds, shuffle=True, random_state=self.random_state)
         for train_index, test_index in kf.split(X, y):
+            model = Pipeline([
+                ('imputer', SimpleImputer()),
+                ('scaler', StandardScaler()),
+                ('clf', self.classifier_cls(**self.classifier_args))
+            ])
             model.fit(X.iloc[train_index], y[train_index])
             probs = model.predict_proba(X.iloc[test_index])
             y_pred = probs.argmax(axis=1)
             scores.extend(list((y[test_index] == y_pred).astype(int)))
             model['clf'].feature_names = X.columns.to_list()
-            self.classifiers.append(model['clf'])
+            self.classifiers.append(deepcopy(model['clf']))
         return scores
 
     @staticmethod
@@ -207,7 +211,7 @@ class DetectionBaseMetric(BaseMetric):
         return { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : np.round(bin_test_p_val, decimals=16) }
     
 
-    def feature_importance(self):
+    def feature_importance(self, combine_categorical=False):
         if not len(self.classifiers):
             raise ValueError('No classifiers have been trained.')
         if not hasattr(self.classifiers[0], 'feature_importances_'):
@@ -221,6 +225,79 @@ class DetectionBaseMetric(BaseMetric):
                 features[feature].append(importance)
 
         features = {k: np.array(v) for k, v in features.items()}
+        if combine_categorical:
+            feature_names = dict()
+            for feature in features.keys():
+                # keep everything before last underscore
+                if '_' not in feature:
+                    continue
+                feature_name = '_'.join(feature.split('_')[:-1])
+                if feature_name not in feature_names:
+                    feature_names[feature_name] = []
+                feature_names[feature_name].append(feature)
+            for feature_name, feature_group in feature_names.items():
+                if len(feature_group) > 1:
+                    features[feature_name] = np.concatenate([features[f] for f in feature_group])
+                    for f in feature_group:
+                        features.pop(f)
 
         return dict(sorted(features.items(), key=lambda x: np.mean(x[1]), reverse=True))
+    
+    
+    def plot_feature_importance(self, metadata, ax=None, combine_categorical=False):
+        features = self.feature_importance(combine_categorical=combine_categorical)
+
+        def find_column_type(feature_name, column_info):
+            for column, values in column_info.items():
+                if values['sdtype'] == 'id':
+                    continue
+                if column in feature_name:
+                    return values['sdtype']
+            return None
+
+        def get_feature_type(feature_name, metadata):
+            if '_counts' in feature_name or '_mean' in feature_name or '_sum' in feature_name:
+                return 'aggregate'
+            
+            feature_type = None
+            if isinstance(metadata, dict):
+                return find_column_type(feature_name, metadata['columns'])
+            else:
+                for table_data in metadata.to_dict()['tables'].values():
+                    feature_type = find_column_type(feature_name, table_data['columns'])
+                    if feature_type is not None:
+                        break
+            return feature_type
+
+        colors = {
+                    'aggregate': '#d7191c',
+                    'numerical': '#fdae61',
+                    'datetime': '#e3d36b',
+                    'boolean': '#abd9e9',
+                    'categorical': '#2c7bb6',
+                }
+        
+        if ax is None:
+            _, ax = plt.subplots(figsize=(10, 10))
+
+        for i, (feature, importance) in enumerate(features.items()):
+            feature_type = get_feature_type(feature, metadata)
+            y = len(features) - i - 1
+            scatter = ax.scatter(importance, np.ones(len(importance)) * y, s=20, alpha=0.6, c=colors[feature_type], label=feature_type.upper())
+            color = scatter.get_facecolor()[0]
+            
+            se = np.std(importance) / np.sqrt(len(importance))
+            ax.errorbar(np.mean(importance), y, xerr=se * 1.96, c=color, capsize=3, fmt='*') 
+            ax.scatter(np.mean(importance), y, s=120, marker='*', color=color)
+
+        xlim = ax.get_xlim()
+        ax.set_xlim(0, xlim[1])
+        ax.set_yticks(range(len(features)))
+        ax.set_yticklabels(list(features.keys())[::-1])
+        ax.set_xlabel('Feature importance')
+        labels = ax.get_legend_handles_labels()
+        unique_labels = {l:h for h,l in zip(*labels)}
+        labels_handles = [*zip(*unique_labels.items())]
+        legend = labels_handles[::-1]
+        ax.legend(*legend)
     
