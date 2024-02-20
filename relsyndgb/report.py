@@ -103,3 +103,12 @@ class Report():
 
         with open(path, 'w') as f:
             json.dump(self.results, f, sort_keys=True, indent=4, cls=NpEncoder)
+
+    def get_metric_instance(self, metric_name):
+        """
+        Get the metric instance.
+        """
+        for metric in self.single_col_metrics + self.single_table_metrics + self.multi_table_metrics:
+            if metric.name == metric_name:
+                return metric
+        raise ValueError(f"Metric with name \"{metric_name}\" not found in the report. Available metrics: {[metric.name for metric in self.single_col_metrics + self.single_table_metrics + self.multi_table_metrics]}")
