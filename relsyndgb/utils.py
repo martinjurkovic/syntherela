@@ -12,6 +12,8 @@ class NpEncoder(json.JSONEncoder):
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
+        if isinstance(obj, np.bool_):
+            return bool(obj)
         return super(NpEncoder, self).default(obj)
     
 
