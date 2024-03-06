@@ -13,6 +13,8 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
         super().__init__(**kwargs)
         self.name = "MaximumMeanDiscrepancy"
         self.goal = Goal.MINIMIZE
+        self.min_value = 0.0
+        self.max_value = float('inf')
 
     @staticmethod
     def is_applicable(metadata):

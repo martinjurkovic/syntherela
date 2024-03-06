@@ -13,6 +13,8 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         self.goal = Goal.MINIMIZE
         self.norm_order = norm_order
         self.correlation_method = correlation_method
+        self.min_value = 0.0
+        self.max_value = 1.0
 
     @staticmethod
     def is_applicable(metadata):

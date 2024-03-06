@@ -13,6 +13,8 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
         super().__init__(**kwargs)
         self.name = "WassersteinDistance"
         self.goal = Goal.MINIMIZE
+        self.min_value = 0.0
+        self.max_value = float('inf')
 
     @staticmethod
     def is_applicable(column_type):

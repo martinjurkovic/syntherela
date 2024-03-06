@@ -14,6 +14,8 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
         super().__init__(**kwargs)
         self.name = "HellingerDistance"
         self.goal = Goal.MINIMIZE
+        self.min_value = 0.0
+        self.max_value = 1
 
     @staticmethod
     def is_applicable(column_type):
