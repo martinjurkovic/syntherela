@@ -168,12 +168,8 @@ class DetectionBaseMetric(BaseMetric):
             X[np.isin(X, [np.inf, -np.inf])] = np.nan
         return X, y
     
-    
-    def compute(self, real_data, synthetic_data, metadata, **kwargs):
 
-        
-
-        X, y = self.prepare_data(real_data, synthetic_data, metadata=metadata)
+    def stratified_kfold(self, X, y, save_models=False):
         scores = []
         kf = StratifiedKFold(n_splits=self.folds, shuffle=True, random_state=self.random_state)
         for train_index, test_index in kf.split(X, y):
@@ -186,11 +182,34 @@ class DetectionBaseMetric(BaseMetric):
             probs = model.predict_proba(X.iloc[test_index])
             y_pred = probs.argmax(axis=1)
             scores.extend(list((y[test_index] == y_pred).astype(int)))
-            self.classifiers.append(deepcopy(model['clf']))
+            if save_models:
+                self.classifiers.append(deepcopy(model['clf']))
+        return scores
+    
+
+    def compute(self, real_data, synthetic_data, metadata, **kwargs):
+        X, y = self.prepare_data(real_data, synthetic_data, metadata=metadata)
         # save the data for feature importance methods
         self.X = X
         self.y = y
-        return scores
+        return self.stratified_kfold(X, y, save_models=True)
+    
+
+    def baseline(self, real_data, metadata, m=10, **kwargs):
+        X, y = self.prepare_data(real_data, real_data, metadata=metadata)
+        X = X[y == 1]
+        y = y[y == 1]
+        bootstrap_scores = []
+        for _ in range(m):
+            index1 = np.random.choice(range(len(X)), size=len(X), replace=True)
+            index2 = np.random.choice(range(len(X)), size=len(X), replace=True)
+            X_boot = pd.concat([X.iloc[index1], X.iloc[index2]])
+            y_boot = np.hstack([np.ones(len(index1)), np.zeros(len(index2))])
+            scores = self.stratified_kfold(X_boot, y_boot)
+            bootstrap_accuracy = np.mean(scores)
+            bootstrap_scores.append(bootstrap_accuracy)
+        return np.mean(bootstrap_scores), np.std(bootstrap_scores) / np.sqrt(m)
+
 
     @staticmethod
     def binomial_test(x, n, p=0.5):
@@ -213,9 +232,11 @@ class DetectionBaseMetric(BaseMetric):
                 Metric output or outputs.
         """
         scores = self.compute(real_data, synthetic_data, metadata=metadata, **kwargs)
+        baseline_mean, baseline_se = self.baseline(real_data, metadata, **kwargs)
         _, bin_test_p_val = self.binomial_test(sum(scores), len(scores))
         standard_error = np.std(scores) / np.sqrt(len(scores))
-        return { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : np.round(bin_test_p_val, decimals=16) }
+        return { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : np.round(bin_test_p_val, decimals=16),
+                 "baseline_mean": baseline_mean, "baseline_se": baseline_se}
     
 
     def feature_importance(self, combine_categorical=False):
