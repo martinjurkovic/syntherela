@@ -6,7 +6,8 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import binomtest
+from scipy.stats import binomtest, norm
+from statsmodels.stats.weightstats import ztest
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
@@ -94,10 +95,10 @@ class DistanceBaseMetric(BaseMetric):
     def run(self, real_data, synthetic_data, **kwargs):
         """ Compute the reference confidence intervals using bootstrap on the real data
         and compute the matric value on real vs synthetic data."""
-        reference_ci = self.bootstrap_reference_conf_int(real_data, **kwargs)
+        reference_bootstrap_mean, reference_bootstrap_variance, reference_standard_ci = self.bootstrap_reference_standard_conf_int(real_data, **kwargs)
         boostrap_mean, bootstrap_se = self.bootstrap_metric_estimate(real_data, synthetic_data, **kwargs)
         value = self.compute(real_data, synthetic_data, **kwargs)
-        return {'value': value, 'reference_ci': reference_ci, 'bootstrap_mean': boostrap_mean, 'bootstrap_se': bootstrap_se}
+        return {'value': value, 'reference_ci': reference_standard_ci, 'bootstrap_mean': boostrap_mean, 'bootstrap_se': bootstrap_se}
 
 
     def boostrap_metric_values(self, data1, data2, m=100, random_state=None, **kwargs):
@@ -115,25 +116,32 @@ class DistanceBaseMetric(BaseMetric):
         return values
 
 
-    def bootstrap_metric_estimate(self, real_data, synthetic_data, m=100, **kwargs):
+    def bootstrap_metric_estimate(self, real_data, synthetic_data, m=1000, **kwargs):
         """ Compute the bootstrap mean and standard error estimates.
         """
         values = self.boostrap_metric_values(real_data, synthetic_data, m=m, **kwargs)
         return np.mean(values), np.std(values) / np.sqrt(m)
-        
-
-    def bootstrap_reference_conf_int(self, real_data, m=100, alpha=0.05, **kwargs):
-        """ Compute the quantile confidence interval of the metric
+    
+    def bootstrap_reference_standard_conf_int(self, real_data, m=1000, alpha=0.05, **kwargs):
+        """ Compute the standard confidence interval of the metric
             on the original data using the bootstrap method.
         """
         values = self.boostrap_metric_values(real_data, real_data, m=m, **kwargs)
+        m = len(values)
+        mean = np.mean(values)
+        bias_adjusted_variance = np.sqrt((1/(m-1)) * np.sum((values - mean)**2))
 
         if self.goal == Goal.MAXIMIZE:
-            return (np.quantile(values, q=0), np.quantile(values, q=1-alpha))
+            z_score = norm.ppf(alpha/2)
+            conf_int = (mean - z_score * np.sqrt(bias_adjusted_variance), self.max_value)
         elif self.goal == Goal.MINIMIZE:
-            return (np.quantile(values, alpha), np.quantile(values, 1))
+            z_score = norm.ppf(1-alpha)
+            conf_int = (0, mean + z_score * np.sqrt(bias_adjusted_variance))
         else:
-            return (np.quantile(values, alpha/2), np.quantile(values, 1-alpha/2))
+            z_score = norm.ppf(1-alpha/2)
+            conf_int = (mean - z_score * np.sqrt(bias_adjusted_variance), mean + z_score * np.sqrt(bias_adjusted_variance))
+        
+        return mean, bias_adjusted_variance, conf_int
 
 
 class DetectionBaseMetric(BaseMetric):
@@ -332,4 +340,4 @@ class DetectionBaseMetric(BaseMetric):
     
 
     def partial_dependence(self):
-        pass
+        raise NotImplementedError()
