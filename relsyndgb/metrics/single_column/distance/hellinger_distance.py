@@ -26,7 +26,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
         return np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2)) / _SQRT2
    
     @classmethod
-    def compute(cls, orig_col, synth_col, normalize_histograms=True, bins='doane', **kwargs):
+    def compute(cls, orig_col, synth_col, bins, normalize_histograms=True, **kwargs):
         """Compute this metric.
 
         Args:
@@ -34,6 +34,8 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
                 The values from the real dataset.
             synthetic_data:
                 The values from the synthetic dataset.
+            bins:
+                The bins to use for the histogram.
 
         Returns:
             Union[float, tuple[float]]:
@@ -44,5 +46,10 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
 
     def run(self, real_data, synthetic_data, **kwargs):
         if self.is_constant(real_data):
-            return {'value': 0, 'reference_ci': 0, 'bootstrap_mean': 0, 'bootstrap_se': 0}
-        return super().run(real_data, synthetic_data, **kwargs)
+            return {'value': 0, 'reference_ci': [0, 0], 'bootstrap_mean': 0, 'bootstrap_se': 0}
+        # compute bin values on the original data
+        if real_data.dtype.name in ("object", "category"):
+            bins = None
+        else:
+            bins = np.histogram_bin_edges(real_data.dropna())
+        return super().run(real_data, synthetic_data, bins=bins, **kwargs)

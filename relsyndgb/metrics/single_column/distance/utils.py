@@ -1,7 +1,8 @@
+from typing import Union
 import numpy as np
 import pandas as pd
 
-def get_histograms(original, synthetic, normalize = True, bins='doane'):
+def get_histograms(original: pd.Series, synthetic: pd.Series, normalize: bool = True, bins: Union[str, np.array] = 'doane') -> tuple:
     """Get percentual frequencies or counts for each possible real categorical value.
 
     Returns:
@@ -15,22 +16,20 @@ def get_histograms(original, synthetic, normalize = True, bins='doane'):
     if original.dtype.name in ("object", "category"):  # categorical
         gt = original.value_counts().to_dict()
         synth = synthetic.value_counts().to_dict()
-        # TODO: get rid of these loops for performance
-        for val in gt:
-            if val not in synth:
-                synth[val] = 0
-        for val in synth:
-            if val not in gt:
-                gt[val] = 0
+        all_keys = gt.keys() | synth.keys()
+        for key in all_keys:
+            gt.setdefault(key, 0)
+            synth.setdefault(key, 0)
     elif np.issubdtype(original.dtype, np.number):  # continuous
         original = original.dropna()
         synthetic = synthetic.dropna()
-        combined = pd.concat([original, synthetic])
-        bin_vals = np.histogram_bin_edges(combined, bins=bins)
-        gt_vals, bin_vals = np.histogram(original, bins=bin_vals)
-        synth_vals, _ = np.histogram(synthetic, bins=bin_vals)
-        gt = {k: v  for k, v in zip(bin_vals, gt_vals)}
-        synth = {k: v for k, v in zip(bin_vals, synth_vals)}
+        if type(bins) != np.ndarray:
+            combined = pd.concat([original, synthetic])
+            bins = np.histogram_bin_edges(combined, bins=bins)
+        gt_vals, _ = np.histogram(original, bins=bins)
+        synth_vals, _ = np.histogram(synthetic, bins=bins)
+        gt = {k: v  for k, v in zip(bins, gt_vals)}
+        synth = {k: v for k, v in zip(bins, synth_vals)}
     else:
         raise ValueError(f"Column is not categorical or continouous")
         

@@ -32,6 +32,6 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
     
     def run(self, real_data, synthetic_data, **kwargs):
         if self.is_constant(real_data):
-            return {'value': 0, 'reference_ci': 0, 'bootstrap_mean': 0, 'bootstrap_se': 0}
+            return {'value': 0, 'reference_ci': [0, 0], 'bootstrap_mean': 0, 'bootstrap_se': 0}
         return super().run(real_data, synthetic_data, **kwargs)
 

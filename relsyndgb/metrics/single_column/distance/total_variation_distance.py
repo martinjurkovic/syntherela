@@ -1,8 +1,5 @@
+import numpy as np
 from sdmetrics.goal import Goal
-from sdmetrics.errors import IncomputableMetricError
-import pandas as pd
-from sdmetrics.utils import get_frequencies
-from sdmetrics.single_column.statistical import TVComplement
 
 from relsyndgb.metrics.base import SingleColumnMetric, DistanceBaseMetric
 from relsyndgb.metrics.single_column.distance.utils import get_histograms
@@ -22,14 +19,24 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         return column_type in ["categorical"]
     
     @staticmethod
-    def compute(real_data, synthetic_data, **kwargs):
+    def compute(real_data, synthetic_data, bins, **kwargs):
         """
         Total Variation Distance metric.
-        Score transformed from sdmetrics.single_column.statistical.TVComplement to return the total variation distance.
         """
-        return (1 - TVComplement.compute(real_data, synthetic_data)) / 0.5
+
+        f_exp, f_obs = get_histograms(
+            real_data, synthetic_data, normalize=True, bins=bins)
+        total_variation = 0
+        for i in range(len(f_obs)):
+            total_variation += abs(f_obs[i] - f_exp[i])
+
+        return total_variation
     
     def run(self, real_data, synthetic_data, **kwargs):
         if self.is_constant(real_data):
-            return {'value': 0, 'reference_ci': 0, 'bootstrap_mean': 0, 'bootstrap_se': 0}
-        return super().run(real_data, synthetic_data, **kwargs)
+            return {'value': 0, 'reference_ci': [0, 0], 'bootstrap_mean': 0, 'bootstrap_se': 0}
+        if real_data.dtype.name in ("object", "category"):
+            bins = None
+        else:
+            bins = np.histogram_bin_edges(real_data.dropna())
+        return super().run(real_data, synthetic_data, bins=bins, **kwargs)

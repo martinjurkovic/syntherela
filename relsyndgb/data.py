@@ -103,7 +103,7 @@ def drop_column_if_in_table(table, column):
         table = table.drop(columns = column, axis=1)
     return table
 
-def make_column_names_unique(real_data, synthetic_data, metadata):  
+def make_column_names_unique(real_data, synthetic_data, metadata, validate=True):  
     for table_name in metadata.get_tables():
         if not real_data[table_name].columns.equals(synthetic_data[table_name].columns):
             raise ValueError("Real and synthetic data column names are not the same")
@@ -115,9 +115,11 @@ def make_column_names_unique(real_data, synthetic_data, metadata):
             synthetic_data[table_name] = synthetic_data[table_name].rename(columns={column: f"{table_name}_{column}"})
             metadata = metadata.rename_column(table_name, column, f"{table_name}_{column}")
 
-    metadata.validate()
-    metadata.validate_data(real_data)
-    metadata.validate_data(synthetic_data)
+    # TODO: this should not be optional
+    if validate:
+        metadata.validate()
+        metadata.validate_data(real_data)
+        metadata.validate_data(synthetic_data)
 
     return real_data, synthetic_data, metadata
     

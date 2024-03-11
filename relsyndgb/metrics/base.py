@@ -95,10 +95,10 @@ class DistanceBaseMetric(BaseMetric):
     def run(self, real_data, synthetic_data, **kwargs):
         """ Compute the reference confidence intervals using bootstrap on the real data
         and compute the matric value on real vs synthetic data."""
-        reference_bootstrap_mean, reference_bootstrap_variance, reference_standard_ci = self.bootstrap_reference_standard_conf_int(real_data, **kwargs)
-        boostrap_mean, bootstrap_se = self.bootstrap_metric_estimate(real_data, synthetic_data, **kwargs)
+        _, _, reference_standard_ci = self.bootstrap_reference_standard_conf_int(real_data, **kwargs)
+        bootstrap_mean, bootstrap_se = self.bootstrap_metric_estimate(real_data, synthetic_data, **kwargs)
         value = self.compute(real_data, synthetic_data, **kwargs)
-        return {'value': value, 'reference_ci': reference_standard_ci, 'bootstrap_mean': boostrap_mean, 'bootstrap_se': bootstrap_se}
+        return {'value': value, 'reference_ci': reference_standard_ci, 'bootstrap_mean': bootstrap_mean, 'bootstrap_se': bootstrap_se}
 
 
     def boostrap_metric_values(self, data1, data2, m=100, random_state=None, **kwargs):
@@ -202,18 +202,18 @@ class DetectionBaseMetric(BaseMetric):
         self.y = y
         return self.stratified_kfold(X, y, save_models=True)
     
+    @staticmethod
+    def bootstrap_sample(real_data, random_state=None, metadata=None):
+        return real_data.sample(frac=1, replace=True, random_state=random_state)
+    
 
     def baseline(self, real_data, metadata, m=10, **kwargs):
-        X, y = self.prepare_data(real_data, real_data, metadata=metadata)
-        X = X[y == 1]
-        y = y[y == 1]
         bootstrap_scores = []
-        for _ in range(m):
-            index1 = np.random.choice(range(len(X)), size=len(X), replace=True)
-            index2 = np.random.choice(range(len(X)), size=len(X), replace=True)
-            X_boot = pd.concat([X.iloc[index1], X.iloc[index2]])
-            y_boot = np.hstack([np.ones(len(index1)), np.zeros(len(index2))])
-            scores = self.stratified_kfold(X_boot, y_boot)
+        for i in range(m):
+            sample1 = self.bootstrap_sample(real_data, random_state=i, metadata=metadata)
+            sample2 = self.bootstrap_sample(real_data, random_state=i+1, metadata=metadata)
+            X, y = self.prepare_data(sample1, sample2, metadata=metadata)
+            scores = self.stratified_kfold(X, y)
             bootstrap_accuracy = np.mean(scores)
             bootstrap_scores.append(bootstrap_accuracy)
         return np.mean(bootstrap_scores), np.std(bootstrap_scores) / np.sqrt(m)
