@@ -180,6 +180,7 @@ class DetectionBaseMetric(BaseMetric):
         scores = []
         kf = StratifiedKFold(n_splits=self.folds, shuffle=True, random_state=self.random_state)
         for train_index, test_index in kf.split(X, y):
+            np.random.seed(self.random_state)
             model = Pipeline([
                 ('imputer', SimpleImputer()),
                 ('scaler', StandardScaler()),
