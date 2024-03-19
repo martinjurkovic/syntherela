@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+import warnings
 
 from tqdm import tqdm
 
@@ -11,6 +12,10 @@ from relsyndgb.report import Report
 from relsyndgb.metrics.single_column.statistical import ChiSquareTest
 from relsyndgb.metrics.single_table.distance import MaximumMeanDiscrepancy
 from relsyndgb.data import load_tables, remove_sdv_columns
+from relsyndgb.visualisations.multi_table_visualisations import visualize_multi_table
+from relsyndgb.visualisations.single_column_visualisations import visualize_single_column_detection_metrics, visualize_single_column_distance_metrics
+from relsyndgb.visualisations.single_table_visualisations import visualize_single_table_detection_metrics_per_classifier, visualize_single_table_detection_metrics_per_table, visualize_single_table_distance_metrics
+
 
 class Benchmark():
 
@@ -41,7 +46,6 @@ class Benchmark():
         #     self.synthetic_data[table] = self.synthetic_data[table][self.real_data[table].columns]
         #     assert (self.real_data[table].columns == self.synthetic_data[table].columns).all(), f"Columns in real and synthetic data do not match for table {table}"
         # self.metadata = metadata
-        self.methods = methods if methods is not None else {}
         self.datasets = datasets
         self.run_id = str(run_id)
         self.sample_id = str(sample_id)
@@ -54,22 +58,33 @@ class Benchmark():
         if self.datasets is None:
             self.datasets = [d for d in os.listdir(self.synthetic_data_dir) if os.path.isdir(os.path.join(self.synthetic_data_dir, d))]
 
+        if methods is not None:
+            # if self.methods is dict
+            if isinstance(methods, dict):
+                self.methods = methods
+            if isinstance(methods, list):
+                self.methods = {}
+                for dataset_name in self.datasets:
+                    self.methods[dataset_name] = methods
+        else:
+            self.methods = {}
+            for dataset_name in self.datasets:
+                if dataset_name not in self.methods:
+                        self.methods[dataset_name] = [d for d in os.listdir(self.synthetic_data_dir / dataset_name) if os.path.isdir(os.path.join(self.synthetic_data_dir / dataset_name, d))]
+
+
         self.single_column_metrics = single_column_metrics
         self.single_table_metrics = single_table_metrics
         self.multi_table_metrics = multi_table_metrics
         self.benchmark_datetime = datetime.now()
 
-        
-
+        self.all_results = {}
 
     def run(self):
-        for dataset in self.datasets:
-            if dataset not in self.methods:
-                self.methods[dataset] = [d for d in os.listdir(self.synthetic_data_dir / dataset) if os.path.isdir(os.path.join(self.synthetic_data_dir / dataset, d))]
-            
-            for method in self.methods[dataset]:
-                real_data_path = self.real_data_dir / dataset
-                synthetic_data_path = self.synthetic_data_dir / dataset / method
+        for dataset_name in self.datasets:
+            for method_name in self.methods[dataset_name]:
+                real_data_path = self.real_data_dir / dataset_name
+                synthetic_data_path = self.synthetic_data_dir / dataset_name / method_name
 
                 if self.run_id is not None:
                     synthetic_data_path = synthetic_data_path / self.run_id
@@ -84,27 +99,62 @@ class Benchmark():
                 real_data, metadata = remove_sdv_columns(real_data, metadata)
                 synthetic_data, metadata = remove_sdv_columns(synthetic_data, metadata, update_metadata=False)
 
-                print(f"Starting benchmark for {dataset}, method {method}")
+                print(f"Starting benchmark for {dataset_name}, method_name {method_name}")
                 report = Report(
                     real_data=real_data,
                     synthetic_data=synthetic_data,
                     metadata=metadata,
-                    report_name=f"{self.benchmark_name}_{dataset}_{method}",
+                    report_name=f"{self.benchmark_name}_{dataset_name}_{method_name}",
                     single_column_metrics=self.single_column_metrics,
                     single_table_metrics=self.single_table_metrics,
                     multi_table_metrics=self.multi_table_metrics,
                 )
 
-                results = report.generate()
+                self.all_results.setdefault(dataset_name, {})[method_name] = report.generate()
 
-                file_name = f"{dataset}_{method}"
-                if self.run_id is not None:
-                    file_name += f"_{self.run_id}"
-                    if self.sample_id is not None:  
-                        file_name += f"_{self.sample_id}"
-                file_name += ".json"
+                file_name = self.build_file_name(dataset_name, method_name)
 
                 report.save_results(self.results_dir, file_name)
 
+    def read_results(self):
+        for dataset_name in self.datasets:
+            for method_name in self.methods[dataset_name]:
+                file_name = self.build_file_name(dataset_name, method_name)
+                with open(self.results_dir / file_name, 'r') as f:
+                    self.all_results.setdefault(dataset_name, {})[method_name] = json.load(f)
+        if not self.all_results:
+            warnings.warn("No results found.")
 
+    def build_file_name(self, dataset_name, method_name):
+        file_name = f"{dataset_name}_{method_name}"
+        if self.run_id is not None:
+            file_name += f"_{self.run_id}"
+            if self.sample_id is not None:  
+                file_name += f"_{self.sample_id}"
+        file_name += ".json"
+        return file_name
 
+    def visualize_single_table_metrics(self, distance=True, detection=True, **kwargs):
+        datasets = kwargs.get('datasets', self.datasets)
+        methods = kwargs.get('methods', self.methods[datasets[0]])
+        if distance:
+            visualize_single_table_distance_metrics(self.all_results, datasets, methods)
+
+        if detection:
+            visualize_single_table_detection_metrics_per_classifier(self.all_results, datasets, methods)
+            visualize_single_table_detection_metrics_per_table(self.all_results, datasets, methods)
+
+    def visualize_single_column_metrics(self, distance=True, detection=True, **kwargs):
+        datasets = kwargs.get('datasets', self.datasets)
+        methods = kwargs.get('methods', self.methods[datasets[0]])
+        if distance:
+            visualize_single_column_distance_metrics(self.all_results, datasets, methods)
+
+        if detection:
+            visualize_single_column_detection_metrics(self.all_results, datasets, methods)
+
+    def visualize_multi_table_metrics(self, **kwargs):
+        datasets = kwargs.get('datasets', self.datasets)
+        methods = kwargs.get('methods', self.methods[datasets[0]])
+        visualize_multi_table(self.all_results, datasets, methods)
+            
