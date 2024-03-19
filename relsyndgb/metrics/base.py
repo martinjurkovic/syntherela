@@ -206,7 +206,7 @@ class DetectionBaseMetric(BaseMetric):
     def bootstrap_sample(real_data, random_state=None, metadata=None):
         return real_data.sample(frac=1, replace=True, random_state=random_state)
     
-
+    # TODO: raise bootstrap repetitions (m) to 100 or 1000
     def baseline(self, real_data, metadata, m=10, **kwargs):
         bootstrap_scores = []
         for i in range(m):
