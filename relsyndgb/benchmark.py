@@ -79,6 +79,7 @@ class Benchmark():
         self.benchmark_datetime = datetime.now()
 
         self.all_results = {}
+        self.reports = {}
 
     def run(self):
         for dataset_name in self.datasets:
@@ -109,6 +110,8 @@ class Benchmark():
                     single_table_metrics=self.single_table_metrics,
                     multi_table_metrics=self.multi_table_metrics,
                 )
+
+                self.reports.setdefault(dataset_name, {})[method_name] = report
 
                 self.all_results.setdefault(dataset_name, {})[method_name] = report.generate()
 

@@ -8,6 +8,7 @@ from tqdm import tqdm
 from relsyndgb.utils import NpEncoder
 from relsyndgb.metrics.single_column.statistical import ChiSquareTest
 from relsyndgb.metrics.single_table.distance import MaximumMeanDiscrepancy
+from relsyndgb.visualisations.distribution_visualisations import visualize_bivariate_distributions, visualize_marginals
 
 class Report():
 
@@ -126,6 +127,15 @@ class Report():
 
         with open(path, 'w') as f:
             json.dump(self.results, f, sort_keys=True, indent=4, cls=NpEncoder)
+
+    def visualize_distributions(self, marginals=True, bivariate=True):
+        """
+        Visualize the distributions.
+        """
+        if marginals:
+            visualize_marginals(self.real_data, self.synthetic_data, self.metadata)
+        if bivariate:
+            visualize_bivariate_distributions(self.real_data, self.synthetic_data, self.metadata)
 
     def get_metric_instance(self, metric_name):
         """
