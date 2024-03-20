@@ -81,24 +81,29 @@ class Benchmark():
         self.all_results = {}
         self.reports = {}
 
+    def load_data(self, dataset_name, method_name):
+        real_data_path = self.real_data_dir / dataset_name
+        synthetic_data_path = self.synthetic_data_dir / dataset_name / method_name
+
+        if self.run_id is not None:
+            synthetic_data_path = synthetic_data_path / self.run_id
+        if self.sample_id is not None:
+            synthetic_data_path = synthetic_data_path / self.sample_id
+
+        metadata = Metadata().load_from_json(real_data_path / 'metadata.json')
+
+        real_data = load_tables(real_data_path, metadata)
+        synthetic_data = load_tables(synthetic_data_path, metadata)
+
+        real_data, metadata = remove_sdv_columns(real_data, metadata)
+        synthetic_data, metadata = remove_sdv_columns(synthetic_data, metadata, update_metadata=False)
+
+        return real_data, synthetic_data, metadata
+
     def run(self):
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
-                real_data_path = self.real_data_dir / dataset_name
-                synthetic_data_path = self.synthetic_data_dir / dataset_name / method_name
-
-                if self.run_id is not None:
-                    synthetic_data_path = synthetic_data_path / self.run_id
-                if self.sample_id is not None:
-                    synthetic_data_path = synthetic_data_path / self.sample_id
-
-                metadata = Metadata().load_from_json(real_data_path / 'metadata.json')
-
-                real_data = load_tables(real_data_path, metadata)
-                synthetic_data = load_tables(synthetic_data_path, metadata)
-
-                real_data, metadata = remove_sdv_columns(real_data, metadata)
-                synthetic_data, metadata = remove_sdv_columns(synthetic_data, metadata, update_metadata=False)
+                real_data, synthetic_data, metadata = self.load_data(dataset_name, method_name)
 
                 print(f"Starting benchmark for {dataset_name}, method_name {method_name}")
                 report = Report(
@@ -124,7 +129,10 @@ class Benchmark():
             for method_name in self.methods[dataset_name]:
                 file_name = self.build_file_name(dataset_name, method_name)
                 with open(self.results_dir / file_name, 'r') as f:
-                    self.all_results.setdefault(dataset_name, {})[method_name] = json.load(f)
+                    real_data, synthetic_data, metadata = self.load_data(dataset_name, method_name)
+                    temp_report = Report(real_data, synthetic_data, metadata, f"{dataset_name}_{method_name}").load_from_json(self.results_dir / file_name)
+                    self.reports.setdefault(dataset_name, {})[method_name] = temp_report
+                    self.all_results.setdefault(dataset_name, {})[method_name] = temp_report.results
         if not self.all_results:
             warnings.warn("No results found.")
 

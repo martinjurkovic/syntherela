@@ -104,6 +104,15 @@ class Report():
         self.report_datetime = datetime.now()
 
         return self.results
+
+    def load_from_json(self, path):
+        """
+        Read the results from a file.
+        """
+        path = Path(path)
+        with open(path, 'r') as f:
+            self.results = json.load(f)
+        return self
     
     def print_results(self):
         """
