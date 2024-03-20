@@ -21,6 +21,8 @@ def visualize_single_table_distance_metrics(all_results, datasets, methods, **kw
             base_metric_name
             ]
         for dataset in datasets:
+            if len(methods) == 0 or len(metrics) == 0:
+                continue
             dataset_table_results = {}
 
             tables = all_results[dataset][methods[0]]['single_table_metrics'][base_metric].keys()
@@ -100,6 +102,8 @@ def visualize_single_table_detection_metrics_per_classifier(all_results, dataset
             base_metric_name
             ]
         for dataset in datasets:
+            if len(methods) == 0 or len(metrics) == 0:
+                continue
             dataset_table_results = {}
 
             tables = all_results[dataset][methods[0]]['single_table_metrics'][base_metric].keys()
@@ -175,6 +179,8 @@ def visualize_single_table_detection_metrics_per_table(all_results, datasets, me
     aggregation_metric_names = aggregation_metrics
 
     for dataset in datasets:
+        if len(methods) == 0 or len(metrics) == 0:
+            continue
         tables = all_results[dataset][methods[0]]['single_table_metrics'][metrics[0]].keys()
         for table in tables:
             agg_metrics = []

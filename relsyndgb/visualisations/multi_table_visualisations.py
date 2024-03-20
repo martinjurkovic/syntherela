@@ -12,6 +12,8 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
     metric_names = kwargs.get('detection_metric_names', metrics)
 
     for dataset in datasets:
+        if len(methods) == 0 or len(metrics) == 0:
+            continue
         tables = all_results[dataset][methods[0]]['multi_table_metrics'][metrics[0]].keys()
         # dataset = "biodegradability"
         # table = "atom"
