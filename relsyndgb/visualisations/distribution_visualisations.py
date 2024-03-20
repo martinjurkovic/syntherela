@@ -67,8 +67,12 @@ def visualize_bivariate_distributions(real_data, synthetic_data, metadata):
         
         fig, axes = plt.subplots(len(pairs), 2, figsize=(10, 5 * len(pairs)))
         for i, pair in enumerate(pairs):
-            ax1 = axes[i, 0]
-            ax2 = axes[i, 1]
+            if len(pairs) == 1:
+                ax1 = axes[0]
+                ax2 = axes[1]
+            else:
+                ax1 = axes[i, 0]
+                ax2 = axes[i, 1]
             data_real = pd.DataFrame({pair[0]: real_data[table][pair[0]], pair[1]: real_data[table][pair[1]]})
             data_synthetic = pd.DataFrame({pair[0]: synthetic_data[table][pair[0]], pair[1]: synthetic_data[table][pair[1]]})
             binsx = get_bins(data_real[pair[0]])
@@ -87,3 +91,46 @@ def visualize_bivariate_distributions(real_data, synthetic_data, metadata):
         fig.tight_layout()
 
     plt.show()
+
+def visualize_parent_child_bivariates(real_data, synthetic_data, metadata):
+    for table in metadata.get_tables():
+        pairs = []
+        table_meta = metadata.get_table_meta(table)
+        non_id_columns = [column for column, column_info in table_meta['columns'].items() if column_info['sdtype'] != 'id']
+        for parent_table in metadata.get_parents(table):
+            parent_table_meta = metadata.get_table_meta(parent_table)
+            for column in parent_table_meta['columns']:
+                if parent_table_meta['columns'][column]['sdtype'] == 'id':
+                    continue
+                for child_column in non_id_columns:
+                    pairs.append(((parent_table, column), child_column))
+        if len(pairs) == 0:
+            continue
+
+        fig, axes = plt.subplots(len(pairs), 2, figsize=(10, 5 * len(pairs)))
+        for i, pair in enumerate(pairs):
+            if len(pairs) == 1:
+                ax1 = axes[0]
+                ax2 = axes[1]
+            else:
+                ax1 = axes[i, 0]
+                ax2 = axes[i, 1]
+            parent_table, parent_column = pair[0]
+            data_real = pd.DataFrame({pair[0]: real_data[parent_table][parent_column], pair[1]: real_data[table][pair[1]]})
+            data_synthetic = pd.DataFrame({pair[0]: synthetic_data[parent_table][parent_column], pair[1]: synthetic_data[table][pair[1]]})
+            binsx = get_bins(data_real[pair[0]])
+            binsy = get_bins(data_real[pair[1]])
+            sns.histplot(data=data_real, x=pair[0], y=pair[1], ax=ax1, bins=(binsx, binsy))
+            ax1.set_title(f'Real')
+            ax1.set_xlabel(f'{parent_table}.{parent_column}')
+            sns.histplot(data=data_synthetic, x=pair[0], y=pair[1], ax=ax2, bins=(binsx, binsy))
+            ax2.set_title(f'Synthetic')
+            ax2.set_xlabel(f'{parent_table}.{parent_column}')
+            if type(binsx) == int and binsx > 16 or (type(binsx) == np.ndarray and len(binsx) > 16):
+                ax1.tick_params("x", labelrotation=90)
+                ax2.tick_params("x", labelrotation=90)
+            xlim = ax1.get_xlim()
+            ylim = ax1.get_ylim()
+            ax2.set_xlim(xlim)
+            ax2.set_ylim(ylim)
+        fig.tight_layout()
