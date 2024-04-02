@@ -144,7 +144,7 @@ class DistanceBaseMetric(BaseMetric):
 
 
 class DetectionBaseMetric(BaseMetric):
-    def __init__(self, classifier_cls, classifier_args = {}, random_state = None, folds=10, **kwargs):
+    def __init__(self, classifier_cls, classifier_args = {}, random_state = None, folds=5, **kwargs):
         super().__init__(**kwargs)
         self.classifier_cls = classifier_cls
         self.classifier_args = classifier_args
@@ -171,8 +171,8 @@ class DetectionBaseMetric(BaseMetric):
         y = np.hstack([
             np.ones(len(transformed_real_data)), np.zeros(len(transformed_synthetic_data))
         ])
-        if np.isin(X, [np.inf, -np.inf]).any():
-            X[np.isin(X, [np.inf, -np.inf])] = np.nan
+        # replace infinite values with NaN
+        X.replace([np.inf, -np.inf], np.nan, inplace=True)
         return X, y
     
 
