@@ -103,26 +103,30 @@ class Benchmark():
     def run(self):
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
-                real_data, synthetic_data, metadata = self.load_data(dataset_name, method_name)
+                try:
+                    real_data, synthetic_data, metadata = self.load_data(dataset_name, method_name)
 
-                print(f"Starting benchmark for {dataset_name}, method_name {method_name}")
-                report = Report(
-                    real_data=real_data,
-                    synthetic_data=synthetic_data,
-                    metadata=metadata,
-                    report_name=f"{self.benchmark_name}_{dataset_name}_{method_name}",
-                    single_column_metrics=self.single_column_metrics,
-                    single_table_metrics=self.single_table_metrics,
-                    multi_table_metrics=self.multi_table_metrics,
-                )
+                    print(f"Starting benchmark for {dataset_name}, method_name {method_name}")
+                    report = Report(
+                        real_data=real_data,
+                        synthetic_data=synthetic_data,
+                        metadata=metadata,
+                        report_name=f"{self.benchmark_name}_{dataset_name}_{method_name}",
+                        single_column_metrics=self.single_column_metrics,
+                        single_table_metrics=self.single_table_metrics,
+                        multi_table_metrics=self.multi_table_metrics,
+                    )
 
-                self.reports.setdefault(dataset_name, {})[method_name] = report
+                    self.reports.setdefault(dataset_name, {})[method_name] = report
 
-                self.all_results.setdefault(dataset_name, {})[method_name] = report.generate()
+                    self.all_results.setdefault(dataset_name, {})[method_name] = report.generate()
 
-                file_name = self.build_file_name(dataset_name, method_name)
+                    file_name = self.build_file_name(dataset_name, method_name)
 
-                report.save_results(self.results_dir, file_name)
+                    report.save_results(self.results_dir, file_name)
+                except Exception as e:
+                    print(f"There was an error with dataset: {dataset_name}, method: {method_name}.")
+                    print(e)
 
     def read_results(self):
         for dataset_name in self.datasets:

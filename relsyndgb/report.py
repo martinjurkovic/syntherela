@@ -48,17 +48,6 @@ class Report():
             "multi_table_metrics": {},
         }
 
-    def run_metric_for_column(self, metric, table, filtered_columns):
-        results = {}
-        for column, column_info in filtered_columns:
-            results[column] = metric.run(
-                self.real_data[table][column],
-                self.synthetic_data[table][column],
-                metadata=self.metadata.to_dict()['tables'][table]['columns'][column],
-            )
-        return table, {metric.name: results}
-
-
     def generate(self):
         """
         Generate the report.
@@ -70,42 +59,24 @@ class Report():
         if len(self.single_column_metrics) == 0:
             print("No single column metrics to run. Skipping.")
         else:
-            # with tqdm(total=len(self.single_column_metrics) * column_count, desc="Running Single Column Metrics") as pbar:
-            #     for table in self.metadata.get_tables():
-            #         for metric in self.single_column_metrics:
-            #             if "detection" not in metric.name:
-            #                 continue
-            #             for column, column_info in self.metadata.tables[table].columns.items():
-            #                 if not metric.is_applicable(column_info["sdtype"]):
-            #                     pbar.update(1)
-            #                     continue
-            #                 self.results["single_column_metrics"].setdefault(metric.name, {}).setdefault(table, {})[column] = metric.run(
-            #                     self.real_data[table][column],
-            #                     self.synthetic_data[table][column],
-            #                     metadata = self.metadata.to_dict()['tables'][table]['columns'][column],  
-            #                 )
-            #                 pbar.update(1)
-            print("Running single column metrics in parallel.")
-            tasks = []
-            for metric in self.single_column_metrics:
+            with tqdm(total=len(self.single_column_metrics) * column_count, desc="Running Single Column Metrics") as pbar:
                 for table in self.metadata.get_tables():
-                    filtered_columns = [
-                        (column, column_info)
-                        for column, column_info in self.metadata.tables[table].columns.items()
-                        if metric.is_applicable(column_info["sdtype"])
-                    ]
-                    tasks.append((metric, table, filtered_columns))
+                    for metric in self.single_column_metrics:
+                        for column, column_info in self.metadata.tables[table].columns.items():
+                            if not metric.is_applicable(column_info["sdtype"]):
+                                pbar.update(1)
+                                continue
+                            try:
+                                self.results["single_column_metrics"].setdefault(metric.name, {}).setdefault(table, {})[column] = metric.run(
+                                    self.real_data[table][column],
+                                    self.synthetic_data[table][column],
+                                    metadata = self.metadata.to_dict()['tables'][table]['columns'][column],  
+                                )
+                            except Exception as e:
+                                print(f"There was a problem with metric {metric.name}, table {table}, column {column}")
+                                print(e)
+                            pbar.update(1)
 
-            self.results["single_column_metrics"] = {metric.name: {} for metric in self.single_column_metrics}
-
-            with Pool() as pool:
-                results = pool.starmap(self.run_metric_for_column, tasks)
-
-            for table, metric_results in results:
-                for metric_name, column_results in metric_results.items():
-                    self.results["single_column_metrics"][metric_name].setdefault(table, {})
-                    self.results["single_column_metrics"][metric_name][table].update(column_results)
-                    
         # single_table_metrics
         if len(self.single_table_metrics) == 0:
             print("No single table metrics to run. Skipping.")
@@ -116,11 +87,15 @@ class Report():
                         if not metric.is_applicable(self.metadata.to_dict()['tables'][table]):
                                 pbar.update(1)
                                 continue
-                        self.results["single_table_metrics"].setdefault(metric.name, {})[table] = metric.run(
-                            self.real_data[table],
-                            self.synthetic_data[table],
-                            metadata = self.metadata.to_dict()['tables'][table],
-                        )
+                        try:
+                            self.results["single_table_metrics"].setdefault(metric.name, {})[table] = metric.run(
+                                self.real_data[table],
+                                self.synthetic_data[table],
+                                metadata = self.metadata.to_dict()['tables'][table],
+                            )
+                        except Exception as e:
+                                print(f"There was a problem with metric {metric.name}, table {table}")
+                                print(e)
                         pbar.update(1)
 
         # multi_table_metrics
@@ -128,11 +103,15 @@ class Report():
             print("No multi table metrics to run. Skipping.")
         else:
             for metric in tqdm(self.multi_table_metrics, desc="Running Multi Table Metrics"):
-                self.results["multi_table_metrics"][metric.name] = metric.run(
-                    self.real_data,
-                    self.synthetic_data,
-                    metadata = self.metadata,
-                )
+                try:
+                    self.results["multi_table_metrics"][metric.name] = metric.run(
+                        self.real_data,
+                        self.synthetic_data,
+                        metadata = self.metadata,
+                    )
+                except Exception as e:
+                    print(f"There was a problem with metric {metric.name}")
+                    print(e)
 
 
         self.report_datetime = datetime.now()
