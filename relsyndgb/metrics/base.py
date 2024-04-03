@@ -106,7 +106,6 @@ class DistanceBaseMetric(BaseMetric):
             random_state = 0
         values = []
         for i in range(m):
-            # draw 2 samples with replacement of size 0.5 * n
             sample1 = data1.sample(frac=1, replace = True, random_state=random_state+i)
             sample2 = data2.sample(frac=1, replace = True, random_state=random_state+i+1)
             # compute the metric
