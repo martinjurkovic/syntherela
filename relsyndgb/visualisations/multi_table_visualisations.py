@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import numpy as np
@@ -10,6 +12,10 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
     metrics = kwargs.get('detection_metrics', 
                          [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if "singletable" not in metric.lower() and "detection" in metric.lower()])
     metric_names = kwargs.get('detection_metric_names', metrics)
+
+    save_figs = kwargs.get("save_figs", False)
+    save_figs_path = kwargs.get("save_figs_path", "./figs/")
+    save_figs_path = Path(save_figs_path) / "multi_table" / "detection"
 
     for dataset in datasets:
         if len(methods) == 0 or len(metrics) == 0:
@@ -68,12 +74,6 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
         # set title
         plt.title(f"Dataset {dataset}")
 
-        # directory_path = f"../figs/multi_table/detection_per_table"
-
-        # os.makedirs(directory_path, exist_ok=True)
-
-        # plt.savefig(f"{directory_path}/{dataset}.png", dpi=300)
-            # plt.show()
-        # except Exception as e:
-        #     print(e)
-        #     print(f"Error with dataset {dataset} and table {table}")
+        if save_figs:
+            os.makedirs(save_figs_path, exist_ok=True)
+            plt.savefig(save_figs_path / f"{dataset}_multi_table_detection.png")

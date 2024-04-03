@@ -153,23 +153,23 @@ class Benchmark():
         datasets = kwargs.get('datasets', self.datasets)
         methods = kwargs.get('methods', self.methods[datasets[0]])
         if distance:
-            visualize_single_table_distance_metrics(self.all_results, datasets, methods)
+            visualize_single_table_distance_metrics(self.all_results, datasets, methods, **kwargs)
 
         if detection:
-            visualize_single_table_detection_metrics_per_classifier(self.all_results, datasets, methods)
-            visualize_single_table_detection_metrics_per_table(self.all_results, datasets, methods)
+            visualize_single_table_detection_metrics_per_classifier(self.all_results, datasets, methods, **kwargs)
+            visualize_single_table_detection_metrics_per_table(self.all_results, datasets, methods, **kwargs)
 
     def visualize_single_column_metrics(self, distance=True, detection=True, **kwargs):
         datasets = kwargs.get('datasets', self.datasets)
         methods = kwargs.get('methods', self.methods[datasets[0]])
         if distance:
-            visualize_single_column_distance_metrics(self.all_results, datasets, methods)
+            visualize_single_column_distance_metrics(self.all_results, datasets, methods, **kwargs)
 
         if detection:
-            visualize_single_column_detection_metrics(self.all_results, datasets, methods)
+            visualize_single_column_detection_metrics(self.all_results, datasets, methods, **kwargs)
 
     def visualize_multi_table_metrics(self, **kwargs):
         datasets = kwargs.get('datasets', self.datasets)
         methods = kwargs.get('methods', self.methods[datasets[0]])
-        visualize_multi_table(self.all_results, datasets, methods)
+        visualize_multi_table(self.all_results, datasets, methods, **kwargs)
             

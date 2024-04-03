@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
+from pathlib import Path
 from matplotlib.lines import Line2D
 import numpy as np
 import seaborn as sns
+import os
 sns.set_theme(font_scale=1.5)
 
 from relsyndgb.visualisations.utils import get_x_tick_width_coef
@@ -12,6 +14,11 @@ def visualize_single_column_distance_metrics(all_results, datasets, methods, **k
     base_metrics = [metric for metric in base_metrics if "detection" not in metric.lower()]
     base_metrics = [metric for metric in base_metrics if "test" not in metric.lower()]
     base_metric_names = base_metrics
+
+    save_figs = kwargs.get("save_figs", False)
+    save_figs_path = kwargs.get("save_figs_path", "./figs/")
+    save_figs_path = Path(save_figs_path) / "single_column" / "distance"
+
 
     for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
         metrics = [
@@ -94,11 +101,11 @@ def visualize_single_column_distance_metrics(all_results, datasets, methods, **k
                     # set title
                     plt.title(f"{base_metric_name} for dataset {dataset}, table {table}")
 
-                    # directory_path = f"./figs/single_column/{base_metric}"
+                    if save_figs:
+                        os.makedirs(save_figs_path, exist_ok=True)
 
-                    # os.makedirs(directory_path, exist_ok=True)
+                        plt.savefig(f"{save_figs_path}/{dataset}_{table}.png", dpi=300)
 
-                    # plt.savefig(f"{directory_path}/{dataset}_{table}.png", dpi=300)
                 except Exception as e:
                     print(f"{base_metric_name} for dataset {dataset}, table {table}")
                     print(e)
@@ -109,6 +116,10 @@ def visualize_single_column_detection_metrics(all_results, datasets, methods, **
     # keep only detection metrics
     base_metrics = [metric for metric in base_metrics if "detection" in metric.lower()]
     base_metric_names = base_metrics
+
+    save_figs = kwargs.get("save_figs", False)
+    save_figs_path = kwargs.get("save_figs_path", "./figs")
+    save_figs_path = Path(save_figs_path) / "single_column" / "detection"
 
     for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
         metrics = [
@@ -175,11 +186,10 @@ def visualize_single_column_detection_metrics(all_results, datasets, methods, **
                 # set title
                 plt.title(f"{base_metric_name} for dataset {dataset}, table {table}")
 
-                # directory_path = f"./figs/single_column/{base_metric}"
+                if save_figs:
+                    os.makedirs(save_figs_path, exist_ok=True)
 
-                # os.makedirs(directory_path, exist_ok=True)
-
-                # plt.savefig(f"{directory_path}/{dataset}_{table}.png", dpi=300)
+                    plt.savefig(f"{save_figs_path}/{dataset}_{table}.png", dpi=300)
 
 
                 
