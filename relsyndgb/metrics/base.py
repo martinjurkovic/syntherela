@@ -144,7 +144,7 @@ class DistanceBaseMetric(BaseMetric):
 
 
 class DetectionBaseMetric(BaseMetric):
-    def __init__(self, classifier_cls, classifier_args = {}, random_state = None, folds=5, **kwargs):
+    def __init__(self, classifier_cls, classifier_args = {}, random_state = None, folds=10, **kwargs):
         super().__init__(**kwargs)
         self.classifier_cls = classifier_cls
         self.classifier_args = classifier_args
