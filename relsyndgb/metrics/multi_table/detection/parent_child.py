@@ -44,6 +44,5 @@ class ParentChildDetection(DenormalizedDetection):
                     pair_meta['tables'].pop(table)
             pair_meta['relationships'] = [relationship]
             pair_metadata = Metadata.load_from_dict(pair_meta)
-            print(f'Running: {parent_table}_{child_table}_{child_fk}')
             results[f'{parent_table}_{child_table}_{child_fk}'] = super().run(real_data_pair, synthetic_data_pair, metadata=pair_metadata, **kwargs)
         return results
