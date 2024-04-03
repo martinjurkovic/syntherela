@@ -18,16 +18,51 @@ class AggregationDetection(DetectionBaseMetric):
             parent_column = relationship['parent_primary_key']
             child_column = relationship['child_foreign_key']
 
+            # add child counts
             child_df = pd.DataFrame({f'{child_table_name}_{child_column}_counts': data[child_table_name][child_column].value_counts()})
             cardinality_df = pd.DataFrame({'parent': data[parent_table_name][parent_column]}).join(
                 child_df, on='parent').fillna(0)
             aggregated_data[parent_table_name] = aggregated_data[parent_table_name].merge(
                 cardinality_df, how='left', left_on=parent_column, right_on='parent').drop(columns='parent')
             
-            if not update_metadata:
-                continue
-            
-            metadata.add_column(parent_table_name, f'{child_table_name}_{child_column}_counts', sdtype='numerical')
+            if update_metadata:
+                metadata.add_column(parent_table_name, f'{child_table_name}_{child_column}_counts', sdtype='numerical')
+
+            # add categorical counts
+            categorical_columns = []
+            for table_name, table_info in metadata.tables[child_table_name].to_dict()['columns'].items():
+                if table_info['sdtype'] == 'categorical':
+                    categorical_columns.append(table_name)
+
+            if len(categorical_columns) > 0:
+                categorical_df = data[child_table_name][categorical_columns + [child_column]]
+                categorical_column_names = [f'{child_table_name}_{column}_counts' for column in categorical_columns]
+                categorical_df.columns = categorical_column_names + [child_column]
+
+                aggregated_data[parent_table_name] = aggregated_data[parent_table_name].merge(
+                    categorical_df.groupby(child_column).nunique(), how='left', left_on=child_column, right_index=True, suffixes=('', '_counts'))
+
+                if update_metadata:
+                    for column in categorical_column_names:
+                        metadata.add_column(parent_table_name, column, sdtype='numerical')
+
+            # add numerical means
+            numerical_columns = []
+            for table_name, table_info in metadata.tables[child_table_name].to_dict()['columns'].items():
+                if table_info['sdtype'] == 'numerical':
+                    numerical_columns.append(table_name)
+
+            if len(numerical_columns) > 0:
+                numerical_df = data[child_table_name][numerical_columns + [child_column]]
+                numerical_column_names = [f'{child_table_name}_{column}_mean' for column in numerical_columns]
+                numerical_df.columns = numerical_column_names + [child_column]
+
+                aggregated_data[parent_table_name] = aggregated_data[parent_table_name].merge(
+                    numerical_df.groupby(child_column).mean(), how='left', left_on=child_column, right_index=True, suffixes=('', '_mean'))
+                
+                if update_metadata:
+                    for column in numerical_column_names:
+                        metadata.add_column(parent_table_name, column, sdtype='numerical')
 
         return aggregated_data, metadata
 
@@ -72,7 +107,7 @@ class DenormalizedAggregationDetection(DenormalizedDetection, AggregationDetecti
     
 
 class ParentChildAggregationDetection(ParentChildDetection, AggregationDetection):
-    def run(self, real_data, synthetic_data, metadata, **kwargs):
-        real_data_with_aggregations, metadata = self.add_aggregations(real_data, deepcopy(metadata))
-        synthetic_data_with_aggregations, _ = self.add_aggregations(synthetic_data, metadata, update_metadata=False)
-        return super().run(real_data_with_aggregations, synthetic_data_with_aggregations, metadata, **kwargs)
+    def prepare_data(self, real_data, synthetic_data, metadata, parent_table, child_table, pair_metadata):
+        aggregated_real_data, metadata = self.add_aggregations(real_data, deepcopy(metadata))
+        aggregated_synthetic_data, _ = self.add_aggregations(synthetic_data, metadata, update_metadata=False)
+        return super().prepare_data(aggregated_real_data, aggregated_synthetic_data, metadata, parent_table, child_table, pair_metadata)

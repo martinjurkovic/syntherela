@@ -197,7 +197,7 @@ class DetectionBaseMetric(BaseMetric):
     
 
     def compute(self, real_data, synthetic_data, metadata, **kwargs):
-        X, y = self.prepare_data(real_data, synthetic_data, metadata=metadata)
+        X, y = self.prepare_data(real_data, synthetic_data, metadata=metadata, **kwargs)
         # save the data for feature importance methods
         self.X = X
         self.y = y
@@ -213,7 +213,7 @@ class DetectionBaseMetric(BaseMetric):
         for i in range(m):
             sample1 = self.bootstrap_sample(real_data, random_state=i, metadata=metadata)
             sample2 = self.bootstrap_sample(real_data, random_state=i+1, metadata=metadata)
-            X, y = self.prepare_data(sample1, sample2, metadata=metadata)
+            X, y = self.prepare_data(sample1, sample2, metadata=metadata, **kwargs)
             scores = self.stratified_kfold(X, y)
             bootstrap_accuracy = np.mean(scores)
             bootstrap_scores.append(bootstrap_accuracy)
