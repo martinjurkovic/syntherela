@@ -151,6 +151,7 @@ class DetectionBaseMetric(BaseMetric):
         self.random_state = random_state
         self.folds = folds
         self.classifiers = []
+        self.name = f"{type(self).__name__}-{classifier_cls.__name__}"
 
 
     def prepare_data(self, real_data: Union[pd.DataFrame, pd.Series], synthetic_data : Union[pd.DataFrame, pd.Series], **kwargs):

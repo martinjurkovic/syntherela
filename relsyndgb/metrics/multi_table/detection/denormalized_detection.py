@@ -7,11 +7,6 @@ from relsyndgb.metrics.base import DetectionBaseMetric
 from copy import deepcopy
 
 class DenormalizedDetection(DetectionBaseMetric):
-
-    def __init__(self, classifier_cls, classifier_args = {}, **kwargs):
-        super().__init__(classifier_cls, classifier_args=classifier_args, **kwargs)
-        self.name = f"DenormalizedDetection-{classifier_cls.__name__}"
-
     @staticmethod
     def bootstrap_sample(real_data: dict, metadata: Metadata, random_state: Union[int, None] = None) -> dict:
         bootstrapped_tables = dict()

@@ -2,11 +2,6 @@ from relsyndgb.metadata import Metadata
 from relsyndgb.metrics.multi_table.detection.denormalized_detection import DenormalizedDetection
 
 class ParentChildDetection(DenormalizedDetection):
-
-    def __init__(self, classifier_cls, classifier_args = {}, **kwargs):
-        super().__init__(classifier_cls, classifier_args=classifier_args, **kwargs)
-        self.name = f"ParentChildDetection-{classifier_cls.__name__}"
-
     @staticmethod
     def is_applicable(metadata: Metadata, table1: str, table2: str):
         """
