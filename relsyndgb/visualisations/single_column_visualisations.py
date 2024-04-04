@@ -19,6 +19,11 @@ def visualize_single_column_distance_metrics(all_results, datasets, methods, **k
     save_figs_path = kwargs.get("save_figs_path", "./figs/")
     save_figs_path = Path(save_figs_path) / "single_column" / "distance"
 
+    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+    if method_order is not None:
+        methods = [method for method in method_order if method in methods]
+        methods += sorted([method for method in methods if method not in method_order])
+
 
     for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
         metrics = [
@@ -120,6 +125,11 @@ def visualize_single_column_detection_metrics(all_results, datasets, methods, **
     save_figs = kwargs.get("save_figs", False)
     save_figs_path = kwargs.get("save_figs_path", "./figs")
     save_figs_path = Path(save_figs_path) / "single_column" / "detection"
+
+    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+    if method_order is not None:
+        methods = [method for method in method_order if method in methods]
+        methods += sorted([method for method in methods if method not in method_order])
 
     for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
         metrics = [

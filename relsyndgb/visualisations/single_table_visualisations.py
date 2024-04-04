@@ -18,6 +18,11 @@ def visualize_single_table_distance_metrics(all_results, datasets, methods, **kw
     save_figs_path = kwargs.get("save_figs_path", "./figs")
     save_figs_path = Path(save_figs_path) / "single_table" / "distance"
 
+    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+    if method_order is not None:
+        methods = [method for method in method_order if method in methods]
+        methods += sorted([method for method in methods if method not in method_order])
+
     for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
         metrics = [
             base_metric
@@ -100,6 +105,11 @@ def visualize_single_table_detection_metrics_per_classifier(all_results, dataset
     save_figs = kwargs.get("save_figs", False)
     save_figs_path = kwargs.get("save_figs_path", "./figs")
     save_figs_path = Path(save_figs_path) / "single_table" / "detection" 
+
+    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+    if method_order is not None:
+        methods = [method for method in method_order if method in methods]
+        methods += sorted([method for method in methods if method not in method_order])
 
     for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
         metrics = [
@@ -187,6 +197,11 @@ def visualize_single_table_detection_metrics_per_table(all_results, datasets, me
     save_figs = kwargs.get("save_figs", False)
     save_figs_path = kwargs.get("save_figs_path", "./figs")
     save_figs_path = Path(save_figs_path) / "single_table" / "detection"
+
+    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+    if method_order is not None:
+        methods = [method for method in method_order if method in methods]
+        methods += sorted([method for method in methods if method not in method_order])
 
     for dataset in datasets:
         if len(methods) == 0 or len(metrics) == 0:
