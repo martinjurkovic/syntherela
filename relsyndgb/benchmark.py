@@ -12,7 +12,7 @@ from relsyndgb.report import Report
 from relsyndgb.metrics.single_column.statistical import ChiSquareTest
 from relsyndgb.metrics.single_table.distance import MaximumMeanDiscrepancy
 from relsyndgb.data import load_tables, remove_sdv_columns
-from relsyndgb.visualisations.multi_table_visualisations import visualize_multi_table
+from relsyndgb.visualisations.multi_table_visualisations import visualize_multi_table, visualize_parent_child_multi_table
 from relsyndgb.visualisations.single_column_visualisations import visualize_single_column_detection_metrics, visualize_single_column_distance_metrics
 from relsyndgb.visualisations.single_table_visualisations import visualize_single_table_detection_metrics_per_classifier, visualize_single_table_detection_metrics_per_table, visualize_single_table_distance_metrics
 
@@ -168,8 +168,10 @@ class Benchmark():
         if detection:
             visualize_single_column_detection_metrics(self.all_results, datasets, methods, **kwargs)
 
-    def visualize_multi_table_metrics(self, **kwargs):
+    def visualize_multi_table_metrics(self, parent_child = True, **kwargs):
         datasets = kwargs.get('datasets', self.datasets)
         methods = kwargs.get('methods', self.methods[datasets[0]])
         visualize_multi_table(self.all_results, datasets, methods, **kwargs)
+        if parent_child:
+            visualize_parent_child_multi_table(self.all_results, datasets, methods, **kwargs)
             
