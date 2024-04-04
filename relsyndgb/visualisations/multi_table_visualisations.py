@@ -9,31 +9,32 @@ sns.set_theme(font_scale=1.5)
 from relsyndgb.visualisations.utils import get_x_tick_width_coef
 
 def visualize_parent_child_multi_table(all_results, datasets, methods, **kwargs):
-    metrics = kwargs.get('detection_metrics', 
-                         [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if 'ParentChildDetection' in metric])
-    metric_names = kwargs.get('detection_metric_names', metrics)
-
-    aggregation_metrics = kwargs.get(
-        'aggregation_metrics', 
-        [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if 'ParentChildAggregationDetection' in metric])
-
-
-    # aggregation_metrics = [
-    #     # "SingleTableAggregationDetection-LogisticRegression", 
-    #     "SingleTableAggregationDetection-XGBClassifier",
-    #     ]
-    aggregation_metric_names = aggregation_metrics
-
-    save_figs = kwargs.get("save_figs", False)
-    save_figs_path = kwargs.get("save_figs_path", "./figs")
-    save_figs_path = Path(save_figs_path) / "multi_table" / "detection"
-
-    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
-    if method_order is not None:
-        methods = [method for method in method_order if method in methods]
-        methods += sorted([method for method in methods if method not in method_order])
-
     for dataset in datasets:
+        metrics = kwargs.get('detection_metrics', 
+                            [metric for metric in list(all_results[dataset][methods[0]]['multi_table_metrics'].keys()) if 'ParentChildDetection' in metric])
+        metric_names = kwargs.get('detection_metric_names', metrics)
+
+        aggregation_metrics = kwargs.get(
+            'aggregation_metrics', 
+            [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if 'ParentChildAggregationDetection' in metric])
+
+
+        # aggregation_metrics = [
+        #     # "SingleTableAggregationDetection-LogisticRegression", 
+        #     "SingleTableAggregationDetection-XGBClassifier",
+        #     ]
+        aggregation_metric_names = aggregation_metrics
+
+        save_figs = kwargs.get("save_figs", False)
+        save_figs_path = kwargs.get("save_figs_path", "./figs")
+        save_figs_path = Path(save_figs_path) / "multi_table" / "detection"
+
+        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+        if method_order is not None:
+            methods = [method for method in method_order if method in methods]
+            methods += sorted([method for method in methods if method not in method_order])
+
+    
         if len(methods) == 0 or len(metrics) == 0:
             continue
         tables = all_results[dataset][methods[0]]['multi_table_metrics'][metrics[0]].keys()

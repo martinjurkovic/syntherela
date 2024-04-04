@@ -9,29 +9,29 @@ sns.set_theme(font_scale=1.5)
 from relsyndgb.visualisations.utils import get_x_tick_width_coef
 
 def visualize_single_table_distance_metrics(all_results, datasets, methods, **kwargs):
-    base_metrics = list(all_results[datasets[0]][methods[0]]['single_table_metrics'].keys())
-    # remove all metrics that are detection
-    base_metrics = [metric for metric in base_metrics if "detection" not in metric.lower()]
-    base_metric_names = base_metrics
+    for dataset in datasets:
+        base_metrics = list(all_results[dataset][methods[0]]['single_table_metrics'].keys())
+        # remove all metrics that are detection
+        base_metrics = [metric for metric in base_metrics if "detection" not in metric.lower()]
+        base_metric_names = base_metrics
 
-    save_figs = kwargs.get("save_figs", False)
-    save_figs_path = kwargs.get("save_figs_path", "./figs")
-    save_figs_path = Path(save_figs_path) / "single_table" / "distance"
+        save_figs = kwargs.get("save_figs", False)
+        save_figs_path = kwargs.get("save_figs_path", "./figs")
+        save_figs_path = Path(save_figs_path) / "single_table" / "distance"
 
-    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
-    if method_order is not None:
-        methods = [method for method in method_order if method in methods]
-        methods += sorted([method for method in methods if method not in method_order])
+        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+        if method_order is not None:
+            methods = [method for method in method_order if method in methods]
+            methods += sorted([method for method in methods if method not in method_order])
 
-    for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
-        metrics = [
-            base_metric
-            ]
+        for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
+            metrics = [
+                base_metric
+                ]
 
-        metric_names = [
-            base_metric_name
-            ]
-        for dataset in datasets:
+            metric_names = [
+                base_metric_name
+                ]
             if len(methods) == 0 or len(metrics) == 0:
                 continue
             dataset_table_results = {}
@@ -51,7 +51,7 @@ def visualize_single_table_distance_metrics(all_results, datasets, methods, **kw
             # plt.rcParams.update({'font.size': 20})
 
             colors = plt.cm.viridis(np.linspace(0.5, 1, N)) # create a color map
- 
+
             for j, method in enumerate(methods):
                 method_means = [all_results[dataset][method]['single_table_metrics'][base_metric][table]["value"] for table in tables]
                 method_ses = [all_results[dataset][method]['single_table_metrics'][base_metric][table]["bootstrap_se"] for table in tables]
@@ -94,32 +94,32 @@ def visualize_single_table_distance_metrics(all_results, datasets, methods, **kw
 
             if save_figs:
                 os.makedirs(save_figs_path, exist_ok=True)
-                plt.savefig(f"{save_figs_path}/{dataset}.png", dpi=300)
+                plt.savefig(f"{save_figs_path}/{dataset}_{base_metric}.png", dpi=300)
 
 def visualize_single_table_detection_metrics_per_classifier(all_results, datasets, methods, **kwargs):
-    base_metrics = list(all_results[datasets[0]][methods[0]]['single_table_metrics'].keys())
-    # remove all metrics that are detection
-    base_metrics = [metric for metric in base_metrics if "detection" in metric.lower()]
-    base_metric_names = base_metrics
+    for dataset in datasets:
+        base_metrics = list(all_results[dataset][methods[0]]['single_table_metrics'].keys())
+        # remove all metrics that are detection
+        base_metrics = [metric for metric in base_metrics if "detection" in metric.lower()]
+        base_metric_names = base_metrics
 
-    save_figs = kwargs.get("save_figs", False)
-    save_figs_path = kwargs.get("save_figs_path", "./figs")
-    save_figs_path = Path(save_figs_path) / "single_table" / "detection" 
+        save_figs = kwargs.get("save_figs", False)
+        save_figs_path = kwargs.get("save_figs_path", "./figs")
+        save_figs_path = Path(save_figs_path) / "single_table" / "detection" 
 
-    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
-    if method_order is not None:
-        methods = [method for method in method_order if method in methods]
-        methods += sorted([method for method in methods if method not in method_order])
+        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+        if method_order is not None:
+            methods = [method for method in method_order if method in methods]
+            methods += sorted([method for method in methods if method not in method_order])
 
-    for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
-        metrics = [
-            base_metric
-            ]
+        for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
+            metrics = [
+                base_metric
+                ]
 
-        metric_names = [
-            base_metric_name
-            ]
-        for dataset in datasets:
+            metric_names = [
+                base_metric_name
+                ]
             if len(methods) == 0 or len(metrics) == 0:
                 continue
             dataset_table_results = {}
@@ -174,36 +174,37 @@ def visualize_single_table_detection_metrics_per_classifier(all_results, dataset
 
             if save_figs:
                 os.makedirs(save_figs_path, exist_ok=True)
-                plt.savefig(f"{save_figs_path}/{dataset}.png", dpi=300)
+                plt.savefig(f"{save_figs_path}/{dataset}_{base_metric}.png", dpi=300)
 
 
 
 def visualize_single_table_detection_metrics_per_table(all_results, datasets, methods, **kwargs):
-    metrics = kwargs.get('detection_metrics', 
-                         [metric for metric in list(all_results[datasets[0]][methods[0]]['single_table_metrics'].keys()) if 'detection' in metric.lower()])
-    metric_names = kwargs.get('detection_metric_names', metrics)
-
-    aggregation_metrics = kwargs.get(
-        'aggregation_metrics', 
-        [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if 'SingleTableAggregationDetection' in metric])
-
-
-    # aggregation_metrics = [
-    #     # "SingleTableAggregationDetection-LogisticRegression", 
-    #     "SingleTableAggregationDetection-XGBClassifier",
-    #     ]
-    aggregation_metric_names = aggregation_metrics
-
-    save_figs = kwargs.get("save_figs", False)
-    save_figs_path = kwargs.get("save_figs_path", "./figs")
-    save_figs_path = Path(save_figs_path) / "single_table" / "detection"
-
-    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
-    if method_order is not None:
-        methods = [method for method in method_order if method in methods]
-        methods += sorted([method for method in methods if method not in method_order])
-
     for dataset in datasets:
+        metrics = kwargs.get('detection_metrics', 
+                            [metric for metric in list(all_results[dataset][methods[0]]['single_table_metrics'].keys()) if 'detection' in metric.lower()])
+        metric_names = kwargs.get('detection_metric_names', metrics)
+
+        aggregation_metrics = kwargs.get(
+            'aggregation_metrics', 
+            [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if 'SingleTableAggregationDetection' in metric])
+
+
+        # aggregation_metrics = [
+        #     # "SingleTableAggregationDetection-LogisticRegression", 
+        #     "SingleTableAggregationDetection-XGBClassifier",
+        #     ]
+        aggregation_metric_names = aggregation_metrics
+
+        save_figs = kwargs.get("save_figs", False)
+        save_figs_path = kwargs.get("save_figs_path", "./figs")
+        save_figs_path = Path(save_figs_path) / "single_table" / "detection"
+
+        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+        if method_order is not None:
+            methods = [method for method in method_order if method in methods]
+            methods += sorted([method for method in methods if method not in method_order])
+
+    
         if len(methods) == 0 or len(metrics) == 0:
             continue
         tables = all_results[dataset][methods[0]]['single_table_metrics'][metrics[0]].keys()
@@ -272,7 +273,7 @@ def visualize_single_table_detection_metrics_per_table(all_results, datasets, me
 
             if save_figs:
                 os.makedirs(save_figs_path, exist_ok=True)
-                plt.savefig(f"{save_figs_path}/{dataset}_{table}.png", dpi=300)
+                plt.savefig(f"{save_figs_path}/{dataset}_{table}_per_table.png", dpi=300)
 
                 
 
