@@ -57,11 +57,18 @@ class CustomHyperTransformer(HyperTransformer):
                 data = pd.concat([data, transformed.set_index(data.index)], axis=1)
             elif kind == 'M':
                 # Datetime column.
-                nulls = data[field].isna()
-                integers = pd.to_numeric(
-                    data[field], errors='coerce').to_numpy().astype(np.float64)
-                integers[nulls] = np.nan
-                data[field] = pd.Series(integers)
-                data[field] = data[field].fillna(transform_info['mean'])
+                nulls = data[field].isnull()
+                data[field] = pd.to_datetime(data[field], errors='coerce')
+                data[f'{field}_Year'] = data[field].dt.year
+                data[f'{field}_Month'] = data[field].dt.month
+                data[f'{field}_Day'] = data[field].dt.day
+                data[f'{field}_Hour'] = data[field].dt.hour
+                data[f'{field}_Minute'] = data[field].dt.minute
+                data[f'{field}_Year'][nulls] = np.nan
+                data[f'{field}_Month'][nulls] = np.nan
+                data[f'{field}_Day'][nulls] = np.nan
+                data[f'{field}_Hour'][nulls] = np.nan
+                data[f'{field}_Minute'][nulls] = np.nan
+                data = data.drop(columns=[field])
 
         return data
