@@ -10,7 +10,7 @@ from relsyndgb.visualisations.utils import get_x_tick_width_coef
 
 def visualize_multi_table(all_results, datasets, methods, **kwargs):
     metrics = kwargs.get('detection_metrics', 
-                         [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if "singletable" not in metric.lower() and "detection" in metric.lower()])
+                         [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if "singletable" not in metric.lower() and "parent" not in metric.lower() and "detection" in metric.lower()])
     metric_names = kwargs.get('detection_metric_names', metrics)
 
     save_figs = kwargs.get("save_figs", False)
