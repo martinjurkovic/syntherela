@@ -84,10 +84,16 @@ class SingleTableAggregationDetection(AggregationDetection, DetectionBaseMetric,
         return nonid and has_children
     
     
-    def run(self, real_data, synthetic_data, metadata, **kwargs):
+    def run(self, real_data, synthetic_data, metadata, target_table=None, **kwargs):
         real_data_with_aggregations, updated_metadata = self.add_aggregations(real_data, deepcopy(metadata))
         synthetic_data_with_aggregations, _ = self.add_aggregations(synthetic_data, metadata, update_metadata=False)
         results = {}
+        if target_table is not None:
+            table_metadata = metadata.tables[target_table].to_dict()
+            real_data_with_aggregations[target_table] = drop_ids(real_data_with_aggregations[target_table], table_metadata)
+            synthetic_data_with_aggregations[target_table] = drop_ids(synthetic_data_with_aggregations[target_table], table_metadata)
+            return super().run(real_data_with_aggregations[target_table], synthetic_data_with_aggregations[target_table], metadata=updated_metadata, **kwargs)
+        
         for table in metadata.get_tables():
             table_metadata = metadata.tables[table].to_dict()
             if not self.is_applicable(updated_metadata, table):
