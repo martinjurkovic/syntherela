@@ -227,9 +227,9 @@ class DetectionBaseMetric(BaseMetric):
 
 
     @staticmethod
-    def binomial_test(x, n, p=0.5):
+    def binomial_test(x, n, p=0.5, alternative='greater'):
         """ Compute the p-value of the metric using the binomial test. """
-        test = binomtest(x, n, p, alternative='greater')
+        test = binomtest(x, n, p, alternative=alternative)
         return test.statistic, test.pvalue
     
 
@@ -248,7 +248,7 @@ class DetectionBaseMetric(BaseMetric):
         """
         scores = self.compute(real_data, synthetic_data, metadata=metadata, **kwargs)
         baseline_mean, baseline_se = self.baseline(real_data, metadata, **kwargs)
-        _, bin_test_p_val = self.binomial_test(sum(scores), len(scores))
+        _, bin_test_p_val = self.binomial_test(sum(scores), len(scores), p=baseline_mean)
         standard_error = np.std(scores) / np.sqrt(len(scores))
         return { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : np.round(bin_test_p_val, decimals=16),
                  "baseline_mean": baseline_mean, "baseline_se": baseline_se}
