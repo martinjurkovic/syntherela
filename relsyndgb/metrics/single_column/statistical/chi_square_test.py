@@ -14,10 +14,10 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
-        return column_type == "categorical"
+        return column_type == "categorical" or column_type == "boolean"
 
     def validate(self, column):
-        if column.dtype.name not in ("object", "category"):
+        if column.dtype.name not in ("object", "category", "bool"):
             raise ValueError(f"{self.name} can only be applied to categorical columns, but column {column.name} is of type {column.dtype}")
     
     @staticmethod

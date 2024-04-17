@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sdmetrics.goal import Goal
+from sdmetrics.utils import is_datetime
 
 from relsyndgb.metadata import drop_ids
 from relsyndgb.metrics.base import DistanceBaseMetric, SingleTableMetric
@@ -23,7 +24,7 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         """
         numeric_count = 0
         for column_name in metadata['columns'].keys():
-            if metadata['columns'][column_name]['sdtype'] == 'numerical':
+            if metadata['columns'][column_name]['sdtype'] == 'numerical' or metadata['columns'][column_name]['sdtype'] == 'datetime':
                 numeric_count += 1
         return numeric_count > 1
 
@@ -47,9 +48,9 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
                 orig.drop(col, axis=1, inplace=True)
                 synth.drop(col, axis=1, inplace=True)
                 continue
-            elif "datetime" in str(orig[col].dtype):
-                orig[col] =  pd.to_numeric(orig[col])
-                synth[col] =  pd.to_numeric(synth[col])
+            elif is_datetime(orig[col]):
+                orig[col] =  pd.to_numeric(orig[col], errors='coerce', downcast='integer')
+                synth[col] =  pd.to_numeric(synth[col], errors='coerce', downcast='integer')
 
 
         # drop nan values

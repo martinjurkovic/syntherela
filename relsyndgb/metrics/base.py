@@ -173,14 +173,21 @@ class DetectionBaseMetric(BaseMetric):
         ])
         # replace infinite values with NaN
         X.replace([np.inf, -np.inf], np.nan, inplace=True)
+        # drop constant columns
+        X = X.loc[:, X.apply(lambda x: x.nunique() > 1)]
         return X, y
     
 
     def stratified_kfold(self, X, y, save_models=False):
         scores = []
-        kf = StratifiedKFold(n_splits=self.folds, shuffle=True, random_state=self.random_state)
-        for train_index, test_index in kf.split(X, y):
-            np.random.seed(self.random_state)
+        # Shuffle the data
+        np.random.seed(self.random_state)
+        idx = np.random.permutation(len(y))
+        X = X.iloc[idx]
+        y = y[idx]
+        kf = StratifiedKFold(n_splits=self.folds)
+        for i, (train_index, test_index) in enumerate(kf.split(X, y)):
+            np.random.seed(self.random_state + i)
             model = Pipeline([
                 ('imputer', SimpleImputer()),
                 ('scaler', StandardScaler()),

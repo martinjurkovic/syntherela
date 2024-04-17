@@ -1,5 +1,7 @@
 import numpy as np
+import pandas as pd
 from sdmetrics.goal import Goal
+from sdmetrics.utils import is_datetime
 
 from relsyndgb.metrics.base import SingleColumnMetric, DistanceBaseMetric
 from relsyndgb.metrics.single_column.distance.utils import get_histograms
@@ -16,7 +18,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
-        return column_type in ["categorical"]
+        return column_type in ["categorical", "numerical", "datetime", "boolean"]
     
     @staticmethod
     def compute(real_data, synthetic_data, bins, **kwargs):
@@ -35,7 +37,11 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
     def run(self, real_data, synthetic_data, **kwargs):
         if self.is_constant(real_data):
             return {'value': 0, 'reference_ci': [0, 0], 'bootstrap_mean': 0, 'bootstrap_se': 0}
-        if real_data.dtype.name in ("object", "category"):
+        # check for datetime
+        if is_datetime(real_data):
+            real_data = pd.to_numeric(real_data, errors='coerce', downcast='integer')
+            synthetic_data = pd.to_numeric(synthetic_data, errors='coerce', downcast='integer')
+        if real_data.dtype.name in ("object", "category", "bool"):
             bins = None
         else:
             bins = np.histogram_bin_edges(real_data.dropna())

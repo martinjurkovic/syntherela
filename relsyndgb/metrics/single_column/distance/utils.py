@@ -1,6 +1,7 @@
 from typing import Union
 import numpy as np
 import pandas as pd
+from sdmetrics.utils import is_datetime
 
 def get_histograms(original: pd.Series, synthetic: pd.Series, normalize: bool = True, bins: Union[str, np.array] = 'doane') -> tuple:
     """Get percentual frequencies or counts for each possible real categorical value.
@@ -9,11 +10,11 @@ def get_histograms(original: pd.Series, synthetic: pd.Series, normalize: bool = 
         The observed and expected frequencies.
     """
     
-    if "date" in str(type(original.dtype)):
-        original = pd.to_numeric(pd.to_datetime(original), errors = 'coerce', downcast='integer')
-        synthetic = pd.to_numeric(pd.to_datetime(synthetic), errors = 'coerce', downcast='integer')
+    if is_datetime(original):
+        original = pd.to_numeric(original, errors = 'coerce', downcast='integer')
+        synthetic = pd.to_numeric(synthetic, errors = 'coerce', downcast='integer')
         
-    if original.dtype.name in ("object", "category"):  # categorical
+    if original.dtype.name in ("object", "category", "bool"):  # categorical
         gt = original.value_counts().to_dict()
         synth = synthetic.value_counts().to_dict()
         all_keys = gt.keys() | synth.keys()
