@@ -105,20 +105,20 @@ class CustomHyperTransformer(HyperTransformer):
                 data[f'{field}_Year'] = data[field].dt.year
                 data[f'{field}_Month'] = data[field].dt.month
                 data[f'{field}_Day'] = data[field].dt.day
-                data[f'{field}_Year'][nulls] = np.nan
-                data[f'{field}_Month'][nulls] = np.nan
-                data[f'{field}_Day'][nulls] = np.nan
+                data.loc[nulls, f'{field}_Year'] = np.nan
+                data.loc[nulls, f'{field}_Month'] = np.nan
+                data.loc[nulls, f'{field}_Day'] = np.nan
                 if transform_info['has_hours']:
                     data[f'{field}_Hour'] = data[field].dt.hour
-                    data[f'{field}_Hour'][nulls] = np.nan
+                    data.loc[nulls, f'{field}_Hour'] = np.nan
                 if transform_info['has_minutes']:
                     data[f'{field}_Minute'] = data[field].dt.minute
-                    data[f'{field}_Minute'][nulls] = np.nan
+                    data.loc[nulls, f'{field}_Minute'] = np.nan
                 if transform_info['has_seconds']:
                     data[f'{field}_Second'] = data[field].dt.second
-                    data[f'{field}_Second'][nulls] = np.nan
+                    data.loc[nulls, f'{field}_Second'] = np.nan
                 if transform_info['has_microseconds']:
                     data[f'{field}_Microsecond'] = data[field].dt.microsecond
-                    data[f'{field}_Microsecond'][nulls] = np.nan
+                    data.loc[nulls, f'{field}_Microsecond'] = np.nan
                 data = data.drop(columns=[field])
         return data
