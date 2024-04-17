@@ -55,6 +55,7 @@ class Metadata(MultiTableMetadata):
             root_tables.discard(relation['child_table_name'])
         return list(root_tables)
 
+
 def drop_ids(table: pd.DataFrame, metadata: dict):
     for column, column_info in metadata['columns'].items():
         if column_info['sdtype'] == 'id' and column in table.columns:
@@ -72,6 +73,9 @@ def convert_metadata_to_v0(metadata):
         metadata_v0['tables'][table_name] = {'fields': {}}
         for column, column_info in table_info['columns'].items():
             metadata_v0['tables'][table_name]['fields'][column] = {'type': column_info['sdtype']}
+            if column_info['sdtype'] == 'boolean':
+                # convert boolean to categorical
+                metadata_v0['tables'][table_name]['fields'][column]['type'] = 'categorical'
             if column_info['sdtype'] == 'datetime':
                 metadata_v0['tables'][table_name]['fields'][column]['format'] = column_info["datetime_format"]
         
