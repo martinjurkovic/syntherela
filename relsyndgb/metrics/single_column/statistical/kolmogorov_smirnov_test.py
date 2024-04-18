@@ -15,7 +15,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
-        return column_type == "numerical"
+        return column_type == "numerical" or column_type == "datetime"
 
     def validate(self, column):
         column_dtype = column.dtypes
