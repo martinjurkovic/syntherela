@@ -95,10 +95,15 @@ class DistanceBaseMetric(BaseMetric):
     def run(self, real_data, synthetic_data, **kwargs):
         """ Compute the reference confidence intervals using bootstrap on the real data
         and compute the matric value on real vs synthetic data."""
-        _, _, reference_standard_ci = self.bootstrap_reference_standard_conf_int(real_data, alpha=self.alpha, **kwargs)
+        reference_mean, reference_variance, reference_standard_ci = self.bootstrap_reference_standard_conf_int(real_data, alpha=self.alpha, **kwargs)
         bootstrap_mean, bootstrap_se = self.bootstrap_metric_estimate(real_data, synthetic_data, **kwargs)
         value = self.compute(real_data, synthetic_data, **kwargs)
-        return {'value': value, 'reference_ci': reference_standard_ci, 'bootstrap_mean': bootstrap_mean, 'bootstrap_se': bootstrap_se}
+        return {'value': value, 
+                'reference_mean': reference_mean,
+                'reference_variance' : reference_variance,
+                'reference_ci': reference_standard_ci, 
+                'bootstrap_mean': bootstrap_mean, 
+                'bootstrap_se': bootstrap_se}
 
 
     def boostrap_metric_values(self, data1, data2, m=100, random_state=None, **kwargs):
