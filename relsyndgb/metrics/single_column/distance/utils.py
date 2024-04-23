@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sdmetrics.utils import is_datetime
 
-def get_histograms(original: pd.Series, synthetic: pd.Series, normalize: bool = True, bins: Union[str, np.array] = 'doane') -> tuple:
+def get_histograms(original: pd.Series, synthetic: pd.Series, normalize: bool = True, bins: Union[str, np.array] = 'doane', return_keys: bool=False) -> tuple:
     """Get percentual frequencies or counts for each possible real categorical value.
 
     Returns:
@@ -47,5 +47,7 @@ def get_histograms(original: pd.Series, synthetic: pd.Series, normalize: bool = 
         synth = {k: v / synth_sum for k, v in synth.items()}
 
     frequencies = (np.array(list(gt.values())), np.array(list(synth.values())))
+    if return_keys:
+        return frequencies, list(gt.keys())
 
     return frequencies
