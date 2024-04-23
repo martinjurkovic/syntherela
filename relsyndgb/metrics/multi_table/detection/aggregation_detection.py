@@ -8,7 +8,7 @@ from relsyndgb.metrics.base import DetectionBaseMetric, SingleTableMetric
 from .denormalized_detection import DenormalizedDetection
 from .parent_child import ParentChildDetection
 
-class AggregationDetection(DetectionBaseMetric):
+class BaseAggregationDetection(DetectionBaseMetric):
     @staticmethod
     def add_aggregations(data, metadata, update_metadata=True):
         aggregated_data = deepcopy(data)
@@ -67,7 +67,7 @@ class AggregationDetection(DetectionBaseMetric):
         return aggregated_data, metadata
 
 
-class SingleTableAggregationDetection(AggregationDetection, DetectionBaseMetric, SingleTableMetric):
+class AggregationDetection(BaseAggregationDetection, DetectionBaseMetric, SingleTableMetric):
     @staticmethod
     def is_applicable(metadata, table):
         """
@@ -105,14 +105,14 @@ class SingleTableAggregationDetection(AggregationDetection, DetectionBaseMetric,
         return results
 
 
-class DenormalizedAggregationDetection(DenormalizedDetection, AggregationDetection):
+class DenormalizedAggregationDetection(DenormalizedDetection, BaseAggregationDetection):
     def prepare_data(self, real_data, synthetic_data, metadata):
         aggregated_real_data, updated_metadata = self.add_aggregations(real_data, deepcopy(metadata))
         aggregated_synthetic_data, _ = self.add_aggregations(synthetic_data, metadata, update_metadata=False)
         return super().prepare_data(aggregated_real_data, aggregated_synthetic_data, updated_metadata)
     
 
-class ParentChildAggregationDetection(ParentChildDetection, AggregationDetection):
+class ParentChildAggregationDetection(ParentChildDetection, BaseAggregationDetection):
     def prepare_data(self, real_data, synthetic_data, metadata, parent_table, child_table, pair_metadata):
         aggregated_real_data, updated_metadata = self.add_aggregations(real_data, deepcopy(metadata))
         aggregated_synthetic_data, _ = self.add_aggregations(synthetic_data, metadata, update_metadata=False)

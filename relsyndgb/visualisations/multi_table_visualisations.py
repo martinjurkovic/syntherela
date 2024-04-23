@@ -20,8 +20,8 @@ def visualize_parent_child_multi_table(all_results, datasets, methods, **kwargs)
 
 
         # aggregation_metrics = [
-        #     # "SingleTableAggregationDetection-LogisticRegression", 
-        #     "SingleTableAggregationDetection-XGBClassifier",
+        #     # "AggregationDetection-LogisticRegression", 
+        #     "AggregationDetection-XGBClassifier",
         #     ]
         aggregation_metric_names = aggregation_metrics
 

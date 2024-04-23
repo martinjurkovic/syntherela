@@ -1,3 +1,3 @@
 from .denormalized_detection import DenormalizedDetection
-from .aggregation_detection import DenormalizedAggregationDetection, SingleTableAggregationDetection, ParentChildAggregationDetection
+from .aggregation_detection import DenormalizedAggregationDetection, AggregationDetection, ParentChildAggregationDetection
 from .parent_child import ParentChildDetection

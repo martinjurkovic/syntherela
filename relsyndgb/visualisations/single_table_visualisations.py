@@ -186,12 +186,12 @@ def visualize_single_table_detection_metrics_per_table(all_results, datasets, me
 
         aggregation_metrics = kwargs.get(
             'aggregation_metrics', 
-            [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if 'SingleTableAggregationDetection' in metric])
+            [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if 'AggregationDetection' in metric])
 
 
         # aggregation_metrics = [
-        #     # "SingleTableAggregationDetection-LogisticRegression", 
-        #     "SingleTableAggregationDetection-XGBClassifier",
+        #     # "AggregationDetection-LogisticRegression", 
+        #     "AggregationDetection-XGBClassifier",
         #     ]
         aggregation_metric_names = aggregation_metrics
 
