@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+from typing import Tuple
 
 from tqdm import tqdm
 
@@ -19,6 +20,7 @@ class Report():
                 synthetic_data, 
                 metadata,
                 report_name, 
+                test_data = None,
                 single_column_metrics = [
                     ChiSquareTest(), 
                    ],
@@ -26,11 +28,17 @@ class Report():
                     MaximumMeanDiscrepancy(),
                     ], 
                 multi_table_metrics = [],
+                utility_metrics = [],
                 ):
         metadata.validate_data(real_data)
         metadata.validate_data(synthetic_data)
         self.real_data = real_data
         self.synthetic_data = synthetic_data
+        self.test_data = None
+
+        if test_data is not None:
+            metadata.validate_data(test_data)
+            self.test_data = test_data
 
         # reorder synthetic data columns to match real data
         for table in metadata.get_tables():
@@ -41,11 +49,13 @@ class Report():
         self.single_column_metrics = single_column_metrics
         self.single_table_metrics = single_table_metrics
         self.multi_table_metrics = multi_table_metrics
+        self.utility_metrics = utility_metrics
         self.report_datetime = datetime.now()
         self.results = {
             "single_column_metrics": {},
             "single_table_metrics": {},
             "multi_table_metrics": {},
+            "utility_metrics": {},
         }
 
     def generate(self):
@@ -108,6 +118,25 @@ class Report():
                         self.real_data,
                         self.synthetic_data,
                         metadata = self.metadata,
+                    )
+                except Exception as e:
+                    print(f"There was a problem with metric {metric.name}")
+                    print(e)
+        
+        # utility_metrics
+        if len(self.utility_metrics) == 0:
+            print("No utility metrics to run. Skipping.")
+        else:
+            for metric in tqdm(self.utility_metrics, desc="Running Utility Metrics"):
+                if self.test_data is None:
+                    print(f"Test data is None. Skipping utility metric {metric.name}")
+                    continue
+                try:
+                    self.results["utility_metrics"][metric.name] = metric.run(
+                        self.real_data,
+                        self.synthetic_data,
+                        metadata = self.metadata,
+                        test_data = self.test_data,
                     )
                 except Exception as e:
                     print(f"There was a problem with metric {metric.name}")

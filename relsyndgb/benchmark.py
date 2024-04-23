@@ -31,6 +31,7 @@ class Benchmark():
                     MaximumMeanDiscrepancy(),
                     ], 
                 multi_table_metrics = [],
+                utility_metrics = {},
                 methods=None,
                 datasets=None,
                 run_id=None,
@@ -76,6 +77,7 @@ class Benchmark():
         self.single_column_metrics = single_column_metrics
         self.single_table_metrics = single_table_metrics
         self.multi_table_metrics = multi_table_metrics
+        self.utility_metrics = utility_metrics
         self.benchmark_datetime = datetime.now()
 
         self.all_results = {}
@@ -84,6 +86,7 @@ class Benchmark():
     def load_data(self, dataset_name, method_name):
         real_data_path = self.real_data_dir / dataset_name
         synthetic_data_path = self.synthetic_data_dir / dataset_name / method_name
+        test_data_path = self.real_data_dir / dataset_name / 'test_data'
 
         if self.run_id is not None:
             synthetic_data_path = synthetic_data_path / self.run_id
@@ -95,26 +98,34 @@ class Benchmark():
         real_data = load_tables(real_data_path, metadata)
         synthetic_data = load_tables(synthetic_data_path, metadata)
 
+        test_data = None
+        if os.path.exists(test_data_path):
+            test_data = load_tables(test_data_path, metadata)
+
         real_data, metadata = remove_sdv_columns(real_data, metadata)
         synthetic_data, metadata = remove_sdv_columns(synthetic_data, metadata, update_metadata=False)
+        if test_data is not None:
+            test_data, metadata = remove_sdv_columns(test_data, metadata, update_metadata=False)
 
-        return real_data, synthetic_data, metadata
+        return real_data, synthetic_data, test_data, metadata
 
     def run(self):
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
                 try:
-                    real_data, synthetic_data, metadata = self.load_data(dataset_name, method_name)
+                    real_data, synthetic_data, test_data, metadata = self.load_data(dataset_name, method_name)
 
                     print(f"Starting benchmark for {dataset_name}, method_name {method_name}")
                     report = Report(
                         real_data=real_data,
                         synthetic_data=synthetic_data,
+                        test_data=test_data,
                         metadata=metadata,
                         report_name=f"{self.benchmark_name}_{dataset_name}_{method_name}",
                         single_column_metrics=self.single_column_metrics,
                         single_table_metrics=self.single_table_metrics,
                         multi_table_metrics=self.multi_table_metrics,
+                        utility_metrics=self.utility_metrics[dataset_name],
                     )
 
                     self.reports.setdefault(dataset_name, {})[method_name] = report
