@@ -20,6 +20,7 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
     @staticmethod
     def is_applicable(column_type):
         # TODO: add continous version using sinkhorn loss
+        # check https://pythonot.github.io/auto_examples/plot_OT_1D.html#solve-sinkhorn
         return column_type in ["categorical", "boolean"]
 
     @staticmethod
