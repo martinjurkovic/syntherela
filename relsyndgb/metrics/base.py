@@ -174,8 +174,8 @@ class DetectionBaseMetric(BaseMetric):
         ht = CustomHyperTransformer()
         combined_data = pd.concat([real_data, synthetic_data])
         ht.fit(combined_data)
-        transformed_real_data = ht.transform(real_data)
-        transformed_synthetic_data = ht.transform(synthetic_data)
+        transformed_real_data = ht.transform(real_data.copy())
+        transformed_synthetic_data = ht.transform(synthetic_data.copy())
         X = pd.concat([transformed_real_data, transformed_synthetic_data])
         y = np.hstack([
             np.ones(len(transformed_real_data)), np.zeros(len(transformed_synthetic_data))
