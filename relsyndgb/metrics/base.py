@@ -11,7 +11,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import mean_squared_error, root_mean_squared_error
+# from sklearn.metrics import mean_squared_error, root_mean_squared_error
 from sdmetrics.goal import Goal
 from sdmetrics.base import BaseMetric
 from relsyndgb.utils import CustomHyperTransformer
