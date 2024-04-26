@@ -152,12 +152,13 @@ class DistanceBaseMetric(BaseMetric):
 
 
 class DetectionBaseMetric(BaseMetric):
-    def __init__(self, classifier_cls, classifier_args = {}, random_state = None, folds=10, **kwargs):
+    def __init__(self, classifier_cls, classifier_args = {}, random_state = None, folds=10, m=10, **kwargs):
         super().__init__(**kwargs)
         self.classifier_cls = classifier_cls
         self.classifier_args = classifier_args
         self.random_state = random_state
         self.folds = folds
+        self.m = m
         self.classifiers = []
         self.name = f"{type(self).__name__}-{classifier_cls.__name__}"
 
@@ -256,7 +257,7 @@ class DetectionBaseMetric(BaseMetric):
                 Metric output or outputs.
         """
         scores = self.compute(real_data, synthetic_data, metadata=metadata, **kwargs)
-        baseline_mean, baseline_se = self.baseline(real_data, metadata, **kwargs)
+        baseline_mean, baseline_se = self.baseline(real_data, metadata, m=self.m, **kwargs)
         _, bin_test_p_val = self.binomial_test(sum(scores), len(scores), p=baseline_mean)
         _, copying_p_val = self.binomial_test(sum(scores), len(scores), p=baseline_mean, alternative='less')
         standard_error = np.std(scores) / np.sqrt(len(scores))
