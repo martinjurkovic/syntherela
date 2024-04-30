@@ -258,8 +258,8 @@ class DetectionBaseMetric(BaseMetric):
         """
         scores = self.compute(real_data, synthetic_data, metadata=metadata, **kwargs)
         baseline_mean, baseline_se = self.baseline(real_data, metadata, m=self.m, **kwargs)
-        _, bin_test_p_val = self.binomial_test(sum(scores), len(scores), p=baseline_mean)
-        _, copying_p_val = self.binomial_test(sum(scores), len(scores), p=baseline_mean, alternative='less')
+        _, bin_test_p_val = self.binomial_test(sum(scores), len(scores), p=0.5, alternative='greater')
+        _, copying_p_val = self.binomial_test(sum(scores), len(scores), p=0.5, alternative='less')
         standard_error = np.std(scores) / np.sqrt(len(scores))
         return { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : np.round(bin_test_p_val, decimals=16),
                  "baseline_mean": baseline_mean, "baseline_se": baseline_se, "copying_p_val": np.round(copying_p_val, decimals=16)}
