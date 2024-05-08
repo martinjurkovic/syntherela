@@ -223,7 +223,7 @@ class DetectionBaseMetric(BaseMetric):
         return real_data.sample(frac=1, replace=True, random_state=random_state)
     
     # TODO: raise bootstrap repetitions (m) to 100 or 1000
-    def baseline(self, real_data, metadata, m=2, **kwargs):
+    def baseline(self, real_data, metadata, m=10, **kwargs):
         bootstrap_scores = []
         for i in range(m):
             sample1 = self.bootstrap_sample(real_data, random_state=i, metadata=metadata)
@@ -256,12 +256,12 @@ class DetectionBaseMetric(BaseMetric):
                 Metric output or outputs.
         """
         scores = self.compute(real_data, synthetic_data, metadata=metadata, **kwargs)
-        baseline_mean, baseline_se = self.baseline(real_data, metadata, m=self.m, **kwargs)
         _, bin_test_p_val = self.binomial_test(sum(scores), len(scores), p=0.5, alternative='greater')
         _, copying_p_val = self.binomial_test(sum(scores), len(scores), p=0.5, alternative='less')
         standard_error = np.std(scores) / np.sqrt(len(scores))
-        return { "accuracy": np.mean(scores), "SE": standard_error, "bin_test_p_val" : np.round(bin_test_p_val, decimals=16),
-                 "baseline_mean": baseline_mean, "baseline_se": baseline_se, "copying_p_val": np.round(copying_p_val, decimals=16)}
+        return { "accuracy": np.mean(scores), "SE": standard_error, 
+                "bin_test_p_val" : np.round(bin_test_p_val, decimals=16),
+                "copying_p_val": np.round(copying_p_val, decimals=16)}
     
 
     def feature_importance(self, combine_categorical=False):
