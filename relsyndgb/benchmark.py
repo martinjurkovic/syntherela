@@ -1,17 +1,15 @@
-from datetime import datetime
-import json
 import os
-from pathlib import Path
 import warnings
+from pathlib import Path
+from datetime import datetime
 
-from tqdm import tqdm
 
-from relsyndgb.utils import NpEncoder
-from relsyndgb.metadata import Metadata
+
 from relsyndgb.report import Report
+from relsyndgb.metadata import Metadata
+from relsyndgb.data import load_tables, remove_sdv_columns
 from relsyndgb.metrics.single_column.statistical import ChiSquareTest
 from relsyndgb.metrics.single_table.distance import MaximumMeanDiscrepancy
-from relsyndgb.data import load_tables, remove_sdv_columns
 from relsyndgb.visualisations.multi_table_visualisations import visualize_multi_table, visualize_parent_child_multi_table
 from relsyndgb.visualisations.single_column_visualisations import visualize_single_column_detection_metrics, visualize_single_column_distance_metrics
 from relsyndgb.visualisations.single_table_visualisations import visualize_single_table_detection_metrics_per_classifier, visualize_single_table_detection_metrics_per_table, visualize_single_table_distance_metrics
@@ -31,7 +29,6 @@ class Benchmark():
                     MaximumMeanDiscrepancy(),
                     ], 
                 multi_table_metrics = [],
-                utility_metrics = {},
                 methods=None,
                 datasets=None,
                 run_id=None,
@@ -77,7 +74,6 @@ class Benchmark():
         self.single_column_metrics = single_column_metrics
         self.single_table_metrics = single_table_metrics
         self.multi_table_metrics = multi_table_metrics
-        self.utility_metrics = utility_metrics
         self.benchmark_datetime = datetime.now()
 
         self.all_results = {}
@@ -125,7 +121,6 @@ class Benchmark():
                         single_column_metrics=self.single_column_metrics,
                         single_table_metrics=self.single_table_metrics,
                         multi_table_metrics=self.multi_table_metrics,
-                        utility_metrics=self.utility_metrics[dataset_name],
                     )
 
                     self.reports.setdefault(dataset_name, {})[method_name] = report
