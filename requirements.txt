@@ -1,3 +1,5 @@
 sdv==1.9.0
 sdmetrics==0.13.0
 POT==0.9.3
+seaborn==0.13.2
+xgboost==2.0.3
