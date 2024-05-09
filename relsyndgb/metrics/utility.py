@@ -1,10 +1,10 @@
 from typing import Tuple
 
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error, roc_auc_score
 from sdmetrics.base import BaseMetric
 
@@ -12,7 +12,6 @@ from relsyndgb.metadata import drop_ids
 from relsyndgb.utils import CustomHyperTransformer
 
 
-# TODO: move from base and add feature importance
 class MachineLearningEfficacyMetric(BaseMetric):
         
     def __init__(self, target: Tuple[str, str], classifier_cls, classifier_args = {}, random_state = None, feature_engineering_function = None, **kwargs):
@@ -24,6 +23,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         self.name = f"{type(self).__name__}-{classifier_cls.__name__}"
         self.feature_engineering_function = feature_engineering_function
 
+
     def prepare_data(self, X, ht = None, **kwargs):
         if ht is None:
             ht = CustomHyperTransformer()
@@ -33,36 +33,37 @@ class MachineLearningEfficacyMetric(BaseMetric):
         transformed_data.replace([np.inf, -np.inf], np.nan, inplace=True)
         return transformed_data, ht
 
-    def compute(self, X_train, y_train, X_test, y_test, random_state=None, **kwargs):
+
+    def compute(self, X_train, y_train, X_test, y_test, random_state=None, cv_args=None, **kwargs):
         np.random.seed(random_state)
         model = Pipeline([
                 ('imputer', SimpleImputer()),
                 ('scaler', StandardScaler()),
                 ('clf', self.classifier_cls(**self.classifier_args))
             ])
+        
+        if cv_args is not None:
+            cv = GridSearchCV(model, **cv_args).fit(X_train, y_train)
+            model.set_params(**cv.best_params_)
+
         model.fit(X_train, y_train)
 
-        # if classifier is a regressor, compute the mean squared error, else accuracy
+        # if classifier is a regressor, compute RMSE, else AUCROC
         if hasattr(model, 'predict_proba'):
             probs = model.predict_proba(X_test)
-            score = roc_auc_score(y_test, probs, multi_class='ovr', average='macro')
+            if probs.shape[1] > 2:
+                # calculate AUCROC
+                score = roc_auc_score(y_test, probs, multi_class='ovr', average='macro')
+            else:
+                score = roc_auc_score(y_test, probs[:, 1])
         else:
             # calculate RMSE
             y_pred = model.predict(X_test)
             score = np.sqrt(mean_squared_error(y_test, y_pred))
 
-        def plot(log=False):
-            # draw perfect line
-            plt.plot(y_test, y_test, label='perfect', color='r', linestyle='dashed', alpha=0.5)
-            plt.scatter(y_test, y_pred, label='predicted', alpha=0.2)
-            plt.xlabel('True')
-            plt.ylabel('Predicted')
-            if log:
-                plt.yscale('log')
-            plt.legend()
-            plt.show()
-        return score
+        return model, score
     
+
     def get_target_table(self, data, target, metadata):
         target_table, target_column = target
         X, y = data[target_table].drop(columns=target_column), data[target_table][target_column]
@@ -70,7 +71,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         return X, y
 
 
-    def run(self, real_data, synthetic_data, metadata, test_data, **kwargs):
+    def run(self, real_data, synthetic_data, metadata, test_data, cv_args=None, **kwargs):
         if self.feature_engineering_function:
             X_real, y_real = self.feature_engineering_function(real_data, metadata)
             X_synthetic, y_synthetic = self.feature_engineering_function(synthetic_data, metadata)
@@ -82,22 +83,20 @@ class MachineLearningEfficacyMetric(BaseMetric):
         X_real = X_real[X_test.columns]
         X_synthetic = X_synthetic[X_test.columns]
 
-        X_real, ht_real = self.prepare_data(X_real)
-        X_test_real, _ = self.prepare_data(X_test, ht=ht_real)
-        X_synthetic, ht_syn = self.prepare_data(X_synthetic)
-        X_test_synthetic, _ = self.prepare_data(X_test, ht=ht_syn)
+        X_real, ht = self.prepare_data(X_real)
+        X_synthetic, _ = self.prepare_data(X_synthetic, ht=ht)
+        X_test, _ = self.prepare_data(X_test, ht=ht)
 
         # save the data for feature importance methods
         self.X_real = X_real
         self.y_real = y_real
         self.X_synthetic = X_synthetic
         self.y_synthetic = y_synthetic
-        self.X_test_real = X_test_real
-        self.X_test_synthetic = X_test_synthetic
+        self.X_test = X_test
         self.y_test = y_test
 
-        scores_real = self.compute(X_real, y_real, X_test_real, y_test, random_state=self.random_state)
-        scores_synthetic = self.compute(X_synthetic, y_synthetic, X_test_synthetic, y_test, random_state=self.random_state + 1 if self.random_state else None)
+        self.model_real, scores_real = self.compute(X_real, y_real, X_test, y_test, cv_args=cv_args, random_state=self.random_state)
+        self.model_synthetic, scores_synthetic = self.compute(X_synthetic, y_synthetic, X_test, y_test, cv_args=cv_args, random_state=self.random_state + 1 if self.random_state else None)
         # compute the baseline score
         if metadata.get_table_meta(self.target[0])['columns'][self.target[1]]['sdtype'] == 'numerical':
             y_baseline = y_real.mean() * np.ones(len(y_test))
@@ -119,6 +118,21 @@ class MachineLearningEfficacyMetric(BaseMetric):
             "synthetic_score": scores_synthetic,
             "baseline_score": baseline_score,
             "difference": difference}
+    
 
-        
-        
+    def feature_importance(self):
+        if hasattr(self.model_real['clf'], 'feature_importances_'):
+            importance_real = self.model_real['clf'].feature_importances_
+            importance_syn  = self.model_synthetic['clf'].feature_importances_
+        elif hasattr(self.model_real['clf'], 'coef_'):
+            importance_real = self.model_real['clf'].coef_
+            importance_syn = self.model_synthetic['clf'].coef_
+        else:
+            raise NotImplementedError(f"Feature importance not supported for {type(self.model_real['clf'])}")
+        order_real = np.argsort(importance_real)
+        importance_real = importance_real[order_real]
+        importance_syn = importance_syn[order_real]
+        feature_names = self.X_real.columns[order_real]
+        return importance_real, importance_syn, feature_names
+    
+    
