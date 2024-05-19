@@ -34,7 +34,22 @@ class MachineLearningEfficacyMetric(BaseMetric):
         return transformed_data, ht
 
 
-    def compute(self, X_train, y_train, X_test, y_test, random_state=None, cv_args=None, **kwargs):
+    def score(self, model, X, y):
+        # if classifier is a regressor, compute RMSE, else AUCROC
+        if hasattr(model, 'predict_proba'):
+            probs = model.predict_proba(X)
+            if probs.shape[1] > 2:
+                # calculate AUCROC
+                return roc_auc_score(y, probs, multi_class='ovr', average='macro')
+            else:
+                return roc_auc_score(y, probs[:, 1])
+        else:
+            # calculate RMSE
+            y_pred = model.predict(X)
+            return np.sqrt(mean_squared_error(y, y_pred))
+        
+
+    def compute(self, X_train, y_train, X_test, y_test, random_state=None, m=100, cv_args=None, **kwargs):
         np.random.seed(random_state)
         model = Pipeline([
                 ('imputer', SimpleImputer()),
@@ -47,21 +62,16 @@ class MachineLearningEfficacyMetric(BaseMetric):
             model.set_params(**cv.best_params_)
 
         model.fit(X_train, y_train)
+        # bootstrap the test set
+        scores = []
+        for _ in range(m):
+            indices = np.random.choice(len(X_test), len(X_test), replace=True)
+            X_test_boot = X_test.iloc[indices]
+            y_test_boot = y_test.iloc[indices]
+            score = self.score(model, X_test_boot, y_test_boot)
+            scores.append(score)
 
-        # if classifier is a regressor, compute RMSE, else AUCROC
-        if hasattr(model, 'predict_proba'):
-            probs = model.predict_proba(X_test)
-            if probs.shape[1] > 2:
-                # calculate AUCROC
-                score = roc_auc_score(y_test, probs, multi_class='ovr', average='macro')
-            else:
-                score = roc_auc_score(y_test, probs[:, 1])
-        else:
-            # calculate RMSE
-            y_pred = model.predict(X_test)
-            score = np.sqrt(mean_squared_error(y_test, y_pred))
-
-        return model, score
+        return model, np.mean(scores), np.std(scores) / np.sqrt(m)
     
 
     def get_target_table(self, data, target, metadata):
@@ -71,7 +81,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         return X, y
 
 
-    def run(self, real_data, synthetic_data, metadata, test_data, cv_args=None, **kwargs):
+    def run(self, real_data, synthetic_data, metadata, test_data, cv_args=None, m=100, **kwargs):
         if self.feature_engineering_function:
             X_real, y_real = self.feature_engineering_function(real_data, metadata)
             X_synthetic, y_synthetic = self.feature_engineering_function(synthetic_data, metadata)
@@ -95,8 +105,8 @@ class MachineLearningEfficacyMetric(BaseMetric):
         self.X_test = X_test
         self.y_test = y_test
 
-        self.model_real, scores_real = self.compute(X_real, y_real, X_test, y_test, cv_args=cv_args, random_state=self.random_state)
-        self.model_synthetic, scores_synthetic = self.compute(X_synthetic, y_synthetic, X_test, y_test, cv_args=cv_args, random_state=self.random_state + 1 if self.random_state else None)
+        self.model_real, scores_real, se_real = self.compute(X_real, y_real, X_test, y_test, cv_args=cv_args, random_state=self.random_state, m=m)
+        self.model_synthetic, scores_synthetic, se_synthetic = self.compute(X_synthetic, y_synthetic, X_test, y_test, cv_args=cv_args, random_state=self.random_state + 1 if self.random_state else None, m=m)
         # compute the baseline score
         if metadata.get_table_meta(self.target[0])['columns'][self.target[1]]['sdtype'] == 'numerical':
             y_baseline = y_real.mean() * np.ones(len(y_test))
@@ -115,7 +125,9 @@ class MachineLearningEfficacyMetric(BaseMetric):
 
         return {
             "real_score": scores_real, 
+            "real_score_se": se_real,
             "synthetic_score": scores_synthetic,
+            "synthetic_score_se": se_synthetic,
             "baseline_score": baseline_score,
             "difference": difference}
     
