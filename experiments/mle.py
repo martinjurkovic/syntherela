@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from functools import partial
+import os
 
 import numpy as np
 import pandas as pd
@@ -18,20 +19,26 @@ from relsyndgb.metadata import Metadata
 from relsyndgb.data import load_tables, remove_sdv_columns
 from relsyndgb.metrics.utility import MachineLearningEfficacyMetric
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+PROJECT_PATH = os.getenv("PROJECT_PATH")
+
 CV_K = 2
 ## DATA LOADING
 def load_rossmann(method):
     dataset_name = 'rossmann_subsampled' 
     run = "1"
-    metadata = Metadata().load_from_json(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/downloads/{dataset_name}/metadata.json')
+    metadata = Metadata().load_from_json(f'{PROJECT_PATH}/data/downloads/{dataset_name}/metadata.json')
 
-    tables = load_tables(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/downloads/{dataset_name}/', metadata)
-    tables_synthetic = load_tables(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/synthetic/{dataset_name}/{method}/{run}/sample1', metadata)
+    tables = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name}/', metadata)
+    tables_synthetic = load_tables(f'{PROJECT_PATH}/data/synthetic/{dataset_name}/{method}/{run}/sample1', metadata)
 
     tables, metadata = remove_sdv_columns(tables, metadata)
     tables_synthetic, metadata = remove_sdv_columns(tables_synthetic, metadata, update_metadata=False)
 
-    tables_test = load_tables(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/downloads/{dataset_name.split("_")[0]}/', metadata)
+    tables_test = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name.split("_")[0]}/', metadata)
     tables_test, _ = remove_sdv_columns(tables_test, metadata, update_metadata=False)
     # split the test data
     min_date = datetime.strptime('2014-10-01', '%Y-%m-%d')
@@ -44,10 +51,10 @@ def load_rossmann(method):
 def load_airbnb(method):
     dataset_name = 'airbnb-simplified_subsampled'
     run = "1"
-    metadata = Metadata().load_from_json(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/downloads/{dataset_name}/metadata.json')
+    metadata = Metadata().load_from_json(f'{PROJECT_PATH}/data/downloads/{dataset_name}/metadata.json')
 
-    tables = load_tables(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/downloads/{dataset_name}/', metadata)
-    tables_synthetic = load_tables(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/synthetic/{dataset_name}/{method}/{run}/sample1', metadata)
+    tables = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name}/', metadata)
+    tables_synthetic = load_tables(f'{PROJECT_PATH}/data/synthetic/{dataset_name}/{method}/{run}/sample1', metadata)
 
     tables, metadata = remove_sdv_columns(tables, metadata)
     for table in tables:
@@ -55,7 +62,7 @@ def load_airbnb(method):
             tables_synthetic[table].drop(columns=['index'], inplace=True)
     tables_synthetic, metadata = remove_sdv_columns(tables_synthetic, metadata, update_metadata=False)
 
-    tables_test = load_tables(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/downloads/{dataset_name.split("_")[0]}/', metadata)
+    tables_test = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name.split("_")[0]}/', metadata)
     tables_test, _ = remove_sdv_columns(tables_test, metadata, update_metadata=False)
 
     # select users with at most 50 sessions
@@ -80,16 +87,16 @@ def load_airbnb(method):
 def load_walmart(method):
     dataset_name = 'walmart_subsampled_12'
     run = "1"
-    metadata = Metadata().load_from_json(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/downloads/{dataset_name}/metadata.json')
+    metadata = Metadata().load_from_json(f'{PROJECT_PATH}/data/downloads/{dataset_name}/metadata.json')
 
-    tables = load_tables(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/downloads/{dataset_name}/', metadata)
-    tables_synthetic = load_tables(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/synthetic/{dataset_name}/{method}/{run}/sample1', metadata)
+    tables = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name}/', metadata)
+    tables_synthetic = load_tables(f'{PROJECT_PATH}/data/synthetic/{dataset_name}/{method}/{run}/sample1', metadata)
 
     tables, metadata = remove_sdv_columns(tables, metadata)
     tables_synthetic, metadata = remove_sdv_columns(tables_synthetic, metadata, update_metadata=False)
 
     # split the test data
-    tables_test = load_tables(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/data/downloads/{dataset_name.split("_")[0]}/', metadata)
+    tables_test = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name.split("_")[0]}/', metadata)
     tables_test, _ = remove_sdv_columns(tables_test, metadata, update_metadata=False)
 
     min_date = datetime.strptime('2012-01-01', '%Y-%m-%d')
@@ -343,5 +350,5 @@ if __name__ == '__main__':
                 print(f"Feature importance rank: {features_spearman_rank.statistic}")
                 print()
                 
-        with open(f'/Users/martinjurkovic/Documents/github_projects/relsyndgb/experiments/evaluation/results/mle_r2_{seed}.json', 'w') as f:
+        with open(f'{PROJECT_PATH}/experiments/evaluation/results/mle_r2_{seed}.json', 'w') as f:
             json.dump(results, f, indent=4)
