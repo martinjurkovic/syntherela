@@ -1,7 +1,8 @@
 # Directories
 data
 checkpoints
-experiments
+experiments/*
+!experiments/mle.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

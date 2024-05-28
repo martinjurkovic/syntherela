@@ -94,16 +94,10 @@ class Benchmark():
         real_data = load_tables(real_data_path, metadata)
         synthetic_data = load_tables(synthetic_data_path, metadata)
 
-        test_data = None
-        if os.path.exists(test_data_path):
-            test_data = load_tables(test_data_path, metadata)
-
         real_data, metadata = remove_sdv_columns(real_data, metadata)
         synthetic_data, metadata = remove_sdv_columns(synthetic_data, metadata, update_metadata=False)
-        if test_data is not None:
-            test_data, metadata = remove_sdv_columns(test_data, metadata, update_metadata=False)
 
-        return real_data, synthetic_data, test_data, metadata
+        return real_data, synthetic_data, metadata
 
     def run(self):
         for dataset_name in self.datasets:
@@ -159,20 +153,36 @@ class Benchmark():
         datasets = kwargs.get('datasets', self.datasets)
         methods = kwargs.get('methods', self.methods[datasets[0]])
         if distance:
-            visualize_single_table_distance_metrics(self.all_results, datasets, methods, **kwargs)
+            visualize_single_table_distance_metrics(granularity_level="single_table", 
+                                                    metric_type="distance", 
+                                                    all_results=self.all_results, 
+                                                    datasets=datasets, 
+                                                    methods=methods, **kwargs)
 
         if detection:
-            visualize_single_table_detection_metrics_per_classifier(self.all_results, datasets, methods, **kwargs)
-            visualize_single_table_detection_metrics_per_table(self.all_results, datasets, methods, **kwargs)
+            # visualize_single_table_detection_metrics_per_classifier(self.all_results, datasets, methods, **kwargs)
+            visualize_single_table_detection_metrics_per_table(granularity_level="single_table", 
+                                                    metric_type="detection", 
+                                                    all_results=self.all_results, 
+                                                    datasets=datasets, 
+                                                    methods=methods, **kwargs)
 
     def visualize_single_column_metrics(self, distance=True, detection=True, **kwargs):
         datasets = kwargs.get('datasets', self.datasets)
         methods = kwargs.get('methods', self.methods[datasets[0]])
         if distance:
-            visualize_single_column_distance_metrics(self.all_results, datasets, methods, **kwargs)
+            visualize_single_column_distance_metrics(granularity_level="single_column", 
+                                                    metric_type="distance", 
+                                                    all_results=self.all_results, 
+                                                    datasets=datasets, 
+                                                    methods=methods, **kwargs)
 
         if detection:
-            visualize_single_column_detection_metrics(self.all_results, datasets, methods, **kwargs)
+            visualize_single_column_detection_metrics(granularity_level="single_column", 
+                                                    metric_type="detection", 
+                                                    all_results=self.all_results, 
+                                                    datasets=datasets, 
+                                                    methods=methods, **kwargs)
 
     def visualize_multi_table_metrics(self, parent_child = True, **kwargs):
         datasets = kwargs.get('datasets', self.datasets)
