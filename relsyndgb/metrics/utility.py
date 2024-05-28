@@ -47,8 +47,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         else:
             # calculate RMSE
             y_pred = model.predict(X)
-            # return r2_score(y, y_pred)
-            return np.sqrt(mean_squared_error(y, y_pred))
+            return r2_score(y, y_pred)
         
 
     def compute(self, X_train, y_train, X_test, y_test, m=100, cv_args=None, **kwargs):
@@ -115,19 +114,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         self.model_real, scores_array_real, scores_real, se_real = self.compute(X_real, y_real, X_test, y_test, cv_args=cv_args, m=m)
         self.model_synthetic, scores_array_synthetic, scores_synthetic, se_synthetic = self.compute(X_synthetic, y_synthetic, X_test, y_test, cv_args=cv_args, random_state=self.random_state + 1 if self.random_state else None, m=m)
         # compute the baseline score
-        if metadata.get_table_meta(self.target[0])['columns'][self.target[1]]['sdtype'] == 'numerical':
-            y_baseline = y_real.mean() * np.ones(len(y_test))
-            baseline_score = np.sqrt(mean_squared_error(y_test, y_baseline))
-            # positive difference means the synthetic data is better (lower RMSE)
-            difference = scores_real - scores_synthetic
-        else:
-            # Accuracy baseline
-            # y_baseline = np.ones(len(y_test)) * mode(y_real).mode
-            # baseline_score = np.mean(y_test == y_baseline)
-            # ROCAUC baseline
-            baseline_score = 0.5
-            # positive difference means the synthetic data is better (higher accuracy)
-            difference = scores_synthetic - scores_real
+        difference = scores_synthetic - scores_real
         
 
         return {
@@ -137,7 +124,6 @@ class MachineLearningEfficacyMetric(BaseMetric):
             "synthetic_score": scores_synthetic,
             "synthetic_score_array": scores_array_synthetic,
             "synthetic_score_se": se_synthetic,
-            "baseline_score": baseline_score,
             "difference": difference}
     
 

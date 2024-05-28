@@ -25,7 +25,6 @@ load_dotenv()
 
 PROJECT_PATH = os.getenv("PROJECT_PATH")
 
-CV_K = 2
 ## DATA LOADING
 def load_rossmann(method):
     dataset_name = 'rossmann_subsampled' 
@@ -213,18 +212,18 @@ def load_dataset(dataset_name, method):
 
 
 methods = [
-    # 'SDV', 
-    # 'RCTGAN',
-    # 'REALTABFORMER',
-    # 'MOSTLYAI',
-    # 'GRETEL_ACTGAN',
+    'SDV', 
+    'RCTGAN',
+    'REALTABFORMER',
+    'MOSTLYAI',
+    'GRETEL_ACTGAN',
     'GRETEL_LSTM'
 ]
     
 datasets = [
-    # 'rossmann',
+    'rossmann',
     'airbnb',
-    # 'walmart',
+    'walmart',
 ]
 
 classifiers = {
@@ -269,7 +268,7 @@ feature_selection_models = {
 
 if __name__ == '__main__':
     results = {}
-    m = 10
+    m = 100
     for seed in [0]:
         for dataset_name in datasets:
             results[dataset_name] = {}
@@ -278,7 +277,6 @@ if __name__ == '__main__':
                 results[dataset_name][method] = {}
                 tables, tables_synthetic, tables_test, metadata, feature_engineering_function, target = load_dataset(dataset_name, method)
                 task = target[2]
-                beat_baseline = []
                 for classifier, classifier_cls in classifiers[task].items():
                     classifier_args_ = cls_args[classifier]
                     if 'random_state' in classifier_args_:
@@ -298,16 +296,11 @@ if __name__ == '__main__':
                         real_rank = np.argsort(importance_real)[::-1]
                         synthetic_rank = np.argsort(importance_syn)[::-1]
                         features_spearman_rank = spearmanr(real_rank, synthetic_rank)
-                    
-                    if task == 'regression' and result['baseline_score'] > result['synthetic_score']:
-                        beat_baseline.append(classifier)
-                    elif task == 'classification' and result['baseline_score'] < result['synthetic_score']:
-                        beat_baseline.append(classifier)
                 
                 
                 # rank the classifiers
-                real_classifier_rank = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['real_score'], reverse = task == 'classification')).keys())
-                synthetic_classifier_rank = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['synthetic_score'], reverse= task == 'classification')).keys())
+                real_classifier_rank = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['real_score'], reverse=True)).keys())
+                synthetic_classifier_rank = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['synthetic_score'], reverse=True)).keys())
                 # print(f"Real data classifier rank: {real_classifier_rank}")
                 # print(f"Synthetic data classifier rank: {synthetic_classifier_rank}")
 
@@ -316,8 +309,8 @@ if __name__ == '__main__':
                 classifier_rank_array_weighted = []
                     
                 for bootstrap_index in range(m):
-                    real_classifier_rank_boot = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['real_score_array'][bootstrap_index], reverse = task == 'classification')).keys())
-                    synthetic_classifier_rank_boot = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['synthetic_score_array'][bootstrap_index], reverse = task == 'classification')).keys())
+                    real_classifier_rank_boot = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['real_score_array'][bootstrap_index], reverse = True)).keys())
+                    synthetic_classifier_rank_boot = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['synthetic_score_array'][bootstrap_index], reverse = True)).keys())
 
                     classifier_rank_array_spearman.append(spearmanr(real_classifier_rank_boot, synthetic_classifier_rank_boot).statistic)
                     classifier_rank_array_kendall.append(kendalltau(real_classifier_rank_boot, synthetic_classifier_rank_boot).statistic)
@@ -327,12 +320,11 @@ if __name__ == '__main__':
                     #     real_rank = len(real_classifier_rank) - real_classifier_rank.index(classifier) - 1
                     #     weights.append(real_rank)
                     indexed_real_rank_boot = np.array([real_classifier_rank.index(classifier) for classifier in real_classifier_rank_boot])
-                    indexed_synthetic_rank_boot = np.array([synthetic_classifier_rank.index(classifier) for classifier in synthetic_classifier_rank_boot])
+                    indexed_synthetic_rank_boot = np.array([real_classifier_rank.index(classifier) for classifier in synthetic_classifier_rank_boot])
                     classifier_rank_array_weighted.append(weightedtau(indexed_real_rank_boot, indexed_synthetic_rank_boot).statistic)
 
                 spearman_rank = spearmanr(list(real_classifier_rank), list(synthetic_classifier_rank))
                 results[dataset_name][method]['classifier_rank'] = spearman_rank.statistic
-                results[dataset_name][method]['beat_baseline'] = len(beat_baseline) / len(classifiers[task])
                 results[dataset_name][method]['feature_importance_rank'] = features_spearman_rank.statistic
                 results[dataset_name][method]['spearman_mean'] = np.mean(classifier_rank_array_spearman)
                 results[dataset_name][method]['spearman_SE'] = np.std(classifier_rank_array_spearman) / np.sqrt(m)
@@ -346,7 +338,6 @@ if __name__ == '__main__':
                 print(f"Boot kendall: {np.mean(classifier_rank_array_kendall)}+-{np.std(classifier_rank_array_kendall) / np.sqrt(m)}")
                 print(f"Boot weighted: {np.mean(classifier_rank_array_weighted)}+-{np.std(classifier_rank_array_weighted) / np.sqrt(m)}")
                 print(f"Spearman rank: {spearman_rank.statistic}")
-                print(f"Beat baseline: {len(beat_baseline) / len(classifiers[task])}")
                 print(f"Feature importance rank: {features_spearman_rank.statistic}")
                 print()
                 
