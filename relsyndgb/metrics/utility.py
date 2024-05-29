@@ -22,7 +22,6 @@ class MachineLearningEfficacyMetric(BaseMetric):
         self.random_state = random_state
         self.name = f"{type(self).__name__}-{classifier_cls.__name__}"
         self.feature_engineering_function = feature_engineering_function
-        self.bootstrap_models = []
 
 
     def prepare_data(self, X, ht = None, **kwargs):
@@ -47,37 +46,30 @@ class MachineLearningEfficacyMetric(BaseMetric):
         else:
             # calculate RMSE
             y_pred = model.predict(X)
-            return r2_score(y, y_pred)
+            return - np.sqrt(mean_squared_error(y, y_pred))
         
 
-    def compute(self, X_train, y_train, X_test, y_test, m=100, cv_args=None, **kwargs):
-        np.random.seed(self.random_state)
-        model = Pipeline([
-                ('imputer', SimpleImputer()),
-                ('scaler', StandardScaler()),
-                ('clf', self.classifier_cls(**self.classifier_args))
-            ])
-        
-        if cv_args is not None:
-            cv = GridSearchCV(model, **cv_args).fit(X_train, y_train)
-            model.set_params(**cv.best_params_)
-
-        model.fit(X_train, y_train)
-        # bootstrap the test set
+    def compute(self, X_train, y_train, X_test, y_test, m=100, **kwargs):
         scores = []
+        models = []
+        for bootstrap_idx in range(m):
+            np.random.seed(self.random_state + bootstrap_idx)
+            indices = np.random.choice(len(X_train), len(X_train), replace= m > 1)
+            model = Pipeline([
+                    ('imputer', SimpleImputer()),
+                    ('scaler', StandardScaler()),
+                    ('clf', self.classifier_cls(**self.classifier_args))
+                ])
+            
+            X_train_boot = X_train.iloc[indices]
+            y_train_boot = y_train.iloc[indices]
 
-        replace = True
-        if m == 1:
-            replace = False
-        for bootstrap_ix in range(m):
-            np.random.seed(self.random_state + bootstrap_ix)
-            indices = np.random.choice(len(X_test), len(X_test), replace=replace)
-            X_test_boot = X_test.iloc[indices]
-            y_test_boot = y_test.iloc[indices]
-            score = self.score(model, X_test_boot, y_test_boot)
+            model.fit(X_train_boot, y_train_boot)
+            score = self.score(model, X_test, y_test)
             scores.append(score)
+            models.append(model)
 
-        return model, scores, np.mean(scores), np.std(scores) / np.sqrt(m)
+        return models, scores, np.mean(scores), np.std(scores) / np.sqrt(m)
     
 
     def get_target_table(self, data, target, metadata):
@@ -87,7 +79,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         return X, y
 
 
-    def run(self, real_data, synthetic_data, metadata, test_data, cv_args=None, m=100, **kwargs):
+    def run(self, real_data, synthetic_data, metadata, test_data, m=100, feature_importance = True, **kwargs):
         if self.feature_engineering_function:
             X_real, y_real = self.feature_engineering_function(real_data, metadata)
             X_synthetic, y_synthetic = self.feature_engineering_function(synthetic_data, metadata)
@@ -111,31 +103,40 @@ class MachineLearningEfficacyMetric(BaseMetric):
         self.X_test = X_test
         self.y_test = y_test
 
-        self.model_real, scores_array_real, scores_real, se_real = self.compute(X_real, y_real, X_test, y_test, cv_args=cv_args, m=m)
-        self.model_synthetic, scores_array_synthetic, scores_synthetic, se_synthetic = self.compute(X_synthetic, y_synthetic, X_test, y_test, cv_args=cv_args, random_state=self.random_state + 1 if self.random_state else None, m=m)
+        models_real, scores_array_real, score_real, se_real = self.compute(X_real, y_real, X_test, y_test, m=m)
+        models_synthetic, scores_array_synthetic, score_synthetic, se_synthetic = self.compute(X_synthetic, y_synthetic, X_test, y_test, m=m)
         # compute the baseline score
-        difference = scores_synthetic - scores_real
+        difference = score_synthetic - score_real
+        importances_real, importances_syn = [], []
+        if feature_importance:
+            for model_real, model_synthetic in zip(models_real, models_synthetic):
+                importance_real, importance_syn, feature_names = self.feature_importance(model_real, model_synthetic)
+                importances_real.append(importance_real)
+                importances_syn.append(importance_syn)
         
 
         return {
             "real_score_array": scores_array_real,
-            "real_score": scores_real, 
+            "real_score": score_real, 
             "real_score_se": se_real,
-            "synthetic_score": scores_synthetic,
+            "synthetic_score": score_synthetic,
             "synthetic_score_array": scores_array_synthetic,
             "synthetic_score_se": se_synthetic,
-            "difference": difference}
+            "difference": difference,
+            "importance_real": importances_real,
+            "importance_synthetic": importances_syn
+        }
     
 
-    def feature_importance(self):
-        if hasattr(self.model_real['clf'], 'feature_importances_'):
-            importance_real = self.model_real['clf'].feature_importances_
-            importance_syn  = self.model_synthetic['clf'].feature_importances_
-        elif hasattr(self.model_real['clf'], 'coef_'):
-            importance_real = self.model_real['clf'].coef_
-            importance_syn = self.model_synthetic['clf'].coef_
+    def feature_importance(self, model_real, model_synthetic):
+        if hasattr(model_real['clf'], 'feature_importances_'):
+            importance_real = model_real['clf'].feature_importances_
+            importance_syn  = model_synthetic['clf'].feature_importances_
+        elif hasattr(model_real['clf'], 'coef_'):
+            importance_real = model_real['clf'].coef_
+            importance_syn = model_synthetic['clf'].coef_
         else:
-            raise NotImplementedError(f"Feature importance not supported for {type(self.model_real['clf'])}")
+            raise NotImplementedError(f"Feature importance not supported for {type(model_real['clf'])}")
         order_real = np.argsort(importance_real)
         importance_real = importance_real[order_real]
         importance_syn = importance_syn[order_real]

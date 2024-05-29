@@ -1,4 +1,5 @@
 import json
+import argparse
 from datetime import datetime
 from functools import partial
 import os
@@ -10,7 +11,7 @@ from sklearn.svm import SVC, SVR
 import xgboost as xgb
 from scipy.stats import spearmanr, kendalltau, weightedtau
 from sklearn.neural_network import MLPClassifier, MLPRegressor
-from sklearn.linear_model import LinearRegression, LogisticRegression, ElasticNet
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -19,11 +20,6 @@ from relsyndgb.metadata import Metadata
 from relsyndgb.data import load_tables, remove_sdv_columns
 from relsyndgb.metrics.utility import MachineLearningEfficacyMetric
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
-PROJECT_PATH = os.getenv("PROJECT_PATH")
 
 ## DATA LOADING
 def load_rossmann(method):
@@ -121,6 +117,8 @@ def process_rossmann(tables, metadata):
 
     # drop the StateHoliday column as it is constant causing problems with standardization
     df.drop(columns=['StateHoliday'], inplace=True)
+    # drop the dates due to subsampling
+    df.drop(columns=['Date'], inplace=True)
 
     df[numerical_columns] = df[numerical_columns].fillna(0)
     y = df.pop('Customers')
@@ -232,19 +230,19 @@ classifiers = {
         'linear': LinearRegression,
         'random_forest': RandomForestRegressor,
         'decision_tree': DecisionTreeRegressor,
-        # 'knn': KNeighborsRegressor,
-        # 'svr': SVR,
-        # 'mlp': MLPRegressor,
+        'knn': KNeighborsRegressor,
+        'svr': SVR,
+        'mlp': MLPRegressor,
     },
     'classification': {
         'xgboost': xgb.XGBClassifier,
         'linear': LogisticRegression,
         'random_forest': RandomForestClassifier,
         'decision_tree': DecisionTreeClassifier,
-        # 'knn': KNeighborsClassifier,
-        # 'svc': SVC,
-        # 'gaussian_nb': GaussianNB,
-        # 'mlp': MLPClassifier,
+        'knn': KNeighborsClassifier,
+        'svc': SVC,
+        'gaussian_nb': GaussianNB,
+        'mlp': MLPClassifier,
     }
 }
 
@@ -267,79 +265,96 @@ feature_selection_models = {
 }
 
 if __name__ == '__main__':
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    PROJECT_PATH = os.getenv("PROJECT_PATH")
+    RESULTS_PATH = os.getenv("RESULTS_PATH")
+    
+    args = argparse.ArgumentParser()
+    args.add_argument("--dataset-name", type=str, default="rossmann", choices=datasets, help="Dataset name to run the experiment on.")
+    args.add_argument("--seed", type=int, default=0, help="Seed for reproducibility.")
+    args.add_argument("--m", type=int, default=100, help="Number of bootstrap samples.")
+    args = args.parse_args()
+
+    dataset_name = args.dataset_name
+    seed = args.seed
+    m = args.m
+
     results = {}
-    m = 100
-    for seed in [0, 1, 2, 3, 4]:
-        for dataset_name in datasets:
-            results[dataset_name] = {}
-            for method in methods:
-                print(f"Method: {method}, Dataset: {dataset_name}")
-                results[dataset_name][method] = {}
-                tables, tables_synthetic, tables_test, metadata, feature_engineering_function, target = load_dataset(dataset_name, method)
-                task = target[2]
-                for classifier, classifier_cls in classifiers[task].items():
-                    classifier_args_ = cls_args[classifier]
-                    if 'random_state' in classifier_args_:
-                        classifier_args_['random_state'] = seed
-                    if 'seed' in classifier_args_:
-                        classifier_args_['seed'] = seed
+    results[dataset_name] = {}
+    for method in methods:
+        print(f"Method: {method}, Dataset: {dataset_name}")
+        results[dataset_name][method] = {}
+        tables, tables_synthetic, tables_test, metadata, feature_engineering_function, target = load_dataset(dataset_name, method)
+        task = target[2]
+        for classifier, classifier_cls in classifiers[task].items():
+            classifier_args_ = cls_args[classifier]
+            if 'random_state' in classifier_args_:
+                classifier_args_['random_state'] = seed
+            if 'seed' in classifier_args_:
+                classifier_args_['seed'] = seed
 
-                    ml_metric = MachineLearningEfficacyMetric(target=target, feature_engineering_function=feature_engineering_function,
-                                                            classifier_cls=classifier_cls, random_state=seed, classifier_args=classifier_args_)
-                    
+            ml_metric = MachineLearningEfficacyMetric(target=target, feature_engineering_function=feature_engineering_function,
+                                                    classifier_cls=classifier_cls, random_state=seed, classifier_args=classifier_args_)
+            
 
-                    result = ml_metric.run(tables, tables_synthetic, metadata, tables_test, m=m)
-                    print(f"Classifier: {classifier}, {result}")
-                    results[dataset_name][method][classifier] = result
-                    if classifier in feature_selection_models[task]:
-                        importance_real, importance_syn, feature_names = ml_metric.feature_importance()
-                        real_rank = np.argsort(importance_real)[::-1]
-                        synthetic_rank = np.argsort(importance_syn)[::-1]
-                        features_spearman_rank = spearmanr(real_rank, synthetic_rank)
-                
-                
-                # rank the classifiers
-                real_classifier_rank = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['real_score'], reverse=True)).keys())
-                synthetic_classifier_rank = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['synthetic_score'], reverse=True)).keys())
-                # print(f"Real data classifier rank: {real_classifier_rank}")
-                # print(f"Synthetic data classifier rank: {synthetic_classifier_rank}")
+            result = ml_metric.run(tables, tables_synthetic, metadata, tables_test, m=m, feature_importance=classifier in feature_selection_models[task])
+            print(f"Classifier: {classifier} real_score: {result['real_score'] :.3f} +- {result['real_score_se']:.3f}, synthetic_score: {result['synthetic_score']:.3f} +- {result['synthetic_score_se']:.3f}")
+            importances_real = result.pop('importance_real', None)
+            importances_syn = result.pop('importance_synthetic', None)
+            results[dataset_name][method][classifier] = result
+            if classifier in feature_selection_models[task]:
+                feature_importances_rank = []
+                for i in range(m):
+                    importance_real = importances_real[i]
+                    importance_syn = importances_syn[i]
+                    real_rank = np.argsort(importance_real)[::-1]
+                    synthetic_rank = np.argsort(importance_syn)[::-1]
+                    features_spearman_rank = spearmanr(real_rank, synthetic_rank).statistic
+                    feature_importances_rank.append(features_spearman_rank)
+        
+        
+        # rank the classifiers
+        real_classifier_rank = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['real_score'], reverse=True)).keys())
+        synthetic_classifier_rank = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['synthetic_score'], reverse=True)).keys())
+        print(f"Real data classifier rank: {real_classifier_rank}")
+        print(f"Synthetic data classifier rank: {synthetic_classifier_rank}")
 
-                classifier_rank_array_spearman = []
-                classifier_rank_array_kendall = []
-                classifier_rank_array_weighted = []
-                    
-                for bootstrap_index in range(m):
-                    real_classifier_rank_boot = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['real_score_array'][bootstrap_index], reverse = True)).keys())
-                    synthetic_classifier_rank_boot = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['synthetic_score_array'][bootstrap_index], reverse = True)).keys())
+        classifier_rank_array_spearman = []
+        classifier_rank_array_kendall = []
+        classifier_rank_array_weighted = []
+            
+        for bootstrap_index in range(m):
+            real_classifier_rank_boot = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['real_score_array'][bootstrap_index], reverse = True)).keys())
+            synthetic_classifier_rank_boot = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['synthetic_score_array'][bootstrap_index], reverse = True)).keys())
 
-                    classifier_rank_array_spearman.append(spearmanr(real_classifier_rank_boot, synthetic_classifier_rank_boot).statistic)
-                    classifier_rank_array_kendall.append(kendalltau(real_classifier_rank_boot, synthetic_classifier_rank_boot).statistic)
-                    # weights = []
-                    # for i, classifier in enumerate(real_classifier_rank_boot):
-                    #     # get position of classifier in real_classifier_rank
-                    #     real_rank = len(real_classifier_rank) - real_classifier_rank.index(classifier) - 1
-                    #     weights.append(real_rank)
-                    indexed_real_rank_boot = np.array([real_classifier_rank.index(classifier) for classifier in real_classifier_rank_boot])
-                    indexed_synthetic_rank_boot = np.array([real_classifier_rank.index(classifier) for classifier in synthetic_classifier_rank_boot])
-                    classifier_rank_array_weighted.append(weightedtau(indexed_real_rank_boot, indexed_synthetic_rank_boot).statistic)
+            classifier_rank_array_spearman.append(spearmanr(real_classifier_rank_boot, synthetic_classifier_rank_boot).statistic)
+            classifier_rank_array_kendall.append(kendalltau(real_classifier_rank_boot, synthetic_classifier_rank_boot).statistic)
 
-                spearman_rank = spearmanr(list(real_classifier_rank), list(synthetic_classifier_rank))
-                results[dataset_name][method]['classifier_rank'] = spearman_rank.statistic
-                results[dataset_name][method]['feature_importance_rank'] = features_spearman_rank.statistic
-                results[dataset_name][method]['spearman_mean'] = np.mean(classifier_rank_array_spearman)
-                results[dataset_name][method]['spearman_SE'] = np.std(classifier_rank_array_spearman) / np.sqrt(m)
-                results[dataset_name][method]['kendall_mean'] = np.mean(classifier_rank_array_kendall)
-                results[dataset_name][method]['kendall_SE'] = np.std(classifier_rank_array_kendall) / np.sqrt(m)
-                results[dataset_name][method]['weighted_mean'] = np.mean(classifier_rank_array_weighted)
-                results[dataset_name][method]['weighted_SE'] = np.std(classifier_rank_array_weighted) / np.sqrt(m)
+            indexed_real_rank_boot = np.array([real_classifier_rank.index(classifier) for classifier in real_classifier_rank_boot])
+            indexed_synthetic_rank_boot = np.array([real_classifier_rank.index(classifier) for classifier in synthetic_classifier_rank_boot])
+            classifier_rank_array_weighted.append(weightedtau(indexed_real_rank_boot, indexed_synthetic_rank_boot, rank=False).statistic)
 
-                print()
-                print(f"Boot spearman: {np.mean(classifier_rank_array_spearman)}+-{np.std(classifier_rank_array_spearman) / np.sqrt(m)}")
-                print(f"Boot kendall: {np.mean(classifier_rank_array_kendall)}+-{np.std(classifier_rank_array_kendall) / np.sqrt(m)}")
-                print(f"Boot weighted: {np.mean(classifier_rank_array_weighted)}+-{np.std(classifier_rank_array_weighted) / np.sqrt(m)}")
-                print(f"Spearman rank: {spearman_rank.statistic}")
-                print(f"Feature importance rank: {features_spearman_rank.statistic}")
-                print()
-                
-        with open(f'{PROJECT_PATH}/experiments/evaluation/results/mle_r2_{seed}.json', 'w') as f:
-            json.dump(results, f, indent=4)
+        spearman_rank = spearmanr(list(real_classifier_rank), list(synthetic_classifier_rank))
+        results[dataset_name][method]['classifier_rank'] = spearman_rank.statistic
+        results[dataset_name][method]['feature_importance_rank_mean'] = np.mean(feature_importances_rank)
+        results[dataset_name][method]['feature_importance_rank_se'] = np.std(feature_importances_rank) / np.sqrt(m)
+        results[dataset_name][method]['spearman_mean'] = np.mean(classifier_rank_array_spearman)
+        results[dataset_name][method]['spearman_se'] = np.std(classifier_rank_array_spearman) / np.sqrt(m)
+        results[dataset_name][method]['kendall_mean'] = np.mean(classifier_rank_array_kendall)
+        results[dataset_name][method]['kendall_se'] = np.std(classifier_rank_array_kendall) / np.sqrt(m)
+        results[dataset_name][method]['weighted_mean'] = np.mean(classifier_rank_array_weighted)
+        results[dataset_name][method]['weighted_se'] = np.std(classifier_rank_array_weighted) / np.sqrt(m)
+
+        print()
+        print(f"Boot spearman: {np.mean(classifier_rank_array_spearman):.3f}+-{np.std(classifier_rank_array_spearman) / np.sqrt(m):.4f}")
+        print(f"Boot kendall: {np.mean(classifier_rank_array_kendall):.3f}+-{np.std(classifier_rank_array_kendall) / np.sqrt(m):.4f}")
+        print(f"Boot weighted: {np.mean(classifier_rank_array_weighted):.3f}+-{np.std(classifier_rank_array_weighted) / np.sqrt(m):.4f}")
+        print(f"Spearman rank: {spearman_rank.statistic}")
+        print(f"Feature importance rank: {np.mean(feature_importances_rank) :.3f}+-{np.std(feature_importances_rank) / np.sqrt(m):.4f}")
+        print()
+            
+    with open(f'{RESULTS_PATH}/mle_{dataset_name}_{seed}.json', 'w') as f:
+        json.dump(results, f, indent=4)
