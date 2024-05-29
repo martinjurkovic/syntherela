@@ -232,19 +232,19 @@ classifiers = {
         'linear': LinearRegression,
         'random_forest': RandomForestRegressor,
         'decision_tree': DecisionTreeRegressor,
-        'knn': KNeighborsRegressor,
-        'svr': SVR,
-        'mlp': MLPRegressor,
+        # 'knn': KNeighborsRegressor,
+        # 'svr': SVR,
+        # 'mlp': MLPRegressor,
     },
     'classification': {
         'xgboost': xgb.XGBClassifier,
         'linear': LogisticRegression,
         'random_forest': RandomForestClassifier,
         'decision_tree': DecisionTreeClassifier,
-        'knn': KNeighborsClassifier,
-        'svc': SVC,
-        'gaussian_nb': GaussianNB,
-        'mlp': MLPClassifier,
+        # 'knn': KNeighborsClassifier,
+        # 'svc': SVC,
+        # 'gaussian_nb': GaussianNB,
+        # 'mlp': MLPClassifier,
     }
 }
 
@@ -269,7 +269,7 @@ feature_selection_models = {
 if __name__ == '__main__':
     results = {}
     m = 100
-    for seed in [0]:
+    for seed in [0, 1, 2, 3, 4]:
         for dataset_name in datasets:
             results[dataset_name] = {}
             for method in methods:
