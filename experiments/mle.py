@@ -306,9 +306,20 @@ if __name__ == '__main__':
                 feature_importances_spearman = []
                 feature_importances_tau = []
                 feature_importances_weighted = []
-                average_importances_real = np.mean(importances_real, axis=0)
-                real_rank = np.argsort(average_importances_real)
                 feature_names = np.array(result['feature_names'])
+
+                true_feature_importance_real = np.array(result['true_feature_importance_real'])
+                true_feature_importance_synthetic = np.array(result['true_feature_importance_synthetic'])
+                real_rank = np.argsort(true_feature_importance_real)
+                synthetic_rank = np.argsort(true_feature_importance_synthetic)
+                true_features_spearman_rank = spearmanr(feature_names[real_rank], feature_names[synthetic_rank]).statistic
+                real_feature_order = feature_names[real_rank]
+                synthetic_feature_order = feature_names[synthetic_rank]
+                true_features_tau_rank = kendalltau(feature_names[real_rank], feature_names[synthetic_rank]).statistic
+                indexed_real_rank = np.arange(len(real_rank))
+                indexed_synthetic_rank = np.array([real_rank.tolist().index(feature) for feature in synthetic_rank])
+                true_features_weighted_rank = weightedtau(indexed_real_rank, indexed_synthetic_rank, rank=None).statistic
+                
                 for i in range(m):
                     # importance_real = importances_real[i]
                     importance_syn = importances_syn[i]
@@ -332,6 +343,14 @@ if __name__ == '__main__':
         print(f"Real data classifier rank: {real_classifier_rank}")
         print(f"Synthetic data classifier rank: {synthetic_classifier_rank}")
 
+        true_classifier_rank_spearman = spearmanr(real_classifier_rank, synthetic_classifier_rank).statistic
+        true_classifier_rank_kendall = kendalltau(real_classifier_rank, synthetic_classifier_rank).statistic
+
+        indexed_real_rank = np.array([len(real_classifier_rank) - real_classifier_rank.index(classifier) for classifier in real_classifier_rank])
+        indexed_synthetic_rank = np.array([len(real_classifier_rank) - real_classifier_rank.index(classifier) for classifier in synthetic_classifier_rank])
+        true_classifier_rank_weighted = weightedtau(indexed_real_rank, indexed_synthetic_rank, rank=None).statistic
+
+
         classifier_rank_array_spearman = []
         classifier_rank_array_kendall = []
         classifier_rank_array_weighted = []
@@ -348,27 +367,30 @@ if __name__ == '__main__':
 
         spearman_rank = spearmanr(list(real_classifier_rank), list(synthetic_classifier_rank))
         results[dataset_name][method]['classifier_rank'] = spearman_rank.statistic
-        results[dataset_name][method]['feature_importance_spearman_mean'] = np.mean(feature_importances_spearman)
+        results[dataset_name][method]['feature_importance_spearman_mean'] = true_features_spearman_rank
         results[dataset_name][method]['feature_importance_spearman_se'] = np.std(feature_importances_spearman) / np.sqrt(m)
-        results[dataset_name][method]['feature_importance_tau_mean'] = np.mean(feature_importances_tau)
+        results[dataset_name][method]['feature_importance_tau_mean'] = true_features_tau_rank
         results[dataset_name][method]['feature_importance_tau_se'] = np.std(feature_importances_tau) / np.sqrt(m)
-        results[dataset_name][method]['feature_importance_weighted_mean'] = np.mean(feature_importances_weighted)
+        results[dataset_name][method]['feature_importance_weighted_mean'] = true_features_weighted_rank
         results[dataset_name][method]['feature_importance_weighted_se'] = np.std(feature_importances_weighted) / np.sqrt(m)
-        results[dataset_name][method]['spearman_mean'] = np.mean(classifier_rank_array_spearman)
+        results[dataset_name][method]['spearman_mean'] = true_classifier_rank_spearman
         results[dataset_name][method]['spearman_se'] = np.std(classifier_rank_array_spearman) / np.sqrt(m)
-        results[dataset_name][method]['kendall_mean'] = np.mean(classifier_rank_array_kendall)
+        results[dataset_name][method]['kendall_mean'] = true_classifier_rank_kendall
         results[dataset_name][method]['kendall_se'] = np.std(classifier_rank_array_kendall) / np.sqrt(m)
-        results[dataset_name][method]['weighted_mean'] = np.mean(classifier_rank_array_weighted)
+        results[dataset_name][method]['weighted_mean'] = true_classifier_rank_weighted
         results[dataset_name][method]['weighted_se'] = np.std(classifier_rank_array_weighted) / np.sqrt(m)
+        results[dataset_name][method]['real_feature_order'] = real_feature_order
+        results[dataset_name][method]['synthetic_feature_order'] = synthetic_feature_order
+
 
         print()
-        print(f"Boot spearman: {np.mean(classifier_rank_array_spearman):.3f}+-{np.std(classifier_rank_array_spearman) / np.sqrt(m):.4f}")
-        print(f"Boot kendall: {np.mean(classifier_rank_array_kendall):.3f}+-{np.std(classifier_rank_array_kendall) / np.sqrt(m):.4f}")
-        print(f"Boot weighted: {np.mean(classifier_rank_array_weighted):.3f}+-{np.std(classifier_rank_array_weighted) / np.sqrt(m):.4f}")
+        print(f"Boot spearman: {true_classifier_rank_spearman:.3f}+-{np.std(classifier_rank_array_spearman) / np.sqrt(m):.4f}")
+        print(f"Boot kendall: {true_classifier_rank_kendall:.3f}+-{np.std(classifier_rank_array_kendall) / np.sqrt(m):.4f}")
+        print(f"Boot weighted: {true_classifier_rank_weighted:.3f}+-{np.std(classifier_rank_array_weighted) / np.sqrt(m):.4f}")
         print(f"Spearman rank: {spearman_rank.statistic}")
-        print(f"Feature importance spearman: {np.mean(feature_importances_spearman) :.3f}+-{np.std(feature_importances_spearman) / np.sqrt(m):.4f}")
-        print(f"Feature importance tau: {np.mean(feature_importances_tau) :.3f}+-{np.std(feature_importances_tau) / np.sqrt(m):.4f}")
-        print(f"Feature importance weighted: {np.mean(feature_importances_weighted) :.3f}+-{np.std(feature_importances_weighted) / np.sqrt(m):.4f}")
+        print(f"Feature importance spearman: {true_features_spearman_rank :.3f}+-{np.std(feature_importances_spearman) / np.sqrt(m):.4f}")
+        print(f"Feature importance tau: {true_features_tau_rank :.3f}+-{np.std(feature_importances_tau) / np.sqrt(m):.4f}")
+        print(f"Feature importance weighted: {true_features_weighted_rank :.3f}+-{np.std(feature_importances_weighted) / np.sqrt(m):.4f}")
         print()
             
     with open(f'{RESULTS_PATH}/mle_{dataset_name}_{seed}.json', 'w') as f:

@@ -79,7 +79,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
             scores.append(score)
             models.append(model)
 
-        return models, scores, score_full_train_set, np.std(scores) / np.sqrt(m)
+        return model_full_train_set, models, scores, score_full_train_set, np.std(scores) / np.sqrt(m)
     
 
     def get_target_table(self, data, target, metadata):
@@ -113,13 +113,16 @@ class MachineLearningEfficacyMetric(BaseMetric):
         self.X_test = X_test
         self.y_test = y_test
 
-        models_real, scores_array_real, score_real, se_real = self.compute(X_real, y_real, X_test, y_test, m=m)
-        models_synthetic, scores_array_synthetic, score_synthetic, se_synthetic = self.compute(X_synthetic, y_synthetic, X_test, y_test, m=m)
+        model_real, models_real, scores_array_real, score_real, se_real = self.compute(X_real, y_real, X_test, y_test, m=m)
+        model_synthetic, models_synthetic, scores_array_synthetic, score_synthetic, se_synthetic = self.compute(X_synthetic, y_synthetic, X_test, y_test, m=m)
         # compute the baseline score
         difference = score_synthetic - score_real
         importances_real, importances_syn = [], []
         feature_names = []
+        true_feature_importance_real = []
+        true_feature_importance_syn = []
         if feature_importance:
+            true_feature_importance_real, true_feature_importance_syn, feature_names = self.feature_importance(model_real, model_synthetic)
             for model_real, model_synthetic in zip(models_real, models_synthetic):
                 importance_real, importance_syn, feature_names = self.feature_importance(model_real, model_synthetic)
                 importances_real.append(importance_real)
@@ -136,7 +139,9 @@ class MachineLearningEfficacyMetric(BaseMetric):
             "difference": difference,
             "importance_real": importances_real,
             "importance_synthetic": importances_syn,
-            "feature_names": feature_names
+            "feature_names": feature_names,
+            "true_feature_importance_real": true_feature_importance_real,
+            "true_feature_importance_syn": true_feature_importance_syn
         }
     
 
