@@ -141,7 +141,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
             "importance_synthetic": importances_syn,
             "feature_names": feature_names,
             "true_feature_importance_real": true_feature_importance_real,
-            "true_feature_importance_syn": true_feature_importance_syn
+            "true_feature_importance_synthetic": true_feature_importance_syn
         }
     
 
