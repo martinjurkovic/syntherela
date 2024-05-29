@@ -19,6 +19,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from relsyndgb.metadata import Metadata
 from relsyndgb.data import load_tables, remove_sdv_columns
 from relsyndgb.metrics.utility import MachineLearningEfficacyMetric
+from relsyndgb.utils import NpEncoder
 
 
 ## DATA LOADING
@@ -270,9 +271,9 @@ if __name__ == '__main__':
     RESULTS_PATH = os.getenv("RESULTS_PATH")
     
     args = argparse.ArgumentParser()
-    args.add_argument("--dataset-name", type=str, default="rossmann", choices=datasets, help="Dataset name to run the experiment on.")
+    args.add_argument("--dataset-name", type=str, default="walmart", choices=datasets, help="Dataset name to run the experiment on.")
     args.add_argument("--seed", type=int, default=0, help="Seed for reproducibility.")
-    args.add_argument("--m", type=int, default=10, help="Number of bootstrap samples.")
+    args.add_argument("--m", type=int, default=2, help="Number of bootstrap samples.")
     args = args.parse_args()
 
     dataset_name = args.dataset_name
@@ -394,4 +395,4 @@ if __name__ == '__main__':
         print()
             
     with open(f'{RESULTS_PATH}/mle_{dataset_name}_{seed}.json', 'w') as f:
-        json.dump(results, f, indent=4)
+        json.dump(results, f, indent=4, cls=NpEncoder)
