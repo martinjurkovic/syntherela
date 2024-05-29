@@ -50,6 +50,16 @@ class MachineLearningEfficacyMetric(BaseMetric):
         
 
     def compute(self, X_train, y_train, X_test, y_test, m=100, **kwargs):
+        np.random.seed(self.random_state)
+        model_full_train_set = Pipeline([
+                    ('imputer', SimpleImputer()),
+                    ('scaler', StandardScaler()),
+                    ('clf', self.classifier_cls(**self.classifier_args))
+                ])
+        model_full_train_set.fit(X_train, y_train)
+        score_full_train_set = self.score(model_full_train_set, X_test, y_test)
+        
+        # Bootstrap to estimate the standard error
         scores = []
         models = []
         for bootstrap_idx in range(m):
@@ -69,7 +79,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
             scores.append(score)
             models.append(model)
 
-        return models, scores, np.mean(scores), np.std(scores) / np.sqrt(m)
+        return models, scores, score_full_train_set, np.std(scores) / np.sqrt(m)
     
 
     def get_target_table(self, data, target, metadata):
