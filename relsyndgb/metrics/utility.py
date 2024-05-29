@@ -64,7 +64,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         models = []
         for bootstrap_idx in range(m):
             np.random.seed(self.random_state + bootstrap_idx)
-            indices = np.random.choice(len(X_train), len(X_train), replace= m > 1)
+            indices = np.random.choice(len(X_train), len(X_train), replace=m > 1)
             model = Pipeline([
                     ('imputer', SimpleImputer()),
                     ('scaler', StandardScaler()),
