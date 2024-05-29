@@ -272,7 +272,7 @@ if __name__ == '__main__':
     args = argparse.ArgumentParser()
     args.add_argument("--dataset-name", type=str, default="rossmann", choices=datasets, help="Dataset name to run the experiment on.")
     args.add_argument("--seed", type=int, default=0, help="Seed for reproducibility.")
-    args.add_argument("--m", type=int, default=100, help="Number of bootstrap samples.")
+    args.add_argument("--m", type=int, default=10, help="Number of bootstrap samples.")
     args = args.parse_args()
 
     dataset_name = args.dataset_name
@@ -306,14 +306,21 @@ if __name__ == '__main__':
                 feature_importances_spearman = []
                 feature_importances_tau = []
                 feature_importances_weighted = []
+                average_importances_real = np.mean(importances_real, axis=0)
+                real_rank = np.argsort(average_importances_real)
+                feature_names = np.array(result['feature_names'])
                 for i in range(m):
-                    importance_real = importances_real[i]
+                    # importance_real = importances_real[i]
                     importance_syn = importances_syn[i]
-                    real_rank = np.argsort(importance_real)
+                    # real_rank = np.argsort(importance_real)
                     synthetic_rank = np.argsort(importance_syn)
-                    features_spearman_rank = spearmanr(real_rank, synthetic_rank).statistic
-                    features_tau_rank = kendalltau(real_rank, synthetic_rank).statistic
-                    features_weighted_rank = weightedtau(real_rank, synthetic_rank, rank=None).statistic
+                    features_spearman_rank = spearmanr(feature_names[real_rank], feature_names[synthetic_rank]).statistic
+                    features_tau_rank = kendalltau(feature_names[real_rank], feature_names[synthetic_rank]).statistic
+                    
+                    indexed_real_rank = np.arange(len(real_rank))
+                    indexed_synthetic_rank_boot = np.array([real_rank.tolist().index(feature) for feature in synthetic_rank])
+                    
+                    features_weighted_rank = weightedtau(indexed_real_rank, indexed_synthetic_rank_boot, rank=None).statistic
                     feature_importances_spearman.append(features_spearman_rank)
                     feature_importances_tau.append(features_tau_rank)   
                     feature_importances_weighted.append(features_weighted_rank)
@@ -330,14 +337,13 @@ if __name__ == '__main__':
         classifier_rank_array_weighted = []
             
         for bootstrap_index in range(m):
-            real_classifier_rank_boot = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['real_score_array'][bootstrap_index], reverse = True)).keys())
             synthetic_classifier_rank_boot = list(dict(sorted(results[dataset_name][method].items(), key=lambda x: x[1]['synthetic_score_array'][bootstrap_index], reverse = True)).keys())
 
-            classifier_rank_array_spearman.append(spearmanr(real_classifier_rank_boot, synthetic_classifier_rank_boot).statistic)
-            classifier_rank_array_kendall.append(kendalltau(real_classifier_rank_boot, synthetic_classifier_rank_boot).statistic)
+            classifier_rank_array_spearman.append(spearmanr(real_classifier_rank, synthetic_classifier_rank_boot).statistic)
+            classifier_rank_array_kendall.append(kendalltau(real_classifier_rank, synthetic_classifier_rank_boot).statistic)
 
-            indexed_real_rank_boot = np.array([len(real_classifier_rank) - real_classifier_rank_boot.index(classifier) for classifier in real_classifier_rank_boot])
-            indexed_synthetic_rank_boot = np.array([len(real_classifier_rank) - real_classifier_rank_boot.index(classifier) for classifier in synthetic_classifier_rank_boot])
+            indexed_real_rank_boot = np.array([len(real_classifier_rank) - real_classifier_rank.index(classifier) for classifier in real_classifier_rank])
+            indexed_synthetic_rank_boot = np.array([len(real_classifier_rank) - real_classifier_rank.index(classifier) for classifier in synthetic_classifier_rank_boot])
             classifier_rank_array_weighted.append(weightedtau(indexed_real_rank_boot, indexed_synthetic_rank_boot, rank=None).statistic)
 
         spearman_rank = spearmanr(list(real_classifier_rank), list(synthetic_classifier_rank))

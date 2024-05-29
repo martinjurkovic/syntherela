@@ -108,6 +108,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         # compute the baseline score
         difference = score_synthetic - score_real
         importances_real, importances_syn = [], []
+        feature_names = []
         if feature_importance:
             for model_real, model_synthetic in zip(models_real, models_synthetic):
                 importance_real, importance_syn, feature_names = self.feature_importance(model_real, model_synthetic)
@@ -124,7 +125,8 @@ class MachineLearningEfficacyMetric(BaseMetric):
             "synthetic_score_se": se_synthetic,
             "difference": difference,
             "importance_real": importances_real,
-            "importance_synthetic": importances_syn
+            "importance_synthetic": importances_syn,
+            "feature_names": feature_names
         }
     
 
@@ -137,10 +139,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
             importance_syn = model_synthetic['clf'].coef_
         else:
             raise NotImplementedError(f"Feature importance not supported for {type(model_real['clf'])}")
-        order_real = np.argsort(importance_real)
-        importance_real = importance_real[order_real]
-        importance_syn = importance_syn[order_real]
-        feature_names = self.X_real.columns[order_real]
-        return importance_real, importance_syn, feature_names
+    
+        return importance_real, importance_syn, self.X_real.columns.tolist()
     
     
