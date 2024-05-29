@@ -72,10 +72,6 @@ def load_airbnb(method):
     tables_test['users'] = tables_test['users'][tables_test['users']['id'].isin(selected_users)]
     tables_test['sessions'] = tables_test['sessions'][tables_test['sessions']['user_id'].isin(selected_users)]
 
-    # tables['users']['country_destination'] =  tables['users']['country_destination'] != 'NDF'
-    # tables_synthetic['users']['country_destination'] =  tables_synthetic['users']['country_destination'] != 'NDF'
-    # tables_test['users']['country_destination'] =  tables_test['users']['country_destination'] != 'NDF'
-
     return tables, tables_synthetic, tables_test, metadata
 
 
@@ -131,7 +127,7 @@ def process_rossmann(tables, metadata):
 
 
 def process_airbnb(tables, metadata, categories):
-    # df = tables['users'].merge(tables['sessions'], left_on='id', right_on='user_id', how='left')
+    # TODO: make use of other tables
     df = tables['users'].copy()
     df.drop(columns=['country_destination', 'date_first_booking'], inplace=True)  
 
@@ -149,8 +145,7 @@ def process_airbnb(tables, metadata, categories):
                     df[column] = pd.Categorical(df[column], categories=categories[column])
 
     df[numerical_columns] = df[numerical_columns].fillna(0)
-    # df = pd.get_dummies(df, columns=categorical_columns).groupby('id').mean()
-    # df.reset_index(inplace=True)
+    
     y = tables['users'][tables['users']['id'].isin(df['id'])]['country_destination']
     X = df.drop(columns=['id'])
     
