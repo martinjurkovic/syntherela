@@ -163,16 +163,18 @@ def process_airbnb(tables, metadata, categories):
 def process_walmart(tables, metadata):
     df = tables['depts'].merge(tables['stores'], on='Store').merge(tables['features'], on=['Store', 'Date'], suffixes=('', '_y'))
     df.drop(df.filter(regex='_y$').columns, axis=1, inplace=True)
-
+    df.drop(columns=['Dept'], inplace=True)
+    categorical_columns = []
     for table in metadata.get_tables():
         table_metadata = metadata.get_table_meta(table)
         for column, column_info in table_metadata['columns'].items():
-            if column_info['sdtype'] == 'id':
-                if column in df.columns:
-                    df.drop(columns=[column], inplace=True)
+            if column_info['sdtype'] == 'categorical' and column in df.columns:
+                categorical_columns.append(column)
 
-    # drop the date column
-    df.drop(columns=['Date'], inplace=True)
+    # one-hot encode the categorical columns
+    df = pd.get_dummies(df, columns=categorical_columns)
+    # obtain average daily sales across all departments
+    df = df.groupby(['Store', 'Date']).mean().reset_index(drop=True)
     
     y = df.pop('Weekly_Sales')
 
