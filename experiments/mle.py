@@ -128,27 +128,52 @@ def process_rossmann(tables, metadata):
 
 
 def process_airbnb(tables, metadata, categories):
-    # TODO: make use of other tables
     df = tables['users'].copy()
-    df.drop(columns=['country_destination', 'date_first_booking'], inplace=True)  
+    df.drop(columns=['date_first_booking'], inplace=True)  
 
-    numerical_columns = [] 
-    categorical_columns = []
+    numerical_columns = {
+        'users': [],
+        'sessions': []
+    } 
+    categorical_columns = {
+        'users': [],
+        'sessions': []
+    }
     for table in metadata.get_tables():
         table_metadata = metadata.get_table_meta(table)
         for column, column_info in table_metadata['columns'].items():
             if column_info['sdtype'] == 'numerical':
-                if column in df.columns:
-                    numerical_columns.append(column)
+                numerical_columns[table].append(column)
             elif column_info['sdtype'] == 'categorical':
+                categorical_columns[table].append(column)
                 if column in df.columns:
-                    categorical_columns.append(column)
                     df[column] = pd.Categorical(df[column], categories=categories[column])
-
-    df[numerical_columns] = df[numerical_columns].fillna(0)
+                else:
+                    tables[table][column] = pd.Categorical(tables[table][column], categories=categories[column])
     
-    y = tables['users'][tables['users']['id'].isin(df['id'])]['country_destination']
-    X = df.drop(columns=['id'])
+    # impute missing values 
+    df[numerical_columns['users']] = df[numerical_columns['users']].fillna(0)
+    tables['sessions'][numerical_columns['sessions']] = tables['sessions'][numerical_columns['sessions']].fillna(0)
+
+    # aggregate the sessions data
+    session_categories = ['action_type', 'device_type']
+    session_numerical = ['secs_elapsed']
+    session_columns = session_categories + session_numerical + ['user_id']
+    # one hot encode the categorical columns
+    encoded_sessions_data = pd.get_dummies(tables['sessions'][session_columns], columns=session_categories)
+    
+    # aggregate the sessions data by user_id to obtain distributions over actions and devices and average session duration
+    sessions_data = encoded_sessions_data.groupby('user_id').mean()
+    sessions_count = tables['sessions']['user_id'].value_counts().rename('sessions_count')
+    # join the sessions data and count of sessions
+    sessions_data = sessions_data.join(sessions_count, on='user_id')
+
+    # merge the sessions data with the users data and fill missing values with 0
+    df = df.merge(sessions_data, left_on='id', right_index=True, how='left')
+    df[sessions_data.columns] = df[sessions_data.columns].fillna(0)
+    
+    y = df.pop('country_destination')
+    X = df.copy()
     
     # convert y to binary variable determining if the user booked a trip or not
     y = y != 'NDF'
