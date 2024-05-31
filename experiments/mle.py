@@ -296,18 +296,23 @@ if __name__ == '__main__':
     RESULTS_PATH = os.getenv("RESULTS_PATH")
     
     args = argparse.ArgumentParser()
-    args.add_argument("--dataset-name", type=str, default="walmart", choices=datasets, help="Dataset name to run the experiment on.")
+    args.add_argument("--dataset-name", type=str, default="rossmann", choices=datasets, help="Dataset name to run the experiment on.")
+    args.add_argument("--methods", '-m', default=None, help="List of methods to evaluate.", action='append')
     args.add_argument("--seed", type=int, default=0, help="Seed for reproducibility.")
-    args.add_argument("--m", type=int, default=2, help="Number of bootstrap samples.")
+    args.add_argument("--bootstrap_repetitions", type=int, default=100, help="Number of bootstrap samples.")
     args = args.parse_args()
 
     dataset_name = args.dataset_name
+    if args.methods is None:
+        methods_to_run = methods
+    else:
+        methods_to_run = args.methods
     seed = args.seed
-    m = args.m
+    m = args.bootstrap_repetitions
 
     results = {}
     results[dataset_name] = {}
-    for method in methods:
+    for method in methods_to_run:
         print(f"Method: {method}, Dataset: {dataset_name}")
         results[dataset_name][method] = {}
         tables, tables_synthetic, tables_test, metadata, feature_engineering_function, target = load_dataset(dataset_name, method)
@@ -418,6 +423,10 @@ if __name__ == '__main__':
         print(f"Feature importance tau: {true_features_tau_rank :.3f}+-{np.std(feature_importances_tau) / np.sqrt(m):.4f}")
         print(f"Feature importance weighted: {true_features_weighted_rank :.3f}+-{np.std(feature_importances_weighted) / np.sqrt(m):.4f}")
         print()
+
+        if len(methods_to_run) < len(methods):
+            with open(f'{RESULTS_PATH}/mle_{dataset_name}_{seed}.json', 'w') as f:
+                json.dump(results, f, indent=4, cls=NpEncoder)
             
     with open(f'{RESULTS_PATH}/mle_{dataset_name}_{seed}.json', 'w') as f:
         json.dump(results, f, indent=4, cls=NpEncoder)
