@@ -109,11 +109,26 @@ def process_rossmann(tables, metadata):
             if column_info['sdtype'] == 'numerical':
                 numerical_columns.append(column)
             elif column_info['sdtype'] == 'id':
-                if column in df.columns:
+                if column in df.columns and column != 'Store':
                     df.drop(columns=[column], inplace=True)
 
     # drop the StateHoliday column as it is constant causing problems with standardization
-    df.drop(columns=['StateHoliday'], inplace=True)
+    # drop the DayOfWeek as we will be aggregating the data by month
+    df.drop(columns=['StateHoliday', 'DayOfWeek'], inplace=True)
+
+    # set the categories for categorical variables
+    df['Open'] = pd.Categorical(df['Open'], categories=['0', '1'])
+    df['Promo'] = pd.Categorical(df['Promo'], categories=['0', '1'])
+    df['SchoolHoliday'] = pd.Categorical(df['SchoolHoliday'], categories=['0', '1'])
+    df['StoreType'] = pd.Categorical(df['StoreType'], categories=['a', 'b', 'c', 'd'])
+    df['Assortment'] = pd.Categorical(df['Assortment'], categories=['a', 'b', 'c'])
+    df['PromoInterval'] = pd.Categorical(df['PromoInterval'].astype('object').fillna('missing'), categories=['missing', 'Jan,Apr,Jul,Oct', 'Mar,Jun,Sept,Dec', 'Feb,May,Aug,Nov'])
+    # one-hot encode the categorical columns
+    df = pd.get_dummies(df, columns=['Open', 'Promo', 'SchoolHoliday', 'StoreType', 'Assortment', 'PromoInterval'], drop_first=True)
+    # aggregate the data by store and month
+    df['Month'] = df['Date'].dt.month
+    df['Year'] = df['Date'].dt.year
+    df = df.groupby(['Store', 'Month', 'Year']).mean().reset_index(drop=True)
     # drop the dates due to subsampling
     df.drop(columns=['Date'], inplace=True)
 
@@ -154,16 +169,10 @@ def process_airbnb(tables, metadata, categories):
     # impute missing values 
     df[numerical_columns['users']] = df[numerical_columns['users']].fillna(0)
     tables['sessions'][numerical_columns['sessions']] = tables['sessions'][numerical_columns['sessions']].fillna(0)
-
-    # aggregate the sessions data
-    session_categories = ['action_type', 'device_type']
-    session_numerical = ['secs_elapsed']
-    session_columns = session_categories + session_numerical + ['user_id']
-    # one hot encode the categorical columns
-    encoded_sessions_data = pd.get_dummies(tables['sessions'][session_columns], columns=session_categories)
     
-    # aggregate the sessions data by user_id to obtain distributions over actions and devices and average session duration
-    sessions_data = encoded_sessions_data.groupby('user_id').mean()
+    # aggregate the sessions data by user_id to obtain average session duration
+    sessions_data = tables['sessions'][['secs_elapsed', 'user_id']].groupby('user_id').mean()
+    # add the sessions count
     sessions_count = tables['sessions']['user_id'].value_counts().rename('sessions_count')
     # join the sessions data and count of sessions
     sessions_data = sessions_data.join(sessions_count, on='user_id')
@@ -171,6 +180,7 @@ def process_airbnb(tables, metadata, categories):
     # merge the sessions data with the users data and fill missing values with 0
     df = df.merge(sessions_data, left_on='id', right_index=True, how='left')
     df[sessions_data.columns] = df[sessions_data.columns].fillna(0)
+    df.drop(columns=['id'], inplace=True)
     
     y = df.pop('country_destination')
     X = df.copy()
