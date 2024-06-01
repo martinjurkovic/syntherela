@@ -116,7 +116,7 @@ def process_rossmann(tables, metadata):
     # drop the DayOfWeek as we will be aggregating the data by month
     df.drop(columns=['StateHoliday', 'DayOfWeek'], inplace=True)
 
-    # set the categories for categorical variables
+    # set the categories for categorical variables (in case methods do not generate certain values)
     df['Open'] = pd.Categorical(df['Open'], categories=['0', '1'])
     df['Promo'] = pd.Categorical(df['Promo'], categories=['0', '1'])
     df['SchoolHoliday'] = pd.Categorical(df['SchoolHoliday'], categories=['0', '1'])
@@ -195,16 +195,12 @@ def process_walmart(tables, metadata):
     df = tables['depts'].merge(tables['stores'], on='Store').merge(tables['features'], on=['Store', 'Date'], suffixes=('', '_y'))
     df.drop(df.filter(regex='_y$').columns, axis=1, inplace=True)
     df.drop(columns=['Dept'], inplace=True)
-    categorical_columns = []
-    for table in metadata.get_tables():
-        table_metadata = metadata.get_table_meta(table)
-        for column, column_info in table_metadata['columns'].items():
-            if column_info['sdtype'] == 'categorical' and column in df.columns:
-                categorical_columns.append(column)
+    
 
     # one-hot encode the categorical columns
-    df = pd.get_dummies(df, columns=categorical_columns)
-    # obtain average daily sales across all departments
+    df['Type'] = pd.Categorical(df['Type'], categories=['A', 'B', 'C'])
+    df = pd.get_dummies(df, columns=['Type'])
+    # obtain average daily sales across all departments (as in the original competition)
     df = df.groupby(['Store', 'Date']).mean().reset_index(drop=True)
     
     y = df.pop('Weekly_Sales')
@@ -224,6 +220,7 @@ def load_dataset(dataset_name, method):
         target=('historical', 'Customers', 'regression')
     elif dataset_name == 'airbnb':
         tables, tables_synthetic, tables_test, metadata = load_airbnb(method)
+        # Store the categories from the real data to avoid mistakes in case methods do not generate certain values
         categories = {}
         for _, table in tables_test.items():
             for column in table.columns:
