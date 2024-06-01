@@ -146,29 +146,15 @@ def process_airbnb(tables, metadata, categories):
     df = tables['users'].copy()
     df.drop(columns=['date_first_booking'], inplace=True)  
 
-    numerical_columns = {
-        'users': [],
-        'sessions': []
-    } 
-    categorical_columns = {
-        'users': [],
-        'sessions': []
-    }
     for table in metadata.get_tables():
         table_metadata = metadata.get_table_meta(table)
         for column, column_info in table_metadata['columns'].items():
-            if column_info['sdtype'] == 'numerical':
-                numerical_columns[table].append(column)
-            elif column_info['sdtype'] == 'categorical':
-                categorical_columns[table].append(column)
+            if column_info['sdtype'] == 'categorical':
                 if column in df.columns:
                     df[column] = pd.Categorical(df[column], categories=categories[column])
-                else:
-                    tables[table][column] = pd.Categorical(tables[table][column], categories=categories[column])
     
     # impute missing values 
-    df[numerical_columns['users']] = df[numerical_columns['users']].fillna(0)
-    tables['sessions'][numerical_columns['sessions']] = tables['sessions'][numerical_columns['sessions']].fillna(0)
+    df[['age']] = df[['age']].fillna(0)
     
     # aggregate the sessions data by user_id to obtain average session duration
     sessions_data = tables['sessions'][['secs_elapsed', 'user_id']].groupby('user_id').mean()
