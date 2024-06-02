@@ -1,42 +1,25 @@
 import os
 from pathlib import Path
+import math
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib import rc
 import numpy as np
-import seaborn as sns
-sns.set_theme(font_scale=1.5)
 
-from relsyndgb.visualisations.utils import get_x_tick_width_coef
+rc('font', **{'family': 'serif', 'serif': ['Times']})
+rc('text', usetex=True)
 
-def visualize_single_table_distance_metrics(all_results, datasets, methods, **kwargs):
+from relsyndgb.visualisations.utils import get_x_tick_width_coef, prettify_dataset_name, prettify_method_name, get_color, get_dataset_info
+
+def visualize_single_table_distance_metrics(granularity_level, metric_type, all_results, datasets, methods, title=True, log_scale = False, fontsize = 35, **kwargs):
     for dataset in datasets:
-        base_metrics = list(all_results[dataset][methods[0]]['single_table_metrics'].keys())
-        # remove all metrics that are detection
-        base_metrics = [metric for metric in base_metrics if "detection" not in metric.lower()]
-        base_metric_names = base_metrics
-
-        save_figs = kwargs.get("save_figs", False)
-        save_figs_path = kwargs.get("save_figs_path", "./figs")
-        save_figs_path = Path(save_figs_path) / "single_table" / "distance"
-
-        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
-        if method_order is not None:
-            methods = [method for method in method_order if method in methods]
-            methods += sorted([method for method in methods if method not in method_order])
-
+        base_metrics, base_metric_names, save_figs, save_figs_path, methods = get_dataset_info(granularity_level, metric_type, all_results, dataset, methods, **kwargs)
+       
         for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
-            metrics = [
-                base_metric
-                ]
-
-            metric_names = [
-                base_metric_name
-                ]
-            if len(methods) == 0 or len(metrics) == 0:
+            if len(methods) == 0:
                 continue
-            dataset_table_results = {}
 
-            tables = all_results[dataset][methods[0]]['single_table_metrics'][base_metric].keys()
+            tables = all_results[dataset][list(all_results[dataset].keys())[0]]['single_table_metrics'][base_metric].keys()
                 
             N = len(methods) # number of methods
             M = len(tables) # number of tables
@@ -47,32 +30,39 @@ def visualize_single_table_distance_metrics(all_results, datasets, methods, **kw
             fig, ax = plt.subplots(figsize=(10,7))
             # set dpi
             fig.dpi = 300
-            # make font size bigger
-            # plt.rcParams.update({'font.size': 20})
 
-            colors = plt.cm.viridis(np.linspace(0.5, 1, N)) # create a color map
+            if log_scale:
+                ax.set_yscale('log')
+
+            colors = [get_color(method) for method in methods]
+            if None in colors:
+                colors = plt.cm.viridis(np.linspace(0.5, 1, N))
+
+            max_value = 0
 
             for j, method in enumerate(methods):
                 method_means = [all_results[dataset][method]['single_table_metrics'][base_metric][table]["value"] for table in tables]
                 method_ses = [all_results[dataset][method]['single_table_metrics'][base_metric][table]["bootstrap_se"] for table in tables]
-                ax.bar(ind + width*j, method_means, width, yerr=method_ses, color=colors[j])
+                ax.bar(ind + width*j, method_means, width, yerr=method_ses, color=colors[j], alpha=0.8, edgecolor='white')
+
+                max_value = max(max_value, max(method_means))
             
             x_tick_width_coef = get_x_tick_width_coef(N)
             ax.set_xticks(ind + x_tick_width_coef*width)
             rotation = 20 if len(tables) > 6 else 0
-            ax.set_xticklabels(tables, fontsize = 10, rotation=rotation)
+            ax.set_xticklabels(tables, rotation=rotation, fontsize = fontsize)
             # y_min = 0
 
-            # max_value = max([all_results[dataset][method]['single_table_metrics'][base_metric][table][column]["value"] for column in tables])
-            # y_max = max_value * 1.2
-            ax.set_ylim(0)
+            if not log_scale:
+                ax.set_ylim(bottom=0, top = max_value * 1.25)
+            else:
+                ax.set_ylim(top = math.pow(max_value, 3))
             # ax.set_yticks(np.arange(y_min, 1.01, 0.1))
-            ax.set_ylabel("Metric Value")
-
-            # Create a legend
+            ax.set_ylabel("Metric Value", fontsize = fontsize)
+            ax.tick_params(axis='y', labelsize=20)
             
             custom_lines = [Line2D([0], [0], color=colors[i], lw=4) for i in range(N)]
-            ax.legend(custom_lines, methods, loc='upper center', ncol=N, fontsize=11)
+            ax.legend(custom_lines, [prettify_method_name(method) for method in methods], loc='upper center', ncol = 3, fontsize=18)
 
             for j, table in enumerate(tables):
                 ci95 = all_results[dataset][method]['single_table_metrics'][base_metric][table]["reference_ci"]
@@ -90,39 +80,22 @@ def visualize_single_table_distance_metrics(all_results, datasets, methods, **kw
 
 
             # set title
-            plt.title(f"{base_metric_name} for dataset {dataset}")
+            if title:
+                plt.title(f"{base_metric_name} for dataset {prettify_dataset_name(dataset)}")
+            else:
+                print(f"{base_metric_name} for dataset {prettify_dataset_name(dataset)}")
 
             if save_figs:
                 os.makedirs(save_figs_path, exist_ok=True)
                 plt.savefig(f"{save_figs_path}/{dataset}_{base_metric}.png", dpi=300)
 
-def visualize_single_table_detection_metrics_per_classifier(all_results, datasets, methods, **kwargs):
+def visualize_single_table_detection_metrics_per_classifier(granularity_level, metric_type, all_results, datasets, methods, **kwargs):
     for dataset in datasets:
-        base_metrics = list(all_results[dataset][methods[0]]['single_table_metrics'].keys())
-        # remove all metrics that are detection
-        base_metrics = [metric for metric in base_metrics if "detection" in metric.lower()]
-        base_metric_names = base_metrics
-
-        save_figs = kwargs.get("save_figs", False)
-        save_figs_path = kwargs.get("save_figs_path", "./figs")
-        save_figs_path = Path(save_figs_path) / "single_table" / "detection" 
-
-        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
-        if method_order is not None:
-            methods = [method for method in method_order if method in methods]
-            methods += sorted([method for method in methods if method not in method_order])
+        base_metrics, base_metric_names, save_figs, save_figs_path, methods = get_dataset_info(granularity_level, metric_type, all_results, dataset, methods, **kwargs)
 
         for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
-            metrics = [
-                base_metric
-                ]
-
-            metric_names = [
-                base_metric_name
-                ]
-            if len(methods) == 0 or len(metrics) == 0:
+            if len(methods) == 0:
                 continue
-            dataset_table_results = {}
 
             tables = all_results[dataset][methods[0]]['single_table_metrics'][base_metric].keys()
                 
@@ -135,8 +108,6 @@ def visualize_single_table_detection_metrics_per_classifier(all_results, dataset
             fig, ax = plt.subplots(figsize=(10,7))
             # set dpi
             fig.dpi = 300
-            # make font size bigger
-            # plt.rcParams.update({'font.size': 20})
 
             colors = plt.cm.viridis(np.linspace(0.5, 1, N)) # create a color map
 
@@ -178,39 +149,35 @@ def visualize_single_table_detection_metrics_per_classifier(all_results, dataset
 
 
 
-def visualize_single_table_detection_metrics_per_table(all_results, datasets, methods, **kwargs):
+def visualize_single_table_detection_metrics_per_table(all_results, datasets, methods, title=True, log_scale = False, fontsize = 20, **kwargs):
     for dataset in datasets:
         metrics = kwargs.get('detection_metrics', 
-                            [metric for metric in list(all_results[dataset][methods[0]]['single_table_metrics'].keys()) if 'detection' in metric.lower()])
+                            [metric for metric in list(all_results[dataset][list(all_results[dataset].keys())[0]]['single_table_metrics'].keys()) if 'detection' in metric.lower()])
         metric_names = kwargs.get('detection_metric_names', metrics)
 
         aggregation_metrics = kwargs.get(
             'aggregation_metrics', 
-            [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if 'AggregationDetection' in metric])
+            [metric for metric in list(all_results[dataset][list(all_results[dataset].keys())[0]]['multi_table_metrics'].keys()) if 'AggregationDetection' in metric and 'parent' not in metric.lower()])
 
-
-        # aggregation_metrics = [
-        #     # "AggregationDetection-LogisticRegression", 
-        #     "AggregationDetection-XGBClassifier",
-        #     ]
-        aggregation_metric_names = aggregation_metrics
 
         save_figs = kwargs.get("save_figs", False)
         save_figs_path = kwargs.get("save_figs_path", "./figs")
         save_figs_path = Path(save_figs_path) / "single_table" / "detection"
 
-        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'REALTABFORMER', 'MOSTLYAI', 'GRETEL_ACTGAN', 'GRETEL_LSTM'])
+
         if method_order is not None:
-            methods = [method for method in method_order if method in methods]
+            methods = [method for method in method_order if method in methods and method in all_results[dataset]]
             methods += sorted([method for method in methods if method not in method_order])
 
     
         if len(methods) == 0 or len(metrics) == 0:
             continue
-        tables = all_results[dataset][methods[0]]['single_table_metrics'][metrics[0]].keys()
+        method_ = list(all_results[dataset].keys())[0]
+        tables = all_results[dataset][method_]['single_table_metrics'][list(all_results[dataset][method_]['single_table_metrics'].keys())[0]].keys()
         for table in tables:
             agg_metrics = []
-            if aggregation_metrics and table in all_results[dataset][methods[0]]['multi_table_metrics'][aggregation_metrics[0]]:
+            if aggregation_metrics and table in all_results[dataset][methods[-1]]['multi_table_metrics'][aggregation_metrics[-1]]:
                 agg_metrics = aggregation_metrics
             
             N = len(metrics + agg_metrics) # number of metrics
@@ -231,45 +198,52 @@ def visualize_single_table_detection_metrics_per_table(all_results, datasets, me
                 metric_means = [all_results[dataset][method]['single_table_metrics'][metric][table]['accuracy'] for method in methods]
                 min_mean = min(min_mean, min(metric_means))
                 metric_ses = [all_results[dataset][method]['single_table_metrics'][metric][table]['SE'] for method in methods]
-                baseline_means = np.array([all_results[dataset][method]['single_table_metrics'][metric][table]["baseline_mean"] for method in methods])
-                baseline_ses = np.array([all_results[dataset][method]['single_table_metrics'][metric][table]["baseline_se"] for method in methods])
+                # baseline_means = np.array([all_results[dataset][method]['single_table_metrics'][metric][table]["baseline_mean"] for method in methods])
+                baseline_means = np.array([0.5 for method in methods])
+                # baseline_ses = np.array([all_results[dataset][method]['single_table_metrics'][metric][table]["baseline_se"] for method in methods])
+                baseline_ses = np.array([0 for method in methods])
 
                 ax.bar(ind + width*j, metric_means, width, yerr=metric_ses, color=colors[j])
-                ax.hlines(baseline_means, ind + width*j - width/2, ind + width*j + width/2, color='k')#, linestyle='--')
-                ax.hlines(baseline_means + baseline_ses, ind + width*j - width/2, ind + width*j + width/2, color='k', linestyle='--')
-                ax.hlines(baseline_means - baseline_ses, ind + width*j - width/2, ind + width*j + width/2, color='k', linestyle='--')
+                # ax.hlines(baseline_means, ind + width*j - width/2, ind + width*j + width/2, color='k')#, linestyle='--')
+                # ax.hlines(baseline_means + baseline_ses, ind + width*j - width/2, ind + width*j + width/2, color='k', linestyle='--')
+                # ax.hlines(baseline_means - baseline_ses, ind + width*j - width/2, ind + width*j + width/2, color='k', linestyle='--')
 
             for j, agg_metric in enumerate(agg_metrics):
                 metric_means = [all_results[dataset][method]['multi_table_metrics'][agg_metric][table]['accuracy'] for method in methods]
                 min_mean = min(min_mean, min(metric_means))
                 metric_ses = [all_results[dataset][method]['multi_table_metrics'][agg_metric][table]['SE'] for method in methods]
-                baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_mean"] for method in methods])
-                baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_se"] for method in methods])
+                # baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_mean"] for method in methods])
+                baseline_means = np.array([0.5 for method in methods])
+                # baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_se"] for method in methods])
+                baseline_ses = np.array([0 for method in methods])
 
                 ax.bar(ind + width*(j+len(metrics)), metric_means, width, yerr=metric_ses, color=colors[j+len(metrics)])
-                ax.hlines(baseline_means, ind + width*(j+len(metrics)) - width/2, ind + width*(j+len(metrics)) + width/2, color='k')
-                ax.hlines(baseline_means + baseline_ses, ind + width*(j+len(metrics)) - width/2, ind + width*(j+len(metrics)) + width/2, color='k', linestyle='--')
-                ax.hlines(baseline_means - baseline_ses, ind + width*(j+len(metrics)) - width/2, ind + width*(j+len(metrics)) + width/2, color='k', linestyle='--')
+                # ax.hlines(baseline_means, ind + width*(j+len(metrics)) - width/2, ind + width*(j+len(metrics)) + width/2, color='k')
+                # ax.hlines(baseline_means + baseline_ses, ind + width*(j+len(metrics)) - width/2, ind + width*(j+len(metrics)) + width/2, color='k', linestyle='--')
+                # ax.hlines(baseline_means - baseline_ses, ind + width*(j+len(metrics)) - width/2, ind + width*(j+len(metrics)) + width/2, color='k', linestyle='--')
 
             ax.set_ylabel('Means')
             x_tick_width_coef = get_x_tick_width_coef(N)
             ax.set_xticks(ind + x_tick_width_coef*width)
             rotation = 20 if len(methods) > 6 else 0
-            ax.set_xticklabels(methods, fontsize = 10, rotation=rotation)
+            pretty_methods = [prettify_method_name(method) for method in methods]
+            ax.set_xticklabels(pretty_methods, fontsize = fontsize, rotation=rotation)
 
-            y_min = 0.4 if min_mean > 0.4 else np.floor((min_mean - 0.1)*10)/10
-            ax.set_ylim(y_min, 1.3)
+            # y_min = 0.4 if min_mean > 0.4 else np.floor((min_mean - 0.1)*10)/10
+            y_min = 0.3
+            ax.set_ylim(y_min, 1.4)
             ax.set_yticks(np.arange(y_min, 1.01, 0.1))
-            ax.set_ylabel("Classification Accuracy")
+            ax.set_ylabel("Classification Accuracy", fontsize = fontsize)
 
             # Create a legend
             custom_lines = [Line2D([0], [0], color=colors[i], lw=4) for i in range(N)]
-            ax.legend(custom_lines, metric_names + agg_metrics, loc='upper left') # move the legend
+            ax.legend(custom_lines, metric_names + agg_metrics, loc='upper left', fontsize=20) # move the legend
 
             ax.axhline(y=0.5, color='red', linestyle='--', linewidth=1)
 
             # set title
-            plt.title(f"Dataset {dataset}, table {table}")
+            if title:
+                plt.title(f"Dataset {prettify_dataset_name(dataset)}, table {table}")
 
             if save_figs:
                 os.makedirs(save_figs_path, exist_ok=True)

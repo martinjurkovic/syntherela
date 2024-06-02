@@ -1,46 +1,26 @@
 import matplotlib.pyplot as plt
 from pathlib import Path
 from matplotlib.lines import Line2D
+from matplotlib import rc
 import numpy as np
-import seaborn as sns
 import os
-sns.set_theme(font_scale=1.5)
 
-from relsyndgb.visualisations.utils import get_x_tick_width_coef
+from relsyndgb.visualisations.utils import get_x_tick_width_coef, get_dataset_info
 
-def visualize_single_column_distance_metrics(all_results, datasets, methods, **kwargs):
+rc('font', **{'family': 'serif', 'serif': ['Times']})
+rc('text', usetex=True)
+
+def visualize_single_column_distance_metrics(granularity_level, metric_type, all_results, datasets, methods, **kwargs):
     for dataset in datasets:
-        base_metrics = list(all_results[dataset][methods[0]]['single_column_metrics'].keys())
-        # remove all metrics that are detection
-        base_metrics = [metric for metric in base_metrics if "detection" not in metric.lower()]
-        base_metrics = [metric for metric in base_metrics if "test" not in metric.lower()]
-        base_metric_names = base_metrics
-
-        save_figs = kwargs.get("save_figs", False)
-        save_figs_path = kwargs.get("save_figs_path", "./figs/")
-        save_figs_path = Path(save_figs_path) / "single_column" / "distance"
-
-        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
-        if method_order is not None:
-            methods = [method for method in method_order if method in methods]
-            methods += sorted([method for method in methods if method not in method_order])
+        base_metrics, base_metric_names, save_figs, save_figs_path, methods = get_dataset_info(granularity_level, metric_type, all_results, dataset, methods, **kwargs)
 
 
         for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
-            metrics = [
-                base_metric
-                ]
-
-            metric_names = [
-                base_metric_name
-                ]
-        
-            dataset_table_results = {}
-            for table in all_results[dataset][methods[0]]['single_column_metrics'][base_metric].keys():
+            for table in all_results[dataset][list(all_results[dataset].keys())[0]]['single_column_metrics'][base_metric].keys():
                 try:
                 
                     N = len(methods) # number of methods
-                    M = len(all_results[dataset][methods[0]]['single_column_metrics'][base_metric][table].keys()) # number of columns
+                    M = len(all_results[dataset][list(all_results[dataset].keys())[0]]['single_column_metrics'][base_metric][table].keys()) # number of columns
                     
                     ind = np.arange(M)
                     width = 0.15
@@ -54,7 +34,7 @@ def visualize_single_column_distance_metrics(all_results, datasets, methods, **k
                     colors = plt.cm.viridis(np.linspace(0.5, 1, N)) # create a color map
 
 
-                    columns = all_results[dataset][methods[0]]['single_column_metrics'][base_metric][table].keys()
+                    columns = all_results[dataset][list(all_results[dataset].keys())[0]]['single_column_metrics'][base_metric][table].keys()
                     for j, method in enumerate(methods):
                         method_means = [all_results[dataset][method]['single_column_metrics'][base_metric][table][column]["value"] for column in columns]
                         method_ses = [all_results[dataset][method]['single_column_metrics'][base_metric][table][column]["bootstrap_se"] for column in columns]
@@ -117,36 +97,16 @@ def visualize_single_column_distance_metrics(all_results, datasets, methods, **k
                     print(e)
                     pass
 
-def visualize_single_column_detection_metrics(all_results, datasets, methods, **kwargs):
+def visualize_single_column_detection_metrics(granularity_level, metric_type, all_results, datasets, methods, **kwargs):
     for dataset in datasets:
-        base_metrics = list(all_results[datasets[0]][methods[0]]['single_column_metrics'].keys())
-        # keep only detection metrics
-        base_metrics = [metric for metric in base_metrics if "detection" in metric.lower()]
-        base_metric_names = base_metrics
+        base_metrics, base_metric_names, save_figs, save_figs_path, methods = get_dataset_info(granularity_level, metric_type, all_results, dataset, methods, **kwargs)
 
-        save_figs = kwargs.get("save_figs", False)
-        save_figs_path = kwargs.get("save_figs_path", "./figs")
-        save_figs_path = Path(save_figs_path) / "single_column" / "detection"
-
-        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
-        if method_order is not None:
-            methods = [method for method in method_order if method in methods]
-            methods += sorted([method for method in methods if method not in method_order])
 
         for base_metric, base_metric_name in zip(base_metrics, base_metric_names):
-            metrics = [
-                base_metric
-                ]
-
-            metric_names = [
-                base_metric_name
-                ]
-        
-            dataset_table_results = {}
-            for table in all_results[dataset][methods[0]]['single_column_metrics'][base_metric].keys():
+            for table in all_results[dataset][list(all_results[dataset].keys())[0]]['single_column_metrics'][base_metric].keys():
                 
                 N = len(methods) # number of methods
-                M = len(all_results[dataset][methods[0]]['single_column_metrics'][base_metric][table].keys()) # number of columns
+                M = len(all_results[dataset][list(all_results[dataset].keys())[0]]['single_column_metrics'][base_metric][table].keys()) # number of columns
                 
                 ind = np.arange(M)
                 width = 0.15
@@ -160,13 +120,16 @@ def visualize_single_column_detection_metrics(all_results, datasets, methods, **
                 colors = plt.cm.viridis(np.linspace(0.5, 1, N)) # create a color map
 
                 min_mean = 1
-                columns = all_results[dataset][methods[0]]['single_column_metrics'][base_metric][table].keys()
+                
                 for j, method in enumerate(methods):
+                    if method not in all_results[dataset]:
+                        continue
+                    columns = all_results[dataset][method]['single_column_metrics'][base_metric][table].keys()
                     method_means = [all_results[dataset][method]['single_column_metrics'][base_metric][table][column]["accuracy"] for column in columns]
                     min_mean = min(min_mean, min(method_means))
                     method_ses = [all_results[dataset][method]['single_column_metrics'][base_metric][table][column]["SE"] for column in columns]
-                    baseline_means = np.array([all_results[dataset][method]['single_column_metrics'][base_metric][table][column]["baseline_mean"] for column in columns])
-                    baseline_ses = np.array([all_results[dataset][method]['single_column_metrics'][base_metric][table][column]["baseline_se"] for column in columns])
+                    baseline_means = np.array([0.5 for column in columns])
+                    baseline_ses = np.array([0 for column in columns])
                     ax.bar(ind + width*j, method_means, width, yerr=method_ses, color=colors[j])
                     # draw a line for baseline accuracy
                     ax.hlines(baseline_means, ind + width*j - width/2, ind + width*j + width/2, color='k')
@@ -177,14 +140,9 @@ def visualize_single_column_detection_metrics(all_results, datasets, methods, **
                 ax.set_xticks(ind + x_tick_width_coef*width)
                 rotation = 20 if len(columns) > 6 else 0
                 ax.set_xticklabels(columns, fontsize = 10, rotation=rotation)
-                # y_min = 0
-
-                # max_value = max([all_results[dataset][method]['single_column_metrics'][base_metric][table][column]["value"] for column in columns])
-                # y_max = max_value * 1.2
                 y_min = 0.4 if min_mean > 0.4 else np.floor((min_mean - 0.1)*10)/10
 
                 ax.set_ylim(y_min, 1.1)
-                # ax.set_yticks(np.arange(y_min, 1.01, 0.1))
                 ax.set_ylabel("Metric Value")
 
                 # Create a legend

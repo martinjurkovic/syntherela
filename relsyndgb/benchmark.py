@@ -103,13 +103,12 @@ class Benchmark():
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
                 try:
-                    real_data, synthetic_data, test_data, metadata = self.load_data(dataset_name, method_name)
+                    real_data, synthetic_data, metadata = self.load_data(dataset_name, method_name)
 
                     print(f"Starting benchmark for {dataset_name}, method_name {method_name}")
                     report = Report(
                         real_data=real_data,
                         synthetic_data=synthetic_data,
-                        test_data=test_data,
                         metadata=metadata,
                         report_name=f"{self.benchmark_name}_{dataset_name}_{method_name}",
                         single_column_metrics=self.single_column_metrics,

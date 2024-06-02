@@ -19,7 +19,6 @@ class Report():
                 synthetic_data, 
                 metadata,
                 report_name, 
-                test_data = None,
                 single_column_metrics = [
                     ChiSquareTest(), 
                    ],
@@ -32,11 +31,6 @@ class Report():
         metadata.validate_data(synthetic_data)
         self.real_data = real_data
         self.synthetic_data = synthetic_data
-        self.test_data = None
-
-        if test_data is not None:
-            metadata.validate_data(test_data)
-            self.test_data = test_data
 
         # reorder synthetic data columns to match real data
         for table in metadata.get_tables():

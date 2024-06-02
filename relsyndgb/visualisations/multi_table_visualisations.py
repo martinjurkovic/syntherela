@@ -2,11 +2,13 @@ import os
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib import rc
 import numpy as np
-import seaborn as sns
-sns.set_theme(font_scale=1.5)
 
 from relsyndgb.visualisations.utils import get_x_tick_width_coef
+
+rc('font', **{'family': 'serif', 'serif': ['Times']})
+rc('text', usetex=True)
 
 def visualize_parent_child_multi_table(all_results, datasets, methods, **kwargs):
     for dataset in datasets:
@@ -115,20 +117,17 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
     save_figs_path = kwargs.get("save_figs_path", "./figs/")
     save_figs_path = Path(save_figs_path) / "multi_table" / "detection"
 
-    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER'])
+    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'REALTABFORMER', 'MOSTLYAI', 'GRETEL_ACTGAN', 'GRETEL_LSTM'])
+
     if method_order is not None:
-        methods = [method for method in method_order if method in methods]
+        methods = [method for method in method_order if method in methods and method in all_results[dataset]]
         methods += sorted([method for method in methods if method not in method_order])
+
 
     for dataset in datasets:
         if len(methods) == 0 or len(metrics) == 0:
             continue
-        tables = all_results[dataset][methods[0]]['multi_table_metrics'][metrics[0]].keys()
-        # dataset = "biodegradability"
-        # table = "atom"
-            # try:
             
-
         N = len(metrics) # number of metrics
         M = len(methods) # number of methods
         ind = np.arange(M) # the x locations for the groups

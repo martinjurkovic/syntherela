@@ -24,7 +24,7 @@ def load_tables(data_path, metadata):
         tables[table_name] = table
     return tables
 
-def remove_sdv_columns(tables, metadata, update_metadata=True):
+def remove_sdv_columns(tables, metadata, update_metadata=True, validate=True):
     """
     "_v1" Versions of the relational demo datasets in SDV have some columns that are not present in the original datasets.
     We created this function to remove these columns from the tables and the metadata.
@@ -40,8 +40,9 @@ def remove_sdv_columns(tables, metadata, update_metadata=True):
                 metadata.tables[table_name].columns.pop(column)
 
         tables[table_name] = table
-    metadata.validate()
-    metadata.validate_data(tables)
+    if validate:
+        metadata.validate()
+        metadata.validate_data(tables)
     return tables, metadata
 
 def save_tables(tables, path):
