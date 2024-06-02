@@ -186,7 +186,7 @@ def process_walmart(tables, metadata):
     # one-hot encode the categorical columns
     df['Type'] = pd.Categorical(df['Type'], categories=['A', 'B', 'C'])
     df = pd.get_dummies(df, columns=['Type'])
-    # obtain average daily sales across all departments (as in the original competition)
+    # obtain average daily sales across all departments 
     df = df.groupby(['Store', 'Date']).mean().reset_index(drop=True)
     
     y = df.pop('Weekly_Sales')
