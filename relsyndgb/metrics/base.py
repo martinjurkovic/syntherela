@@ -183,7 +183,8 @@ class DetectionBaseMetric(BaseMetric):
         # replace infinite values with NaN
         X.replace([np.inf, -np.inf], np.nan, inplace=True)
         # drop constant columns
-        X = X.loc[:, X.apply(lambda x: x.nunique() > 1)]
+        if X.shape[1] > 1:
+            X = X.loc[:, X.apply(lambda x: x.nunique() > 1)]
         return X, y
     
 
