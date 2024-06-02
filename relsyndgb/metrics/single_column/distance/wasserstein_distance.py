@@ -21,7 +21,9 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
         return column_type in ["numerical", "datetime"]
 
     @staticmethod
-    def compute(orig_col, synth_col, xmin, xmax, **kwargs):
+    def compute(real_data, synthetic_data, xmin, xmax, **kwargs):
+        orig_col = pd.Series(real_data).dropna()
+        synth_col = pd.Series(synthetic_data).dropna()
         # sample real and synthetic data to have the same length
         n = min(len(orig_col), len(synth_col))
         orig_col = orig_col.sample(n, random_state=0)
