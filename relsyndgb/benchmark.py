@@ -82,7 +82,6 @@ class Benchmark():
     def load_data(self, dataset_name, method_name):
         real_data_path = self.real_data_dir / dataset_name
         synthetic_data_path = self.synthetic_data_dir / dataset_name / method_name
-        test_data_path = self.real_data_dir / dataset_name / 'test_data'
 
         if self.run_id is not None:
             synthetic_data_path = synthetic_data_path / self.run_id
