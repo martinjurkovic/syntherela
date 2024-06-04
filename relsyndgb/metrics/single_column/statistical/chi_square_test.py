@@ -26,6 +26,8 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         synth_col = pd.Categorical(synthetic_data, categories=orig_col.categories)
         freq_orig = orig_col.value_counts()
         freq_synth = synth_col.value_counts()
+        if freq_synth.sum() == 0:
+            return {"statistic": -1, "p_value": 0}
         freq_synth = freq_synth / freq_synth.sum() * freq_orig.sum()
         assert (freq_orig.index == freq_synth.index).all(), f"Indexes do not match for column"
         # calculate the chi-square test
