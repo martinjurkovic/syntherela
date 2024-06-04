@@ -95,7 +95,6 @@ def load_walmart(method):
     max_date = datetime.strptime('2012-02-01', '%Y-%m-%d')
     tables_test['depts'] = tables_test['depts'][(tables_test['depts']['Date'] >= min_date) & (tables_test['depts']['Date'] < max_date)]
     tables_test['features'] = tables_test['features'][(tables_test['features']['Date'] >= min_date) & (tables_test['features']['Date'] < max_date)]
-    tables_test['features'].merge(tables_test['depts'], on=['Store', 'Date']).tail()
 
     return tables, tables_synthetic, tables_test, metadata
 
