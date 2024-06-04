@@ -342,8 +342,8 @@ class DetectionBaseMetric(BaseMetric):
             color = scatter.get_facecolor()[0]
             
             se = np.std(importance) / np.sqrt(len(importance))
-            ax.errorbar(np.mean(importance), y, xerr=se * 1.96, c=color, capsize=3, fmt='*') 
-            ax.scatter(np.mean(importance), y, s=120, marker='*', color=color)
+            ax.errorbar(np.mean(importance), y, xerr=se * 1.96, c=color, capsize=3, ls='None') 
+            ax.scatter(np.mean(importance), y, s=120, marker='v', color=color)
 
         xlim = ax.get_xlim()
         ax.set_xlim(0, xlim[1])
