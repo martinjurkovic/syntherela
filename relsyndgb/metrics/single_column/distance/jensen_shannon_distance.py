@@ -39,5 +39,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         if real_data.dtype.name in ("object", "category", "bool"):
             bins = None
         else:
-            bins = np.histogram_bin_edges(real_data.dropna())
+            real_data = real_data.dropna()
+            synthetic_data = synthetic_data.dropna()
+            bins = np.histogram_bin_edges(real_data)
         return super().run(real_data, synthetic_data, bins=bins, base = self.base, **kwargs)
