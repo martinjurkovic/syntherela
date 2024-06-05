@@ -36,11 +36,12 @@ class BaseAggregationDetection(DetectionBaseMetric):
 
             if len(categorical_columns) > 0:
                 categorical_df = data[child_table_name][categorical_columns + [child_fk]]
-                categorical_column_names = [f'{child_table_name}_{child_fk}_{column}_counts' for column in categorical_columns]
+                categorical_column_names = [f'{child_table_name}_{child_fk}_{column}_nunique' for column in categorical_columns]
                 categorical_df.columns = categorical_column_names + [child_fk]
 
                 aggregated_data[parent_table_name] = aggregated_data[parent_table_name].merge(
-                    categorical_df.groupby(child_fk).nunique(), how='left', left_on=parent_column, right_index=True, suffixes=('', '_counts'))
+                    categorical_df.groupby(child_fk).nunique(), how='left', left_on=parent_column, right_index=True, suffixes=('', '_nunique'))
+                aggregated_data[parent_table_name][categorical_column_names] = aggregated_data[parent_table_name][categorical_column_names].fillna(0)
 
                 if update_metadata:
                     for column in categorical_column_names:

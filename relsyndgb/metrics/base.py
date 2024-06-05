@@ -159,6 +159,7 @@ class DetectionBaseMetric(BaseMetric):
         self.folds = folds
         self.m = m
         self.classifiers = []
+        self.models = []
         self.name = f"{type(self).__name__}-{classifier_cls.__name__}"
 
 
@@ -209,6 +210,7 @@ class DetectionBaseMetric(BaseMetric):
             scores.extend(list((y[test_index] == y_pred).astype(int)))
             if save_models:
                 self.classifiers.append(deepcopy(model['clf']))
+                self.models.append(model)
         return scores
     
 
@@ -311,7 +313,7 @@ class DetectionBaseMetric(BaseMetric):
             return None
 
         def get_feature_type(feature_name, metadata):
-            if '_counts' in feature_name or '_mean' in feature_name or '_sum' in feature_name:
+            if '_counts' in feature_name or '_mean' in feature_name or '_sum' in feature_name or '_nunique' in feature_name:
                 return 'aggregate'
             
             feature_type = None
