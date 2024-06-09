@@ -14,8 +14,11 @@ class Metadata(MultiTableMetadata):
     def get_primary_key(self, table_name):
         return self.tables[table_name].primary_key
     
-    def get_table_meta(self, table_name):
-        return self.tables[table_name].to_dict()
+    def get_table_meta(self, table_name, to_dict=True):
+        table_meta = self.tables[table_name]
+        if to_dict:
+            return table_meta.to_dict()
+        return table_meta
     
     def get_children(self, table_name):
         children = set()
