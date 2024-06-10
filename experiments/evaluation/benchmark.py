@@ -77,9 +77,9 @@ multi_table_metrics = [
     ]
 
 benchmark = Benchmark(
-    real_data_dir='/d/hpc/projects/FRI/vh0153/syntherela/data/original',
-    synthetic_data_dir='/d/hpc/projects/FRI/vh0153/syntherela/data/synthetic_single_table',
-    results_dir=f'/d/hpc/projects/FRI/vh0153/syntherela/experiments/results/{run_id}',
+    real_data_dir='data/original',
+    synthetic_data_dir='data/synthetic',
+    results_dir=f'results/{run_id}',
     benchmark_name='Benchmark',
     single_column_metrics=single_column_metrics,
     single_table_metrics=single_table_metrics,
