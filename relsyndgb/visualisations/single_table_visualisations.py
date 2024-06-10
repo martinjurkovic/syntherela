@@ -44,8 +44,10 @@ def visualize_single_table_distance_metrics(granularity_level, metric_type, all_
                 method_means = [all_results[dataset][method]['single_table_metrics'][base_metric][table]["value"] for table in tables]
                 method_ses = [all_results[dataset][method]['single_table_metrics'][base_metric][table]["bootstrap_se"] for table in tables]
                 ax.bar(ind + width*j, method_means, width, yerr=method_ses, color=colors[j], alpha=0.8, edgecolor='white')
+                ci95s = [all_results[dataset][method]['single_table_metrics'][base_metric][table]["reference_ci"][1] for table in tables]
 
-                max_value = max(max_value, max(method_means))
+                max_value = max(max_value, max(method_means), max(ci95s))
+
             
             x_tick_width_coef = get_x_tick_width_coef(N)
             ax.set_xticks(ind + x_tick_width_coef*width)
@@ -53,10 +55,11 @@ def visualize_single_table_distance_metrics(granularity_level, metric_type, all_
             ax.set_xticklabels(tables, rotation=rotation, fontsize = fontsize)
             # y_min = 0
 
+
             if not log_scale:
                 ax.set_ylim(bottom=0, top = max_value * 1.25)
             else:
-                ax.set_ylim(top = math.pow(max_value, 3))
+                ax.set_ylim(top = math.pow(max_value, 20))
             # ax.set_yticks(np.arange(y_min, 1.01, 0.1))
             ax.set_ylabel("Metric Value", fontsize = fontsize)
             ax.tick_params(axis='y', labelsize=20)
@@ -191,7 +194,10 @@ def visualize_single_table_detection_metrics_per_table(all_results, datasets, me
             # make font size bigger
             # plt.rcParams.update({'font.size': 20})
 
-            colors = plt.cm.viridis(np.linspace(0, 1, N)) # create a color map
+            colors = plt.cm.tab20(np.linspace(0, 1, N)) # create a color map
+
+            tab20 = plt.colormaps['tab20']
+            colors = [tab20(1), tab20(3), tab20(0), tab20(2)]
 
             min_mean = 1
             for j, metric in enumerate(metrics):
@@ -227,19 +233,22 @@ def visualize_single_table_detection_metrics_per_table(all_results, datasets, me
             ax.set_xticks(ind + x_tick_width_coef*width)
             rotation = 20 if len(methods) > 6 else 0
             pretty_methods = [prettify_method_name(method) for method in methods]
-            ax.set_xticklabels(pretty_methods, fontsize = fontsize, rotation=rotation)
+            ax.set_xticklabels(pretty_methods, rotation=rotation)
 
             # y_min = 0.4 if min_mean > 0.4 else np.floor((min_mean - 0.1)*10)/10
             y_min = 0.3
             ax.set_ylim(y_min, 1.4)
             ax.set_yticks(np.arange(y_min, 1.01, 0.1))
-            ax.set_ylabel("Classification Accuracy", fontsize = fontsize)
+            ax.set_ylabel("Classification Accuracy")
 
             # Create a legend
             custom_lines = [Line2D([0], [0], color=colors[i], lw=4) for i in range(N)]
-            ax.legend(custom_lines, metric_names + agg_metrics, loc='upper left', fontsize=20) # move the legend
+            ax.legend(custom_lines, metric_names + agg_metrics, loc='upper left', fontsize=fontsize) # move the legend
 
             ax.axhline(y=0.5, color='red', linestyle='--', linewidth=1)
+
+            # make figsize smaller
+            fig.set_size_inches(6.5, 4)
 
             # set title
             if title:

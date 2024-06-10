@@ -69,9 +69,9 @@ def prettify_method_name(method_name):
     if method_name == 'REALTABFORMER':
         return 'REALTABF'
     if method_name == 'GRETEL_ACTGAN':
-        return 'GRE-ACTGAN'
+        return 'G-ACTGAN'
     if method_name == 'GRETEL_LSTM':
-        return 'GRE-LSTM'
+        return 'G-LSTM'
     return method_name
 
 def get_dataset_info(granularity_level, metric_type, all_results, dataset, methods, **kwargs):
