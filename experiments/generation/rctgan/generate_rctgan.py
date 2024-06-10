@@ -18,7 +18,7 @@ args.add_argument("--dataset-name", type=str, default="airbnb-simplified_subsamp
 args.add_argument("--real-data-path", type=str, default="data/original")
 args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
 args.add_argument("--model-save-path", type=str, default="checkpoints")
-args.add_argument("--run_id", type=str, default="1")
+args.add_argument("--run-id", type=str, default="1")
 args = args.parse_args()
 
 dataset_name = args.dataset_name

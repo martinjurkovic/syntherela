@@ -19,7 +19,7 @@ from syntherela.metrics.multi_table.statistical import CardinalityShapeSimilarit
 args = argparse.ArgumentParser()
 args.add_argument("--dataset-name", type=str, default="airbnb-simplified_subsampled")
 args.add_argument("--methods",'-m', action='append', default=None)
-args.add_argument("--run_id", type=str, default="1")
+args.add_argument("--run-id", type=str, default="1")
 args = args.parse_args()
 dataset_name = args.dataset_name
 methods = args.methods
