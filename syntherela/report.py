@@ -26,9 +26,11 @@ class Report():
                     MaximumMeanDiscrepancy(),
                     ], 
                 multi_table_metrics = [],
+                validate_metadata=True
                 ):
-        metadata.validate_data(real_data)
-        metadata.validate_data(synthetic_data)
+        if validate_metadata:
+            metadata.validate_data(real_data)
+            metadata.validate_data(synthetic_data)
         self.real_data = real_data
         self.synthetic_data = synthetic_data
 

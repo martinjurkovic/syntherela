@@ -12,7 +12,7 @@ from syntherela.metrics.single_column.statistical import ChiSquareTest
 from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
 from syntherela.visualisations.multi_table_visualisations import visualize_multi_table, visualize_parent_child_multi_table
 from syntherela.visualisations.single_column_visualisations import visualize_single_column_detection_metrics, visualize_single_column_distance_metrics
-from syntherela.visualisations.single_table_visualisations import visualize_single_table_detection_metrics_per_classifier, visualize_single_table_detection_metrics_per_table, visualize_single_table_distance_metrics
+from syntherela.visualisations.single_table_visualisations import visualize_single_table_detection_metrics_per_table, visualize_single_table_distance_metrics
 
 
 class Benchmark():
@@ -33,20 +33,12 @@ class Benchmark():
                 datasets=None,
                 run_id=None,
                 sample_id=None,
+                validate_metadata=True
                 ):
-        # metadata.validate_data(real_data)
-        # metadata.validate_data(synthetic_data)
-        # self.real_data = real_data
-        # self.synthetic_data = synthetic_data
-
-        # reorder synthetic data columns to match real data
-        # for table in metadata.get_tables():
-        #     self.synthetic_data[table] = self.synthetic_data[table][self.real_data[table].columns]
-        #     assert (self.real_data[table].columns == self.synthetic_data[table].columns).all(), f"Columns in real and synthetic data do not match for table {table}"
-        # self.metadata = metadata
         self.datasets = datasets
         self.run_id = str(run_id)
         self.sample_id = str(sample_id)
+        self.validate_metadata = validate_metadata
 
         self.benchmark_name = benchmark_name, 
         self.real_data_dir = Path(real_data_dir)
@@ -93,8 +85,8 @@ class Benchmark():
         real_data = load_tables(real_data_path, metadata)
         synthetic_data = load_tables(synthetic_data_path, metadata)
 
-        real_data, metadata = remove_sdv_columns(real_data, metadata)
-        synthetic_data, metadata = remove_sdv_columns(synthetic_data, metadata, update_metadata=False)
+        real_data, metadata = remove_sdv_columns(real_data, metadata, validate=self.validate_metadata)
+        synthetic_data, metadata = remove_sdv_columns(synthetic_data, metadata, update_metadata=False, validate=self.validate_metadata)
 
         return real_data, synthetic_data, metadata
 
@@ -113,6 +105,7 @@ class Benchmark():
                         single_column_metrics=self.single_column_metrics,
                         single_table_metrics=self.single_table_metrics,
                         multi_table_metrics=self.multi_table_metrics,
+                        validate_metadata=self.validate_metadata,
                     )
 
                     self.reports.setdefault(dataset_name, {})[method_name] = report
