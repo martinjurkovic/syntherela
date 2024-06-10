@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.0.1"
+VERSION = "0.0.0"
 DESCRIPTION = "RELSYNDGB - Relational Synthetic Data Generation Benchmark"
 LONG_DESCRIPTION = "RELSYNDGB - A Python package for evaluating synthetic relational datasets"
 
@@ -8,15 +8,16 @@ LONG_DESCRIPTION = "RELSYNDGB - A Python package for evaluating synthetic relati
 setup(
     name="relsyndgb",
     version=VERSION,
-    author="Martin Jurkovic, Valter Hudovernik",
-    author_email="martin.jurkovic19@gmail.com, valter.hudovernik@gmail.com",
+    author="Anon",
+    author_email="Anon",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages("."),
     package_dir={"": "."},
     install_requires=[
-        "sdv==1.9.0",
-        "sdmetrics==0.13.0",
+        "sdv>=1.9.0",
+        "sdmetrics>=0.13.0",
+        "POT==0.9.3"
         ],
     keywords=["python", "relsyndgb", "synthetic data", "relational data", "evaluation", "benchmark"],
     classifiers=[
