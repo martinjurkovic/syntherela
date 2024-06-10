@@ -84,7 +84,6 @@ class AggregationDetection(BaseAggregationDetection, DetectionBaseMetric, Single
         has_children = len(metadata.get_children(table)) > 0
         return nonid and has_children
     
-    # TODO: add baseline
     def run(self, real_data, synthetic_data, metadata, target_table=None, **kwargs):
         real_data_with_aggregations, updated_metadata = self.add_aggregations(real_data, deepcopy(metadata))
         synthetic_data_with_aggregations, _ = self.add_aggregations(synthetic_data, metadata, update_metadata=False)

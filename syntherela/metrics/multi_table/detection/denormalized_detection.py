@@ -11,7 +11,7 @@ class DenormalizedDetection(DetectionBaseMetric):
     def bootstrap_sample(real_data: dict, metadata: Metadata, random_state: Union[int, None] = None) -> dict:
         bootstrapped_tables = dict()
         root_tables = metadata.get_root_tables()
-        # TODO: deal with duplicated parent samples (should reindex them --> and their children)
+        
         for table in root_tables:
             primary_key = metadata.get_primary_key(table)
             bootstrapped_tables[table] = real_data[table].sample(frac=1, replace=True, random_state=random_state)

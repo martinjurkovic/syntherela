@@ -51,14 +51,17 @@ def save_tables(tables, path):
         table.to_csv(os.path.join(path, f"{table_name}.csv"), index=False)
 
 
-def download_sdv_relational_datasets():
+def download_sdv_relational_datasets(data_path='data/original'):
+    """
+        Download all the available relational datasets from SDV
+        https://docs.sdv.dev/sdv/single-table-data/data-preparation/loading-data
+    """
     sdv_relational_datasets = get_available_demos('multi_table')
 
     # iterate through the dataframe
     for dataset_name in sdv_relational_datasets.dataset_name:
         print(f'Downloading {dataset_name}...', end=' ')
-        # TODO: data/downloads or data/original
-        download_demo('multi_table', dataset_name, output_folder_name=f'data/downloads/{dataset_name}')
+        download_demo('multi_table', dataset_name, output_folder_name=f'{data_path}/{dataset_name}')
         print('Done.')
 
 def denormalize_tables(tables, metadata):
@@ -115,7 +118,6 @@ def make_column_names_unique(real_data, synthetic_data, metadata, validate=True)
             synthetic_data[table_name] = synthetic_data[table_name].rename(columns={column: f"{table_name}_{column}"})
             metadata = metadata.rename_column(table_name, column, f"{table_name}_{column}")
 
-    # TODO: this should not be optional
     if validate:
         metadata.validate()
         metadata.validate_data(real_data)
