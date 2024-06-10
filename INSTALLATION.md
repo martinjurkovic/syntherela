@@ -1,8 +1,8 @@
-## Install syntherela
+## Install benchmark reproducibility environment
 ```bash
 conda create -n syntherela python=3.10 -y
-conda activate syntherela
-pip install .
+conda activate reproduce_benchmark
+pip install -r requirements.txt
 ```
 
 ## Install tabular
