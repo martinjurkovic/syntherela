@@ -19,3 +19,11 @@ conda create -n rctgan python=3.7 -y
 conda activate rctgan
 pip install experiments/generation/rctgan/RCTGAN 
 ```
+
+## Install gretel
+```bash
+conda create -n gretel python=3.9 -y
+conda activate gretel
+pip install .
+pip install -r experiments/generation/gretel/requirements.txt
+```
