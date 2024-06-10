@@ -1,11 +1,12 @@
 import os
+import sys
+import glob
+import logging
 import argparse
 from pathlib import Path
-import glob
-import sys
+
 
 from realtabformer import REaLTabFormer
-import logging
 from syntherela.metadata import Metadata
 from syntherela.data import load_tables, save_tables, remove_sdv_columns
 
@@ -15,12 +16,13 @@ BATCH_SIZE_CHILD = 1
 
 args = argparse.ArgumentParser()
 args.add_argument("--dataset-name", type=str, default="airbnb-simplified_subsampled")
-args.add_argument("--real_data_path", type=str, default="data/original")
-args.add_argument("--synthetic_data_path", type=str, default="data/synthetic")
-args.add_argument("--full_sensitivity", type=bool, default=True)
+args.add_argument("--real-data-path", type=str, default="data/original")
+args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
+args.add_argument("--full-sensitivity", type=bool, default=True)
 args.add_argument("--retrain", type=bool, default=True)
-args.add_argument("--run_id", type=str, default="1")
+args.add_argument("--run-id", type=str, default="1")
 args = args.parse_args()
+
 dataset_name = args.dataset_name
 full_sensitivity = args.full_sensitivity
 retrain = args.retrain
