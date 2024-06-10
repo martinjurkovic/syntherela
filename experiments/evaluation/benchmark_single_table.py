@@ -1,13 +1,12 @@
-
-from syntherela.benchmark import Benchmark
-import argparse
-import logging
 import sys
+import logging
+import argparse
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
 
+from syntherela.benchmark import Benchmark
 from syntherela.metrics.single_column.distance import HellingerDistance, JensenShannonDistance, WassersteinDistance, TotalVariationDistance
 from syntherela.metrics.single_column.statistical import ChiSquareTest, KolmogorovSmirnovTest
 from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy, PairwiseCorrelationDifference
