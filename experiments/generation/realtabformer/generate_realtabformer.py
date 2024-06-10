@@ -66,10 +66,6 @@ for table in real_data:
     if metadata.get_primary_key(table) is None:
         logger.debug(f"Table {table} has no primary key. Adding one...")
         real_data[table].reset_index(inplace=True)
-        # real_data[table].rename(columns={'index': 'id'}, inplace=True)
-        # real_data[table].index = real_data[table]['id']
-        # real_data[table].index.name = 'id'
-        # metadata.tables[table].primary_key = 'id'
         added_keys[table] = 'index'
         logger.debug(f"Primary key added to table {table}")
 
