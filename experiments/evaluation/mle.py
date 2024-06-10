@@ -77,7 +77,7 @@ def load_airbnb(method):
 
 
 def load_walmart(method):
-    dataset_name = 'walmart_subsampled_12'
+    dataset_name = 'walmart_subsampled'
     run = "1"
     metadata = Metadata().load_from_json(f'{PROJECT_PATH}/data/original/{dataset_name}/metadata.json')
 

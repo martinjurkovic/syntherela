@@ -61,7 +61,7 @@ def prettify_dataset_name(dataset_name):
         return 'Cora'
     if dataset_name in ('imdb_MovieLens_v1'):
         return 'IMDB MovieLens'
-    if dataset_name in ('walmart', 'walmart_subsampled', 'walmart_subsampled_12'):
+    if dataset_name in ('walmart', 'walmart_subsampled'):
         return 'Walmart'
     return dataset_name
 
