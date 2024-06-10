@@ -14,10 +14,10 @@ from rctgan.relational import RCTGAN
 MODEL_NAME = "RCTGAN"
 
 args = argparse.ArgumentParser()
-args.add_argument("--dataset-name", type=str, default="rossmann_subsampled")
-args.add_argument("--real_data_path", type=str, required=True)
-args.add_argument("--synthetic_data_path", type=str, required=True)
-args.add_argument("--model_save_path", type=str, required=True)
+args.add_argument("--dataset-name", type=str, default="airbnb-simplified_subsampled")
+args.add_argument("--real-data-path", type=str, default="data/original")
+args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
+args.add_argument("--model-save-path", type=str, default="checkpoints")
 args.add_argument("--run_id", type=str, default="1")
 args = args.parse_args()
 

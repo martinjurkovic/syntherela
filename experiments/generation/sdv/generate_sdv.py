@@ -1,22 +1,21 @@
 import os
 import sys
+import logging
 import argparse
 from pathlib import Path
 
 
 from sdv.multi_table import HMASynthesizer
-import logging
-from relsyndgb.metadata import Metadata
-from relsyndgb.metadata import Metadata
-from relsyndgb.data import load_tables, save_tables, remove_sdv_columns
+from syntherela.metadata import Metadata
+from syntherela.data import load_tables, save_tables, remove_sdv_columns
 
 MODEL_NAME = "SDV"
 
 args = argparse.ArgumentParser()
 args.add_argument("--dataset-name", type=str, default="airbnb-simplified_subsampled")
-args.add_argument("--real_data_path", type=str, required=True)
-args.add_argument("--synthetic_data_path", type=str, required=True)
-args.add_argument("--model_save_path", type=str, required=True)
+args.add_argument("--real-data-path", type=str, default="data/original")
+args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
+args.add_argument("--model-save-path", type=str, default="checkpoints")
 args.add_argument("--run_id", type=str, default="1")
 args = args.parse_args()
 
