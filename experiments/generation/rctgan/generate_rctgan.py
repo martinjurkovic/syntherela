@@ -66,7 +66,6 @@ def remove_sdv_columns(tables, metadata, update_metadata=True):
     """
     "_v1" Versions of the relational demo datasets in SDV have some columns that are not present in the original datasets.
     We created this function to remove these columns from the tables and the metadata.
-    We have also created the following issue in the SDV repo which adresses this problem: https://github.com/sdv-dev/SDV/issues/1776
     """
     for table_name, table in tables.items():
         for column in table.columns:
