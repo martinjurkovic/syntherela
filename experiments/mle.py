@@ -298,7 +298,6 @@ if __name__ == '__main__':
     dataset_name = args.dataset_name
     if args.methods is None:
         methods_to_run = methods
-        methods_to_run = ['COPY']
     else:
         methods_to_run = args.methods
     seed = args.seed
