@@ -5,10 +5,10 @@ conda activate syntherela
 pip install .
 ```
 
-## Install synthcity
+## Install tabular
 ```bash
-conda create -n synthcity python=3.9 -y
-conda activate synthcity
+conda create -n tabular python=3.9 -y
+conda activate tabular
 pip install .
 pip install -r experiments/generation/tabular/requirements.txt
 ```
