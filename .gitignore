@@ -1,5 +1,6 @@
 # Directories
 data
+!experiments/data
 checkpoints
 
 # Byte-compiled / optimized / DLL files
