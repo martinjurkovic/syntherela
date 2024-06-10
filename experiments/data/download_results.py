@@ -29,7 +29,6 @@ def download_and_extract(url, filename):
 # URL of the file to download
 results_url = "https://drive.google.com/uc?id=1HmmiQ-fKJo35gI3YcKKBcGoeERYpa_yt"
 
-# download_and_extract(orig_url, "original.zip")
 download_and_extract(results_url, "results.zip")
 
 print("Results downloaded and extracted successfully!")
