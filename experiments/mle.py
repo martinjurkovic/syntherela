@@ -26,15 +26,15 @@ from relsyndgb.utils import NpEncoder
 def load_rossmann(method):
     dataset_name = 'rossmann_subsampled' 
     run = "1"
-    metadata = Metadata().load_from_json(f'{PROJECT_PATH}/data/downloads/{dataset_name}/metadata.json')
+    metadata = Metadata().load_from_json(f'{PROJECT_PATH}/data/original/{dataset_name}/metadata.json')
 
-    tables = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name}/', metadata)
+    tables = load_tables(f'{PROJECT_PATH}/data/original/{dataset_name}/', metadata)
     tables_synthetic = load_tables(f'{PROJECT_PATH}/data/synthetic/{dataset_name}/{method}/{run}/sample1', metadata)
 
     tables, metadata = remove_sdv_columns(tables, metadata)
     tables_synthetic, metadata = remove_sdv_columns(tables_synthetic, metadata, update_metadata=False)
 
-    tables_test = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name.split("_")[0]}/', metadata)
+    tables_test = load_tables(f'{PROJECT_PATH}/data/original/{dataset_name.split("_")[0]}/', metadata)
     tables_test, _ = remove_sdv_columns(tables_test, metadata, update_metadata=False)
     # split the test data
     min_date = datetime.strptime('2014-10-01', '%Y-%m-%d')
@@ -47,9 +47,9 @@ def load_rossmann(method):
 def load_airbnb(method):
     dataset_name = 'airbnb-simplified_subsampled'
     run = "1"
-    metadata = Metadata().load_from_json(f'{PROJECT_PATH}/data/downloads/{dataset_name}/metadata.json')
+    metadata = Metadata().load_from_json(f'{PROJECT_PATH}/data/original/{dataset_name}/metadata.json')
 
-    tables = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name}/', metadata)
+    tables = load_tables(f'{PROJECT_PATH}/data/original/{dataset_name}/', metadata)
     tables_synthetic = load_tables(f'{PROJECT_PATH}/data/synthetic/{dataset_name}/{method}/{run}/sample1', metadata)
 
     tables, metadata = remove_sdv_columns(tables, metadata)
@@ -58,7 +58,7 @@ def load_airbnb(method):
             tables_synthetic[table].drop(columns=['index'], inplace=True)
     tables_synthetic, metadata = remove_sdv_columns(tables_synthetic, metadata, update_metadata=False)
 
-    tables_test = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name.split("_")[0]}/', metadata)
+    tables_test = load_tables(f'{PROJECT_PATH}/data/original/{dataset_name.split("_")[0]}/', metadata)
     tables_test, _ = remove_sdv_columns(tables_test, metadata, update_metadata=False)
 
     # select users with at most 50 sessions
@@ -79,16 +79,16 @@ def load_airbnb(method):
 def load_walmart(method):
     dataset_name = 'walmart_subsampled_12'
     run = "1"
-    metadata = Metadata().load_from_json(f'{PROJECT_PATH}/data/downloads/{dataset_name}/metadata.json')
+    metadata = Metadata().load_from_json(f'{PROJECT_PATH}/data/original/{dataset_name}/metadata.json')
 
-    tables = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name}/', metadata)
+    tables = load_tables(f'{PROJECT_PATH}/data/original/{dataset_name}/', metadata)
     tables_synthetic = load_tables(f'{PROJECT_PATH}/data/synthetic/{dataset_name}/{method}/{run}/sample1', metadata)
 
     tables, metadata = remove_sdv_columns(tables, metadata)
     tables_synthetic, metadata = remove_sdv_columns(tables_synthetic, metadata, update_metadata=False)
 
     # split the test data
-    tables_test = load_tables(f'{PROJECT_PATH}/data/downloads/{dataset_name.split("_")[0]}/', metadata)
+    tables_test = load_tables(f'{PROJECT_PATH}/data/original/{dataset_name.split("_")[0]}/', metadata)
     tables_test, _ = remove_sdv_columns(tables_test, metadata, update_metadata=False)
 
     min_date = datetime.strptime('2012-01-01', '%Y-%m-%d')
