@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 VERSION = "0.0.0"
-DESCRIPTION = "RELSYNDGB - Relational Synthetic Data Generation Benchmark"
-LONG_DESCRIPTION = "RELSYNDGB - A Python package for evaluating synthetic relational datasets"
+DESCRIPTION = "SyntheRela - Synthetic Relational Data Generation Benchmark"
+LONG_DESCRIPTION = "SyntheRela - A Python package for evaluating synthetic relational datasets"
 
 # Setting up
 setup(
-    name="relsyndgb",
+    name="syntherela",
     version=VERSION,
     author="Anon",
     author_email="Anon",
@@ -15,11 +15,12 @@ setup(
     packages=find_packages("."),
     package_dir={"": "."},
     install_requires=[
-        "sdv>=1.9.0",
-        "sdmetrics>=0.13.0",
-        "POT==0.9.3"
+        "sdv>=1.9.0,<2",
+        "POT==0.9.3",
+        "seaborn==0.13.2",
+        "xgboost==2.0.3",
         ],
-    keywords=["python", "relsyndgb", "synthetic data", "relational data", "evaluation", "benchmark"],
+    keywords=["python", "syntherela", "synthetic data", "relational data", "evaluation", "benchmark"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Education",

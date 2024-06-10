@@ -16,10 +16,10 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
-from relsyndgb.metadata import Metadata
-from relsyndgb.data import load_tables, remove_sdv_columns
-from relsyndgb.metrics.utility import MachineLearningEfficacyMetric
-from relsyndgb.utils import NpEncoder
+from syntherela.metadata import Metadata
+from syntherela.data import load_tables, remove_sdv_columns
+from syntherela.metrics.utility import MachineLearningEfficacyMetric
+from syntherela.utils import NpEncoder
 
 
 ## DATA LOADING
