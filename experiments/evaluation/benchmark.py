@@ -1,5 +1,5 @@
 
-from relsyndgb.benchmark import Benchmark
+from syntherela.benchmark import Benchmark
 import argparse
 import logging
 import sys
@@ -8,13 +8,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
 
-from relsyndgb.metrics.single_column.distance import HellingerDistance, JensenShannonDistance, WassersteinDistance, TotalVariationDistance
-from relsyndgb.metrics.single_column.statistical import ChiSquareTest, KolmogorovSmirnovTest
-from relsyndgb.metrics.single_table.distance import MaximumMeanDiscrepancy, PairwiseCorrelationDifference
-from relsyndgb.metrics.single_column.detection import SingleColumnDetection
-from relsyndgb.metrics.single_table.detection import SingleTableDetection
-from relsyndgb.metrics.multi_table.detection import DenormalizedDetection, DenormalizedAggregationDetection, AggregationDetection, ParentChildDetection, ParentChildAggregationDetection
-from relsyndgb.metrics.multi_table.statistical import CardinalityShapeSimilarity
+from syntherela.metrics.single_column.distance import HellingerDistance, JensenShannonDistance, WassersteinDistance, TotalVariationDistance
+from syntherela.metrics.single_column.statistical import ChiSquareTest, KolmogorovSmirnovTest
+from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy, PairwiseCorrelationDifference
+from syntherela.metrics.single_column.detection import SingleColumnDetection
+from syntherela.metrics.single_table.detection import SingleTableDetection
+from syntherela.metrics.multi_table.detection import DenormalizedDetection, DenormalizedAggregationDetection, AggregationDetection, ParentChildDetection, ParentChildAggregationDetection
+from syntherela.metrics.multi_table.statistical import CardinalityShapeSimilarity
 
 args = argparse.ArgumentParser()
 args.add_argument("--dataset-name", type=str, default="airbnb-simplified_subsampled")
@@ -77,9 +77,9 @@ multi_table_metrics = [
     ]
 
 benchmark = Benchmark(
-    real_data_dir='/d/hpc/projects/FRI/vh0153/relsyndgb/data/original',
-    synthetic_data_dir='/d/hpc/projects/FRI/vh0153/relsyndgb/data/synthetic_single_table',
-    results_dir=f'/d/hpc/projects/FRI/vh0153/relsyndgb/experiments/results/{run_id}',
+    real_data_dir='/d/hpc/projects/FRI/vh0153/syntherela/data/original',
+    synthetic_data_dir='/d/hpc/projects/FRI/vh0153/syntherela/data/synthetic_single_table',
+    results_dir=f'/d/hpc/projects/FRI/vh0153/syntherela/experiments/results/{run_id}',
     benchmark_name='Benchmark',
     single_column_metrics=single_column_metrics,
     single_table_metrics=single_table_metrics,
