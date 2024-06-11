@@ -63,8 +63,11 @@ def visualize_parent_child_multi_table(all_results, datasets, methods, **kwargs)
                 metric_means = [all_results[dataset][method]['multi_table_metrics'][metric][table]['accuracy'] for method in methods]
                 min_mean = min(min_mean, min(metric_means))
                 metric_ses = [all_results[dataset][method]['multi_table_metrics'][metric][table]['SE'] for method in methods]
-                baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][metric][table]["baseline_mean"] for method in methods])
-                baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][metric][table]["baseline_se"] for method in methods])
+                # baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][metric][table]["baseline_mean"] for method in methods])
+                # baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][metric][table]["baseline_se"] for method in methods])
+
+                baseline_means = np.array([0.5 for method in methods])
+                baseline_ses = np.array([0.00 for method in methods])
 
                 ax.bar(ind + width*j, metric_means, width, yerr=metric_ses, color=colors[j])
                 ax.hlines(baseline_means, ind + width*j - width/2, ind + width*j + width/2, color='k')#, linestyle='--')
@@ -75,8 +78,11 @@ def visualize_parent_child_multi_table(all_results, datasets, methods, **kwargs)
                 metric_means = [all_results[dataset][method]['multi_table_metrics'][agg_metric][table]['accuracy'] for method in methods]
                 min_mean = min(min_mean, min(metric_means))
                 metric_ses = [all_results[dataset][method]['multi_table_metrics'][agg_metric][table]['SE'] for method in methods]
-                baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_mean"] for method in methods])
-                baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_se"] for method in methods])
+                # baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_mean"] for method in methods])
+                # baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_se"] for method in methods])
+
+                baseline_means = np.array([0.5 for method in methods])
+                baseline_ses = np.array([0.00 for method in methods])
 
                 ax.bar(ind + width*(j+len(metrics)), metric_means, width, yerr=metric_ses, color=colors[j+len(metrics)])
                 ax.hlines(baseline_means, ind + width*(j+len(metrics)) - width/2, ind + width*(j+len(metrics)) + width/2, color='k')
@@ -109,24 +115,29 @@ def visualize_parent_child_multi_table(all_results, datasets, methods, **kwargs)
 
 
 def visualize_multi_table(all_results, datasets, methods, **kwargs):
-    metrics = kwargs.get('detection_metrics', 
-                         [metric for metric in list(all_results[datasets[0]][methods[0]]['multi_table_metrics'].keys()) if "singletable" not in metric.lower() and "parent" not in metric.lower() and "detection" in metric.lower()])
-    metric_names = kwargs.get('detection_metric_names', metrics)
+    
 
     save_figs = kwargs.get("save_figs", False)
     save_figs_path = kwargs.get("save_figs_path", "./figs/")
     save_figs_path = Path(save_figs_path) / "multi_table" / "detection"
 
-    method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'REALTABFORMER', 'MOSTLYAI', 'GRETEL_ACTGAN', 'GRETEL_LSTM'])
-
-    if method_order is not None:
-        methods = [method for method in method_order if method in methods and method in all_results[dataset]]
-        methods += sorted([method for method in methods if method not in method_order])
-
+    methods_all = methods.copy()
 
     for dataset in datasets:
+        methods = methods_all.copy()
+        method_order = kwargs.get("method_order", ['SDV', 'RCTGAN', 'REALTABFORMER', 'MOSTLYAI', 'GRETEL_ACTGAN', 'GRETEL_LSTM'])
+        metrics = kwargs.get('detection_metrics', 
+                         [metric for metric in list(all_results[dataset][method_order[1]]['multi_table_metrics'].keys()) if "singletable" not in metric.lower() and "parent" not in metric.lower() and "detection" in metric.lower()])
+        metric_names = kwargs.get('detection_metric_names', metrics)
+
+
+        if method_order is not None:
+            methods = [method for method in method_order if method in methods and method in all_results[dataset]]
+            methods += sorted([method for method in methods if method not in method_order])
         if len(methods) == 0 or len(metrics) == 0:
             continue
+
+        
             
         N = len(metrics) # number of metrics
         M = len(methods) # number of methods
@@ -147,8 +158,11 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
             metric_means = [all_results[dataset][method]['multi_table_metrics'][metric]['accuracy'] for method in methods]
             min_mean = min(min_mean, min(metric_means))
             metric_ses = [all_results[dataset][method]['multi_table_metrics'][metric]['SE'] for method in methods]
-            baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][metric]["baseline_mean"] for method in methods])
-            baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][metric]["baseline_se"] for method in methods])
+            # baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][metric]["baseline_mean"] for method in methods])
+            # baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][metric]["baseline_se"] for method in methods])
+
+            baseline_means = np.array([0.5 for method in methods])
+            baseline_ses = np.array([0.00 for method in methods])
 
             ax.bar(ind + width*j, metric_means, width, yerr=metric_ses, color=colors[j])
             # draw a horizontal line for the baseline and standard error

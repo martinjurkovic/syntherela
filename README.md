@@ -64,18 +64,11 @@ experiments/generation/gretel/generate_gretel.py --connection-uid <connection-ui
 To generate data with MOSTLYAI, insructions are provided in [experiments/generation/mostlyai/README.md](experiments/generation/mostlyai/README.md). Further instructions for GRETELAI are provided in [experiments/generation/gretel/README.md](experiments/generation/gretel/README.md).
 
 ### Visualising results
-To visualize results, after running the benchmark you can run the following:
-```python
-benchmark = Benchmark(
-    <real_data_dir>,
-    <synthetic_data_dir>,
-    <results_dir>,
-    <benchmark_name>)
-benchmark.read_results()
-benchmark.visualize_single_column_metrics()
-benchmark.visualize_single_table_metrics()
-benchmark.visualize_multi_table_metrics()
-
+To visualize results, after running the benchmark you can run the below script. The figures will be saved to `results/figures/`:
+```bash
+conda activate reproduce_benchmark
+chmod +x ./experiments/reproducibility/generate_figures.sh
+./experiments/reproducibility/generate_figures.sh
 ```
 
 ## Adding a new metric

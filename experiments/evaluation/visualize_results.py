@@ -12,6 +12,8 @@ from syntherela.metrics.single_column.statistical import ChiSquareTest, Kolmogor
 from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy, PairwiseCorrelationDifference
 from syntherela.metrics.single_column.detection import SingleColumnDetection
 from syntherela.metrics.single_table.detection import SingleTableDetection
+from syntherela.metrics.multi_table.detection import AggregationDetection, ParentChildDetection, ParentChildAggregationDetection
+from syntherela.metrics.multi_table.statistical import CardinalityShapeSimilarity
 
 args = argparse.ArgumentParser()
 args.add_argument("--dataset-name", type=str, default="airbnb-simplified_subsampled")
@@ -56,6 +58,22 @@ single_table_metrics = [
     # SingleTableDetection(classifier_cls=rf_cls, classifier_args=rf_args),
     SingleTableDetection(classifier_cls=logistic, classifier_args=logistic_args, random_state=42),
                         ]
+multi_table_metrics = [
+    CardinalityShapeSimilarity(),
+    # DenormalizedDetection(classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42),
+    # DenormalizedDetection(classifier_cls=rf_cls, classifier_args=rf_args),
+    # DenormalizedDetection(classifier_cls=logistic, classifier_args=logistic_args, random_state=42),
+    # DenormalizedAggregationDetection(classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42),
+    # DenormalizedAggregationDetection(classifier_cls=rf_cls, classifier_args=rf_args),
+    # DenormalizedAggregationDetection(classifier_cls=logistic, classifier_args=logistic_args, random_state=42),
+    AggregationDetection(classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42),
+    # AggregationDetection(classifier_cls=rf_cls, classifier_args=rf_args),
+    AggregationDetection(classifier_cls=logistic, classifier_args=logistic_args, random_state=42),
+    ParentChildDetection(classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42),
+    ParentChildDetection(classifier_cls=logistic, classifier_args=logistic_args, random_state=42),
+    ParentChildAggregationDetection(classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42),
+    ParentChildAggregationDetection(classifier_cls=logistic, classifier_args=logistic_args, random_state=42),
+    ]
 
 benchmark = Benchmark(
     real_data_dir='data/original',
@@ -64,12 +82,19 @@ benchmark = Benchmark(
     benchmark_name='Benchmark',
     single_column_metrics=single_column_metrics,
     single_table_metrics=single_table_metrics,
+    multi_table_metrics=multi_table_metrics,
     run_id=run_id,
     sample_id="sample1",
-    datasets=[dataset_name],
+    # datasets=[dataset_name],
+    datasets=None,
     methods=methods,
     validate_metadata = False
 )
 
-benchmark.run()
+# benchmark.run()
+benchmark.read_results()
 
+# benchmark.reports['Biodegradability_v1']['MOSTLYAI'].visualize_distributions()
+
+benchmark.visualize_single_column_metrics(save_figs = True, save_figs_path="results/figures")
+benchmark.visualize_single_table_metrics(save_figs = True, save_figs_path="results/figures")

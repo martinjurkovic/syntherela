@@ -125,7 +125,7 @@ class Benchmark():
                 file_name = self.build_file_name(dataset_name, method_name)
                 with open(self.results_dir / file_name, 'r') as f:
                     real_data, synthetic_data, metadata = self.load_data(dataset_name, method_name)
-                    temp_report = Report(real_data, synthetic_data, metadata, f"{dataset_name}_{method_name}").load_from_json(self.results_dir / file_name)
+                    temp_report = Report(real_data, synthetic_data, metadata, f"{dataset_name}_{method_name}", validate_metadata=self.validate_metadata).load_from_json(self.results_dir / file_name)
                     self.reports.setdefault(dataset_name, {})[method_name] = temp_report
                     self.all_results.setdefault(dataset_name, {})[method_name] = temp_report.results
         if not self.all_results:
@@ -141,8 +141,8 @@ class Benchmark():
         return file_name
 
     def visualize_single_table_metrics(self, distance=True, detection=True, **kwargs):
-        datasets = kwargs.get('datasets', self.datasets)
-        methods = kwargs.get('methods', self.methods[datasets[0]])
+        datasets = kwargs.pop('datasets', self.datasets)
+        methods = kwargs.pop('methods', self.methods[datasets[0]])
         if distance:
             visualize_single_table_distance_metrics(granularity_level="single_table", 
                                                     metric_type="distance", 
@@ -175,10 +175,8 @@ class Benchmark():
                                                     datasets=datasets, 
                                                     methods=methods, **kwargs)
 
-    def visualize_multi_table_metrics(self, parent_child = True, **kwargs):
+    def visualize_multi_table_metrics(self, **kwargs):
         datasets = kwargs.get('datasets', self.datasets)
         methods = kwargs.get('methods', self.methods[datasets[0]])
         visualize_multi_table(self.all_results, datasets, methods, **kwargs)
-        if parent_child:
-            visualize_parent_child_multi_table(self.all_results, datasets, methods, **kwargs)
             

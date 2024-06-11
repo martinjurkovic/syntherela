@@ -90,10 +90,4 @@ benchmark = Benchmark(
 )
 
 benchmark.run()
-# benchmark.read_results()
 
-# benchmark.reports['Biodegradability_v1']['MOSTLYAI'].visualize_distributions()
-
-# benchmark.visualize_single_column_metrics()
-# benchmark.visualize_single_table_metrics()
-# benchmark.visualize_multi_table_metrics()

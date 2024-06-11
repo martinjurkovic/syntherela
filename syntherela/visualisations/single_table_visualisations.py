@@ -243,7 +243,7 @@ def visualize_single_table_detection_metrics_per_table(all_results, datasets, me
 
             # Create a legend
             custom_lines = [Line2D([0], [0], color=colors[i], lw=4) for i in range(N)]
-            ax.legend(custom_lines, metric_names + agg_metrics, loc='upper left', fontsize=fontsize) # move the legend
+            ax.legend(custom_lines, metric_names + agg_metrics, loc='upper left') # move the legend
 
             ax.axhline(y=0.5, color='red', linestyle='--', linewidth=1)
 
