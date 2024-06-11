@@ -70,6 +70,13 @@ conda activate reproduce_benchmark
 chmod +x ./experiments/reproducibility/generate_figures.sh
 ./experiments/reproducibility/generate_figures.sh
 ```
+### Reproducing Tables
+To reproduce the tables you can run the below script. The tables will be saved as .tex files in `results/tables/`:
+```bash
+conda activate reproduce_benchmark
+chmod +x ./experiments/reproducibility/generate_tables.sh
+./experiments/reproducibility/generate_tables.sh
+```
 
 ## Adding a new metric
 The documentation for adding a new metric can be found in [docs/ADDING_A_METRIC.md](/docs/ADDING_A_METRIC.md).
