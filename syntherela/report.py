@@ -10,7 +10,6 @@ from syntherela.metrics.single_column.statistical import ChiSquareTest
 from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
 from syntherela.visualisations.distribution_visualisations import visualize_bivariate_distributions, visualize_marginals, visualize_parent_child_bivariates
 
-from multiprocessing import Pool
 
 class Report():
 

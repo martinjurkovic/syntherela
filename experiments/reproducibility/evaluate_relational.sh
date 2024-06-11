@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Activate the conda environment
-conda activate reproduce_benchmark
-
 # Arrays to store datasets and their corresponding methods
 DATASETS=(
     airbnb-simplified_subsampled
@@ -43,7 +40,7 @@ do
         do
             METHOD_ARGS+="-m $METHOD "
         done
-        
+        echo Evaluating dataset $DATASET, run-id $RUN_ID methods $METHOD_ARGS
         # Run the Python script with the dataset, run ID, and methods
         python experiments/evaluation/benchmark.py --dataset-name $DATASET --run-id $RUN_ID $METHOD_ARGS
     done

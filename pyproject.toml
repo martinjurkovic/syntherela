@@ -28,6 +28,5 @@ classifiers = [
     ]
 
 [tool.setuptools.packages.find]
-include = ['syntherela']
-namespaces = false
+where = ["."]
 

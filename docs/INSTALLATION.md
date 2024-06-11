@@ -1,6 +1,6 @@
 ## Install benchmark reproducibility environment
 ```bash
-conda create -n syntherela python=3.10 -y
+conda create -n reproduce_benchmark python=3.10 -y
 conda activate reproduce_benchmark
 pip install -r requirements.txt
 ```
@@ -18,6 +18,14 @@ pip install -r experiments/generation/tabular/requirements.txt
 conda create -n rctgan python=3.7 -y
 conda activate rctgan
 pip install experiments/generation/rctgan/RCTGAN 
+```
+
+## Install realtabformer
+```bash
+conda create -n realtabformer python=3.9 -y
+conda activate realtabformer
+pip install .
+pip install -r experiments/generation/realtabformer/requirements.txt
 ```
 
 ## Install gretel

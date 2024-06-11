@@ -13,8 +13,6 @@ RUN_IDS=(
     3
 )
 
-conda activate sdv
-
 for DATASET in ${DATASETS[@]}
 do
     for RUN_ID in ${RUN_IDS[@]}
