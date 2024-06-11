@@ -14,7 +14,7 @@ First, create a .env file in the root of the project with the path to the root o
 
 ### Download synthetic data and results
 
-The results are available through [google drive here](https://drive.google.com/drive/folders/1L9KarR20JqzU0p8b3G_KU--h2b8sz6ky).
+The results can be downloaded and extracted with the below script, or are available on [google drive here](https://drive.google.com/drive/folders/1L9KarR20JqzU0p8b3G_KU--h2b8sz6ky).
 
 ```bash
 conda activate reproduce_benchmark
