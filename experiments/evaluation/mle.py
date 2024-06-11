@@ -286,7 +286,6 @@ if __name__ == '__main__':
     load_dotenv()
 
     PROJECT_PATH = os.getenv("PROJECT_PATH")
-    RESULTS_PATH = os.getenv("RESULTS_PATH")
     
     args = argparse.ArgumentParser()
     args.add_argument("--dataset-name", type=str, default="rossmann", choices=datasets, help="Dataset name to run the experiment on.")
@@ -424,8 +423,8 @@ if __name__ == '__main__':
         print()
 
         if len(methods_to_run) < len(methods):
-            with open(f'{RESULTS_PATH}/mle_{dataset_name}_{seed}_{method}.json', 'w') as f:
+            with open(f'{PROJECT_PATH}/results/mle_{dataset_name}_{seed}_{method}.json', 'w') as f:
                 json.dump(results, f, indent=4, cls=NpEncoder)
             
-    with open(f'{RESULTS_PATH}/mle_{dataset_name}_{seed}.json', 'w') as f:
+    with open(f'{PROJECT_PATH}/results/mle_{dataset_name}_{seed}.json', 'w') as f:
         json.dump(results, f, indent=4, cls=NpEncoder)
