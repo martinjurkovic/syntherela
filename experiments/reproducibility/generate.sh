@@ -1,23 +1,9 @@
-DATASETS=(
-    airbnb-simplified_subsampled
-    Biodegradability_v1
-    CORA_v1
-    imdb_MovieLens_v1
-    rossmann_subsampled
-    walmart_subsampled
-)
+chmod +x experiments/reproduciblity/generation/generate_sdv.sh
+chmod +x experiments/reproduciblity/generation/generate_rctgan.sh
+chmod +x experiments/reproduciblity/generation/generate_realtabformer.sh
+chmod +x experiments/reproduciblity/generation/generate_tabular.sh
 
-RUN_IDS=(
-    1 
-    2 
-    3
-)
-
-for DATASET in ${DATASETS[@]}
-do
-    for RUN_ID in ${RUN_IDS[@]}
-    do
-        # SDV
-        python experiments/generation/sdv/generate_sdv.py --dataset-name $DATASET --run-id $RUN_ID
-    done
-done
+./experiments/reproduciblity/generation/generate_sdv.sh
+./experiments/reproduciblity/generation/generate_rctgan.sh
+./experiments/reproduciblity/generation/generate_realtabformer.sh
+./experiments/reproduciblity/generation/generate_tabular.sh

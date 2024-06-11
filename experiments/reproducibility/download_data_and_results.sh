@@ -1,5 +1,7 @@
+conda activate reproduce_benchmark
+
 # download original and synthetic data
-python experiments/reproducibility/data/download_original_data.py
+python experiments/data/download_data.py
 
 # download results
-python experiments/reproducibility/data/download_results.py
+python experiments/data/download_results.py

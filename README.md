@@ -8,7 +8,12 @@ pip install .
 ```
 
 ## Running reproducibility experiments
-We divide the reproducibility of the experiments into two parts: the generation of synthetic data and the evaluation of the generated data. The following sections describe how to reproduce the experiments for each part.
+We divide the reproducibility of the experiments into two parts: the generation of synthetic data and the evaluation of the generated data. The following sections describe how to reproduce the experiments for each part. If you want to run all experiments at once, you can run the following command:
+
+```bash
+chmod +x run_all_experiments.sh
+./run_all_experiments.sh
+```
 
 ### Generation of synthetic data
 Depending on the synthetic data generation method a separate pythone environment is needed. The instruction for installing the required environment for each method is provided in [docs/INSTALLATION.md](/docs/INSTALLATION.md).

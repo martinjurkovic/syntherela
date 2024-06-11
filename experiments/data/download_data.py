@@ -30,7 +30,7 @@ def download_and_extract(url, filename):
 orig_url = "https://drive.google.com/uc?id=11-vhJejKLCA-PAvj9o3MMItvy6RBL8dm"
 synth_url = "https://drive.google.com/uc?id=1b6qebgzniF3Zro52WpoIKS9W6C-8O4d-"
 
-# download_and_extract(orig_url, "original.zip")
+download_and_extract(orig_url, "original.zip")
 download_and_extract(synth_url, "synthetic.zip")
 
 print("Files downloaded and extracted successfully!")
