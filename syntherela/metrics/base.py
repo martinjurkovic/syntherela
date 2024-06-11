@@ -301,14 +301,22 @@ class DetectionBaseMetric(BaseMetric):
         return dict(sorted(features.items(), key=lambda x: np.mean(x[1]), reverse=True))
     
     
-    def plot_feature_importance(self, metadata, ax=None, combine_categorical=False):
+    def plot_feature_importance(self, metadata, ax=None, combine_categorical=False, lab_fontsize = 30, fontsize=23):
         features = self.feature_importance(combine_categorical=combine_categorical)
+
+        def prettyify_feature_name(feature_name):
+            split_name = feature_name.split('_')
+            if len(split_name) > 1:
+                return ' '.join([word.capitalize().replace('Nunique', '\#Unique') if 'id' not in word else '' for word in split_name])
+            return feature_name[0].upper() + feature_name[1:]
 
         def find_column_type(feature_name, column_info):
             for column, values in column_info.items():
                 if values['sdtype'] == 'id':
                     continue
-                if column in feature_name:
+                if column == feature_name:
+                    return values['sdtype']
+                elif not combine_categorical and feature_name in column:
                     return values['sdtype']
             return None
 
@@ -350,15 +358,71 @@ class DetectionBaseMetric(BaseMetric):
         xlim = ax.get_xlim()
         ax.set_xlim(0, xlim[1])
         ax.set_yticks(range(len(features)))
-        ax.set_yticklabels(list(features.keys())[::-1])
-        ax.set_xlabel('Feature importance')
+        pretty_feature_names = [prettyify_feature_name(feature) for feature in features.keys()][::-1]
+        ax.set_yticklabels(pretty_feature_names)
+        ax.set_xlabel('Feature importance', fontsize=lab_fontsize)
+        ax.tick_params(axis='x', labelsize=fontsize-2)
+        ax.tick_params(axis='y', labelsize=fontsize)
         labels = ax.get_legend_handles_labels()
         unique_labels = {l:h for h,l in zip(*labels)}
         labels_handles = [*zip(*unique_labels.items())]
         legend = labels_handles[::-1]
-        ax.legend(*legend)
+        ax.legend(*legend, fontsize='x-small', loc='lower right', title='Feature type', markerscale=2)
     
 
-    def partial_dependence(self):
-        raise NotImplementedError()
+    def plot_partial_dependence(self, feature, lab_fontsize = 30, seed=None):
+        features = self.feature_importance(combine_categorical=False)
+        # sort by average importance
+        features = {k: v.mean() for k, v in sorted(features.items(), key=lambda item: np.mean(item[1]), reverse=True)}
+        from sklearn.inspection import PartialDependenceDisplay
+        
+        # TODO: move these functions to some utility module
+        def prettyify_feature_name(feature_name):
+            split_name = feature_name.split('_')
+            if len(split_name) > 1:
+                return ' '.join([word.capitalize().replace('Nunique', '\#Unique') if 'id' not in word else '' for word in split_name])
+            return feature_name[0].upper() + feature_name[1:]
+        
+        def get_average_pds(feature, seed=0):
+            plt.ioff()
+            ys = []
+            disps_ind = []
+            for i in range(10):
+                disp_ind = PartialDependenceDisplay.from_estimator(self.models[i], self.X.sample(30, random_state=seed + i), [feature], kind='individual', response_method='predict_proba')
+                np.random.seed(seed + i)
+                disp = PartialDependenceDisplay.from_estimator(self.models[i], self.X, [feature], kind='average', response_method='predict_proba', subsample=0.5, percentiles=(0, 1))
+                disps_ind.append(disp_ind)
+                y = disp.axes_[0][0].lines[0].get_ydata()
+                if i == 0:
+                    ys.append(y)
+                    x = disp.axes_[0][0].lines[0].get_xdata()
+                    
+                elif i > 0 and y.shape == ys[0].shape:
+                    ys.append(y)
+                plt.clf()
+            plt.close("all")
+            return x, np.array(ys), disps_ind
+        
+        x, ys, disps = get_average_pds(feature, seed=seed)
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+        disps[0].plot(ax=ax)
+        for i in range (1, len(disps)):
+            disps[i].plot(ax=disps[i-1].axes_)
+
+        ax = disps[0].axes_[0][0]
+        y_mean = ys.mean(axis=0)
+        y_se = ys.std(axis=0) / np.sqrt(ys.shape[0])
+
+        ax.plot(x, y_mean, color='C0', label='Individual CEs')
+        ax.plot(x, y_mean, color='C1', label='Average')
+        ax.fill_between(x, y_mean - y_se, y_mean + y_se, alpha=0.4, color='C1', zorder=1, label='SE')
+
+        if all([x_.is_integer() for x_ in x]):
+            ax.set_xticks(x)
+            ax.set_xticklabels(x.astype(int))
+        ax.set_xlabel(prettyify_feature_name(feature), fontsize=lab_fontsize)
+        ax.set_ylabel('Partial dependence', fontsize=lab_fontsize)
+        ax.legend(fontsize='xx-small', loc='lower left')
+        
     
