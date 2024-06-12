@@ -59,7 +59,9 @@ def visualize_single_table_distance_metrics(granularity_level, metric_type, all_
             if not log_scale:
                 ax.set_ylim(bottom=0, top = max_value * 1.25)
             else:
-                ax.set_ylim(top = math.pow(max_value, 20))
+                p = kwargs.get(f"{base_metric}_pow", 20)
+                top = math.pow(max_value, p)
+                ax.set_ylim(top = top)
             # ax.set_yticks(np.arange(y_min, 1.01, 0.1))
             ax.set_ylabel("Metric Value", fontsize = fontsize)
             ax.tick_params(axis='y', labelsize=20)
@@ -85,8 +87,6 @@ def visualize_single_table_distance_metrics(granularity_level, metric_type, all_
             # set title
             if title:
                 plt.title(f"{base_metric_name} for dataset {prettify_dataset_name(dataset)}")
-            else:
-                print(f"{base_metric_name} for dataset {prettify_dataset_name(dataset)}")
 
             if save_figs:
                 os.makedirs(save_figs_path, exist_ok=True)
