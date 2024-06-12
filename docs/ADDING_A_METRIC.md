@@ -33,9 +33,10 @@ Distance metrics calculate the distance between the original and synthetic data.
 Detection metrics alongside the real and synthetic data also accept a scikit-learn API based classifier to calculate the accuracy of the classifier on the real and synthetic data. The `DetectionBaseMetric` class is written in a way that when adding a new metric you don't need to implement anything, or you can overwrite any of the functions. The `run` function calculates the accuracy and standard error of the classifier on the real and synthetic data and then the p values of the binomial test for the detection of synthetic data or detection of potential data copying. The function returns a dictionary of the form:
 
 ```python
-{ "accuracy": np.mean(scores), "SE": standard_error, 
-                "bin_test_p_val" : np.round(bin_test_p_val, decimals=16),
-                "copying_p_val": np.round(copying_p_val, decimals=16)}
+{"accuracy": np.mean(scores), 
+"SE": standard_error, 
+"bin_test_p_val" : np.round(bin_test_p_val, decimals=16),
+"copying_p_val": np.round(copying_p_val, decimals=16)}
 ```
 
 The metric also implements a `prepare_data` function where the data gets transformed from a pandas dataframe to a numpy array. The `prepare_data` function can be overwritten if the data needs to be transformed in a different way, it just has to return the `X` and `y` arrays. If the classifier supports feature importance there is also a function `plot_feature_importance`.
@@ -47,11 +48,11 @@ For granularity, a `SingleColumnMetric` and `SingleTableMetric` classes are prov
 Here is an example of how to add a new metric to the benchmark. Let's say we want to add a new distance metric that calculates absolute difference of the means of the real vs synthetic column. We would create a new class that inherits from `DistanceBaseMetric` and `SingleColumnMetric`, and implement the `compute` and `is_applicable` functions. 
 
 ```python
-class MeanDistance(DistanceBaseMetric, SingleColumnMetric):
+class AbsoluteMeanDistance(DistanceBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = "MeanDistance"
+        self.name = "AbsoluteMeanDistance"
         self.goal = Goal.MINIMIZE
         self.min_value = 0.0
         self.max_value = float('inf')

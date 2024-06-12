@@ -7,14 +7,14 @@ To install only the benchmark package, run the following command:
 pip install .
 ```
 
-## Running reproducibility experiments
+## Replicating the paper's results
 We divide the reproducibility of the experiments into two parts: the generation of synthetic data and the evaluation of the generated data. The following sections describe how to reproduce the experiments for each part.
 
 First, create a .env file in the root of the project with the path to the root of the project. Copy `.env.example`, rename it to `.env` and update the path.
 
 ### Download synthetic data and results
 
-The results can be downloaded and extracted with the below script, or are available on [google drive here](https://drive.google.com/drive/folders/1L9KarR20JqzU0p8b3G_KU--h2b8sz6ky).
+The data and results can be downloaded and extracted with the below script, or are available on [google drive here](https://drive.google.com/drive/folders/1L9KarR20JqzU0p8b3G_KU--h2b8sz6ky).
 
 ```bash
 conda activate reproduce_benchmark
