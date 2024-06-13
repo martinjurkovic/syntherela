@@ -684,7 +684,7 @@ def create_table(metric_type, table_name="table1"):
 
     table_latex = re.sub(" +", " ", latex_table)
     # save the latex table to file
-    print(f"Saving table {table_name}.")
+    print(f"Saving Table {table_name}.")
     with open(f"results/tables/table{table_name}.tex", "w") as f:
         f.write(table_latex)
 

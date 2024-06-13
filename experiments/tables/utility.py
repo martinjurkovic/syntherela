@@ -160,17 +160,17 @@ for dataset in ["airbnb", "rossmann", "walmart"]:
 # Save the tables
 
 
-print("Saving table 2 (best results were bolded manually).")
+print("Saving Table 2 (best results were bolded manually).")
 table_latex = df_to_latex(df)
 with open(f"results/tables/table2.tex", "w") as f:
     f.write(table_latex)
 
-print("Saving table 6 (best results were bolded manually).")
+print("Saving Table 6 (best results were bolded manually).")
 table_latex = df_to_latex(df_model)
 with open(f"results/tables/table6.tex", "w") as f:
     f.write(table_latex)
 
-print("Saving table 7 (best results were bolded manually).")
+print("Saving Table 7 (best results were bolded manually).")
 table_latex = df_to_latex(df_feature)
 with open(f"results/tables/table7.tex", "w") as f:
     f.write(table_latex)
