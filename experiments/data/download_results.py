@@ -1,5 +1,4 @@
 import os
-import requests
 import zipfile
 
 import gdown
@@ -8,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 PROJECT_PATH = os.getenv("PROJECT_PATH")
+
 
 def download_and_extract(url, filename):
     # Path to the directory where the file will be extracted
@@ -25,6 +25,7 @@ def download_and_extract(url, filename):
 
     # Clean up the downloaded zip file
     os.remove(file_path)
+
 
 # URL of the file to download
 results_url = "https://drive.google.com/uc?id=1FprsHPYWDrE2AJKscRIVET_fvh0LoJX1"

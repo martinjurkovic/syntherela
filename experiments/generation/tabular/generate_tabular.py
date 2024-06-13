@@ -22,12 +22,12 @@ synthetic_data_path = args.synthetic_data_path
 run_id = args.run_id
 
 MODEL_NAMES = [
-               'bayesian_network',
-               'ddpm',
-                'ctgan', 
-               'tvae',
-               'nflow',
-               ]
+    "bayesian_network",
+    "ddpm",
+    "ctgan",
+    "tvae",
+    "nflow",
+]
 
 SYNTHETIC_MODEL_PARAMS = {
     "marginal_distributions": {},
@@ -86,8 +86,10 @@ SYNTHETIC_MODEL_PARAMS = {
     },
 }
 
-metadata = Metadata().load_from_json(Path(real_data_path) / f'{dataset_name}/metadata.json')
-real_data = load_tables(Path(real_data_path) / f'{dataset_name}', metadata)
+metadata = Metadata().load_from_json(
+    Path(real_data_path) / f"{dataset_name}/metadata.json"
+)
+real_data = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
 real_data, metadata = remove_sdv_columns(real_data, metadata, validate=False)
 metadata.validate_data(real_data)
 
@@ -106,12 +108,13 @@ for MODEL_NAME in MODEL_NAMES:
             if len(constant_columns) > 0:
                 X = X.drop(columns=constant_columns)
 
-
-            numeric_columns = X.select_dtypes(include='number').columns
+            numeric_columns = X.select_dtypes(include="number").columns
             if len(numeric_columns) > 0:
-                imp = SimpleImputer(strategy='mean')
-                X[numeric_columns] = pd.DataFrame(imp.fit_transform(X[numeric_columns]), columns=numeric_columns)
-            
+                imp = SimpleImputer(strategy="mean")
+                X[numeric_columns] = pd.DataFrame(
+                    imp.fit_transform(X[numeric_columns]), columns=numeric_columns
+                )
+
             syn_model.fit(X)
             synthetic_data[table] = syn_model.generate(len(X))
             synthetic_data[table] = synthetic_data[table].dataframe()
@@ -122,5 +125,7 @@ for MODEL_NAME in MODEL_NAMES:
         except Exception as e:
             print(f"Exception occured at {MODEL_NAME}-{table}: {e}")
 
-    save_data_path = Path(synthetic_data_path) / dataset_name / MODEL_NAME / run_id / 'sample1'
+    save_data_path = (
+        Path(synthetic_data_path) / dataset_name / MODEL_NAME / run_id / "sample1"
+    )
     save_tables(synthetic_data, save_data_path)

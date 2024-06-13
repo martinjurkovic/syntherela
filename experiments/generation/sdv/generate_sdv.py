@@ -25,10 +25,10 @@ synthetic_data_path = args.synthetic_data_path
 model_save_path = args.model_save_path
 run_id = args.run_id
 
-logger = logging.getLogger(f'{MODEL_NAME}_logger')
+logger = logging.getLogger(f"{MODEL_NAME}_logger")
 
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 handler = logging.StreamHandler(stream=sys.stdout)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -37,16 +37,19 @@ logger.info(f"START LOGGING DATASET {dataset_name} RUN {run_id}...")
 
 
 logger.debug("Loading real data...")
-metadata = Metadata().load_from_json(Path(real_data_path) / f'{dataset_name}/metadata.json')
+metadata = Metadata().load_from_json(
+    Path(real_data_path) / f"{dataset_name}/metadata.json"
+)
 
-if dataset_name == 'Biodegradability_v1':
-    metadata.update_column('bond', 'type', sdtype='numerical', computer_representation = "Int64")
+if dataset_name == "Biodegradability_v1":
+    metadata.update_column(
+        "bond", "type", sdtype="numerical", computer_representation="Int64"
+    )
 
-real_data = load_tables(Path(real_data_path) / f'{dataset_name}', metadata)
+real_data = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
 real_data, metadata = remove_sdv_columns(real_data, metadata)
 metadata.validate_data(real_data)
 logger.debug("Real data loaded")
-
 
 
 synthetic_data = {}
@@ -68,10 +71,11 @@ for i in range(1, 4):
     logger.debug(f"Sampling sample {i}")
     model.seed = i
     synthetic_data = model.sample()
-    save_data_path = Path(synthetic_data_path) / dataset_name / MODEL_NAME / run_id / f"sample{i}"
+    save_data_path = (
+        Path(synthetic_data_path) / dataset_name / MODEL_NAME / run_id / f"sample{i}"
+    )
     save_tables(synthetic_data, save_data_path)
     logger.debug(f"Done! Sample {i} saved!")
-    
+
 
 logger.info("COMPLETE GENERATION DONE.")
-

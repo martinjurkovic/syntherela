@@ -8,34 +8,33 @@ import numpy as np
 warnings.filterwarnings("ignore")
 
 method_names_dict = {
-    'SDV': 'SDV',
-    'RCTGAN': 'RCTGAN',
-    'REALTABFORMER': 'REALTABF.',
-    'MOSTLYAI': 'MOSTLYAI',
-    'GRETEL_ACTGAN': 'GRE-ACTGAN',
-    'GRETEL_LSTM': 'GRE-LSTM',
-    'ddpm': 'DDPM',
+    "SDV": "SDV",
+    "RCTGAN": "RCTGAN",
+    "REALTABFORMER": "REALTABF.",
+    "MOSTLYAI": "MOSTLYAI",
+    "GRETEL_ACTGAN": "GRE-ACTGAN",
+    "GRETEL_LSTM": "GRE-LSTM",
+    "ddpm": "DDPM",
 }
 
-baselines = {
-    'walmart': 7697,
-    'rossmann': 345,
-    'airbnb': 0.5
-}
+baselines = {"walmart": 7697, "rossmann": 345, "airbnb": 0.5}
 
-dataset_names = {
-    'walmart': 'Walmart',
-    'rossmann': 'Rossmann',
-    'airbnb': 'AirBnB'
-}
+dataset_names = {"walmart": "Walmart", "rossmann": "Rossmann", "airbnb": "AirBnB"}
+
 
 def df_to_latex(df):
     latex_table = df.to_latex(index=False, escape=False, column_format="clrrr")
     # replace all white spaces with one space
-    table_latex = re.sub(' +', ' ', latex_table)
+    table_latex = re.sub(" +", " ", latex_table)
     table_latex = table_latex.replace("\\\\\n\\multirow", "\\\\\n\\hline\n\\multirow")
-    table_latex = table_latex.replace(".00\\", "\\").replace(".000\\", "\\").replace(".000$", "$").replace(".00$", "$")
+    table_latex = (
+        table_latex.replace(".00\\", "\\")
+        .replace(".000\\", "\\")
+        .replace(".000$", "$")
+        .replace(".00$", "$")
+    )
     return table_latex
+
 
 def add_utility_results(df, dataset, data, round_score=False):
     model = "xgboost"
@@ -47,7 +46,16 @@ def add_utility_results(df, dataset, data, round_score=False):
             score_se = np.round(score_se).astype(int)
         score_se = np.round(score_se, 1)
 
-    header_row = pd.DataFrame({"Dataset": f"\multirow{{7}}{{*}}{{\\parbox{{1.3cm}}{{{dataset_names[dataset]}}}}}", "Method": "Real Data", "Score": f"${score:.2f}\pm{score_se:.3f}$ ({baselines[dataset]})", "Model Selection": f"-", "Feature Selection": f"-"}, index=[0])
+    header_row = pd.DataFrame(
+        {
+            "Dataset": f"\multirow{{7}}{{*}}{{\\parbox{{1.3cm}}{{{dataset_names[dataset]}}}}}",
+            "Method": "Real Data",
+            "Score": f"${score:.2f}\pm{score_se:.3f}$ ({baselines[dataset]})",
+            "Model Selection": f"-",
+            "Feature Selection": f"-",
+        },
+        index=[0],
+    )
     # add the row without append
     df = pd.concat([df, header_row], ignore_index=True)
 
@@ -59,13 +67,22 @@ def add_utility_results(df, dataset, data, round_score=False):
             if score_se > 1:
                 score_se = np.round(score_se).astype(int)
             score_se = np.round(score_se, 1)
-        
+
         model_selection = data[dataset][method]["spearman_mean"]
         model_selection_se = data[dataset][method]["spearman_se"]
         feature_selection = data[dataset][method]["feature_importance_spearman_mean"]
         feature_selection_se = data[dataset][method]["feature_importance_spearman_se"]
 
-        new_row = pd.DataFrame({"Dataset": "", "Method": method_names_dict[method], "Score": f"${score:.2f}\pm{score_se:.3f}$", "Model Selection": f"${model_selection:.2f}\pm{model_selection_se:.2f}$", "Feature Selection": f"${feature_selection:.2f}\pm{feature_selection_se:.2f}$"}, index=[0])
+        new_row = pd.DataFrame(
+            {
+                "Dataset": "",
+                "Method": method_names_dict[method],
+                "Score": f"${score:.2f}\pm{score_se:.3f}$",
+                "Model Selection": f"${model_selection:.2f}\pm{model_selection_se:.2f}$",
+                "Feature Selection": f"${feature_selection:.2f}\pm{feature_selection_se:.2f}$",
+            },
+            index=[0],
+        )
         df = pd.concat([df, new_row], ignore_index=True)
     return df
 
@@ -88,7 +105,16 @@ def add_rank_results(df, dataset, data, feature_importance=False):
     weighted = data[dataset][method][f"{key_weighted}_mean"]
     weighted_se = data[dataset][method][f"{key_weighted}_se"]
 
-    header_row = pd.DataFrame({"Dataset": f"\multirow{{6}}{{*}}{{\\parbox{{1.3cm}}{{{dataset_names[dataset]}}}}}", "Method": method_names_dict[method], "Spearman": f"${spearman:.2f}\pm{spearman_se:.2f}$", "Kendall": f"${kendall_Kendall:.2f}\pm{kendall_Kendall_se:.2f}$", "Weighted": f"${weighted:.2f}\pm{weighted_se:.2f}$"}, index=[0])
+    header_row = pd.DataFrame(
+        {
+            "Dataset": f"\multirow{{6}}{{*}}{{\\parbox{{1.3cm}}{{{dataset_names[dataset]}}}}}",
+            "Method": method_names_dict[method],
+            "Spearman": f"${spearman:.2f}\pm{spearman_se:.2f}$",
+            "Kendall": f"${kendall_Kendall:.2f}\pm{kendall_Kendall_se:.2f}$",
+            "Weighted": f"${weighted:.2f}\pm{weighted_se:.2f}$",
+        },
+        index=[0],
+    )
     df = pd.concat([df, header_row], ignore_index=True)
 
     for method in methods[1:]:
@@ -99,14 +125,29 @@ def add_rank_results(df, dataset, data, feature_importance=False):
         weighted = data[dataset][method][f"{key_weighted}_mean"]
         weighted_se = data[dataset][method][f"{key_weighted}_se"]
 
-        new_row = pd.DataFrame({"Dataset": "", "Method": method_names_dict[method], "Spearman": f"${spearman:.2f}\pm{spearman_se:.2f}$", "Kendall": f"${kendall_Kendall:.2f}\pm{kendall_Kendall_se:.2f}$", "Weighted": f"${weighted:.2f}\pm{weighted_se:.2f}$"}, index=[0])
+        new_row = pd.DataFrame(
+            {
+                "Dataset": "",
+                "Method": method_names_dict[method],
+                "Spearman": f"${spearman:.2f}\pm{spearman_se:.2f}$",
+                "Kendall": f"${kendall_Kendall:.2f}\pm{kendall_Kendall_se:.2f}$",
+                "Weighted": f"${weighted:.2f}\pm{weighted_se:.2f}$",
+            },
+            index=[0],
+        )
         df = pd.concat([df, new_row], ignore_index=True)
     return df
 
 
-df = pd.DataFrame(columns=["Dataset", "Method", "Score", "Model Selection",  "Feature Selection"])
-df_model = pd.DataFrame(columns=["Dataset", "Method", "Spearman", "Kendall", "Weighted"])
-df_feature = pd.DataFrame(columns=["Dataset", "Method", "Spearman", "Kendall", "Weighted"])
+df = pd.DataFrame(
+    columns=["Dataset", "Method", "Score", "Model Selection", "Feature Selection"]
+)
+df_model = pd.DataFrame(
+    columns=["Dataset", "Method", "Spearman", "Kendall", "Weighted"]
+)
+df_feature = pd.DataFrame(
+    columns=["Dataset", "Method", "Spearman", "Kendall", "Weighted"]
+)
 
 for dataset in ["airbnb", "rossmann", "walmart"]:
     with open("results/mle_{}_0.json".format(dataset)) as f:
@@ -122,14 +163,14 @@ for dataset in ["airbnb", "rossmann", "walmart"]:
 print("Saving table 2 (best results were bolded manually).")
 table_latex = df_to_latex(df)
 with open(f"results/tables/table2.tex", "w") as f:
-        f.write(table_latex)
+    f.write(table_latex)
 
 print("Saving table 6 (best results were bolded manually).")
 table_latex = df_to_latex(df_model)
 with open(f"results/tables/table6.tex", "w") as f:
-        f.write(table_latex)
+    f.write(table_latex)
 
 print("Saving table 7 (best results were bolded manually).")
 table_latex = df_to_latex(df_feature)
 with open(f"results/tables/table7.tex", "w") as f:
-        f.write(table_latex)
+    f.write(table_latex)
