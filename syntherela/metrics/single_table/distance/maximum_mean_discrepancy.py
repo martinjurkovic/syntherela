@@ -8,30 +8,31 @@ from sdmetrics.goal import Goal
 from syntherela.metadata import drop_ids
 from syntherela.metrics.base import DistanceBaseMetric, SingleTableMetric
 
+
 class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "MaximumMeanDiscrepancy"
         self.goal = Goal.MINIMIZE
         self.min_value = 0.0
-        self.max_value = float('inf')
+        self.max_value = float("inf")
 
     @staticmethod
     def is_applicable(metadata):
         """
         Check if the table contains at least one column that is not an id.
         """
-        for column_name in metadata['columns'].keys():
-            if metadata['columns'][column_name]['sdtype'] == 'numerical':
+        for column_name in metadata["columns"].keys():
+            if metadata["columns"][column_name]["sdtype"] == "numerical":
                 return True
         return False
 
     @staticmethod
-    def compute(original_table, sythetic_table, metadata, kernel='linear', **kwargs):
+    def compute(original_table, sythetic_table, metadata, kernel="linear", **kwargs):
         """
         Code for MaximumMeanDiscrepancy metric modified from:
-        Qian, Z., Cebere, B.-C., & van der Schaar, M. (2023). 
-        Synthcity: Facilitating innovative use cases of synthetic data in different data modalities. 
+        Qian, Z., Cebere, B.-C., & van der Schaar, M. (2023).
+        Synthcity: Facilitating innovative use cases of synthetic data in different data modalities.
         arXiv: https://arxiv.org/abs/2301.07573
         github: https://github.com/vanderschaarlab/synthcity/
         """
@@ -45,27 +46,28 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
                 orig.drop(col, axis=1, inplace=True)
                 synth.drop(col, axis=1, inplace=True)
             elif "datetime" in str(orig[col].dtype):
-                orig[col] =  pd.to_numeric(orig[col])
-                synth[col] =  pd.to_numeric(synth[col])
+                orig[col] = pd.to_numeric(orig[col])
+                synth[col] = pd.to_numeric(synth[col])
 
         # standardize the values
-        pipe = Pipeline([
+        pipe = Pipeline(
+            [
                 ("imputer", SimpleImputer(strategy="mean")),
                 ("scaler", StandardScaler()),
-                ]
+            ]
         )
-        
+
         combined = pd.concat([orig, synth])
         pipe.fit(combined)
         orig = pipe.transform(orig)
         synth = pipe.transform(synth)
-        
+
         if kernel == "linear":
             """
             MMD using linear kernel (i.e., k(x,y) = <x,y>)
             """
             delta = orig.mean(axis=0) - synth.mean(axis=0)
-            #delta = delta_df.values
+            # delta = delta_df.values
 
             score = delta.dot(delta.T)
         elif kernel == "rbf":
@@ -120,6 +122,5 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
             score = XX.mean() + YY.mean() - 2 * XY.mean()
         else:
             raise ValueError(f"Unsupported kernel {kernel}")
-        
+
         return score.astype(float)
-    
