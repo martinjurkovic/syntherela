@@ -9,6 +9,7 @@ pip install .
 
 ## Replicating the paper's results
 We divide the reproducibility of the experiments into two parts: the generation of synthetic data and the evaluation of the generated data. The following sections describe how to reproduce the experiments for each part.
+> To reproduce some of the figures the synthetic data needs to be downloaded first. The tables can be reproduced with the results provided in the repository or by re-running the benchmark.
 
 First, create a .env file in the root of the project with the path to the root of the project. Copy `.env.example`, rename it to `.env` and update the path.
 
@@ -57,11 +58,12 @@ chmod +x ./experiments/reproducibility/generation/generate_tabular.sh
 ./experiments/reproducibility/generation/generate_tabular.sh
 
 conda activate gretel
-chmod +x experiments/generation/gretel/generate_gretel.py
-experiments/generation/gretel/generate_gretel.py --connection-uid <connection-uid>
+python experiments/generation/gretel/generate_gretel.py --connection-uid  <connection-uid> --model lstm
+python experiments/generation/gretel/generate_gretel.py --connection-uid  <connection-uid> --model actgan
 ```
 
-To generate data with MOSTLYAI, insructions are provided in [experiments/generation/mostlyai/README.md](experiments/generation/mostlyai/README.md). Further instructions for GRETELAI are provided in [experiments/generation/gretel/README.md](experiments/generation/gretel/README.md).
+To generate data with MOSTLYAI, insructions are provided in [experiments/generation/mostlyai/README.md](experiments/generation/mostlyai/README.md). <br>
+Further instructions for GRETELAI are provided in [experiments/generation/gretel/README.md](experiments/generation/gretel/README.md).
 
 ### Visualising results
 To visualize results, after running the benchmark you can run the below script. The figures will be saved to `results/figures/`:
