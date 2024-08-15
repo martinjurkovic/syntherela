@@ -662,9 +662,10 @@ if __name__ == "__main__":
 
         if len(methods_to_run) < len(methods):
             with open(
-                f"{PROJECT_PATH}/results/mle_{dataset_name}_{seed}_{method}.json", "w"
+                f"{PROJECT_PATH}/results/mle_{dataset_name}_{run}_{seed}_{method}.json",
+                "w",
             ) as f:
                 json.dump(results, f, indent=4, cls=NpEncoder)
 
-    with open(f"{PROJECT_PATH}/results/mle_{dataset_name}_{seed}.json", "w") as f:
+    with open(f"{PROJECT_PATH}/results/mle_{dataset_name}_{run}_{seed}.json", "w") as f:
         json.dump(results, f, indent=4, cls=NpEncoder)
