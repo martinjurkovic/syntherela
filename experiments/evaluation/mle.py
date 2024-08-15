@@ -382,7 +382,7 @@ if __name__ == "__main__":
         default=100,
         help="Number of bootstrap samples.",
     )
-    args.add_argument("--run", type=str, default="2", help="Run number.")
+    args.add_argument("--run", type=str, default="1", help="Run number.")
     args = args.parse_args()
 
     dataset_name = args.dataset_name
