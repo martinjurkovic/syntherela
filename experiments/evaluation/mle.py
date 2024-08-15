@@ -23,9 +23,9 @@ from syntherela.utils import NpEncoder
 
 
 ## DATA LOADING
-def load_rossmann(method):
+def load_rossmann(method, run="1"):
     dataset_name = "rossmann_subsampled"
-    run = "1"
+
     metadata = Metadata().load_from_json(
         f"{PROJECT_PATH}/data/original/{dataset_name}/metadata.json"
     )
@@ -55,9 +55,9 @@ def load_rossmann(method):
     return tables, tables_synthetic, tables_test, metadata
 
 
-def load_airbnb(method):
+def load_airbnb(method, run="1"):
     dataset_name = "airbnb-simplified_subsampled"
-    run = "1"
+
     metadata = Metadata().load_from_json(
         f"{PROJECT_PATH}/data/original/{dataset_name}/metadata.json"
     )
@@ -103,9 +103,9 @@ def load_airbnb(method):
     return tables, tables_synthetic, tables_test, metadata
 
 
-def load_walmart(method):
+def load_walmart(method, run="1"):
     dataset_name = "walmart_subsampled"
-    run = "1"
+
     metadata = Metadata().load_from_json(
         f"{PROJECT_PATH}/data/original/{dataset_name}/metadata.json"
     )
@@ -268,13 +268,13 @@ def process_walmart(tables, metadata):
 
 
 ## UTILITY
-def load_dataset(dataset_name, method):
+def load_dataset(dataset_name, method, run="1"):
     if dataset_name == "rossmann":
-        tables, tables_synthetic, tables_test, metadata = load_rossmann(method)
+        tables, tables_synthetic, tables_test, metadata = load_rossmann(method, run=run)
         feature_engineering_function = process_rossmann
         target = ("historical", "Customers", "regression")
     elif dataset_name == "airbnb":
-        tables, tables_synthetic, tables_test, metadata = load_airbnb(method)
+        tables, tables_synthetic, tables_test, metadata = load_airbnb(method, run=run)
         # Store the categories from the real data to avoid mistakes in case methods do not generate certain values
         categories = {}
         for _, table in tables_test.items():
@@ -285,7 +285,7 @@ def load_dataset(dataset_name, method):
         # feature_engineering_function = None
         target = ("users", "country_destination", "classification")
     elif dataset_name == "walmart":
-        tables, tables_synthetic, tables_test, metadata = load_walmart(method)
+        tables, tables_synthetic, tables_test, metadata = load_walmart(method, run=run)
         feature_engineering_function = process_walmart
         target = ("depts", "Weekly_Sales", "regression")
     else:
@@ -302,7 +302,6 @@ def load_dataset(dataset_name, method):
 
 
 methods = [
-    "COPY",
     "SDV",
     "RCTGAN",
     "REALTABFORMER",
@@ -383,6 +382,7 @@ if __name__ == "__main__":
         default=100,
         help="Number of bootstrap samples.",
     )
+    args.add_argument("--run", type=str, default="2", help="Run number.")
     args = args.parse_args()
 
     dataset_name = args.dataset_name
@@ -392,6 +392,7 @@ if __name__ == "__main__":
         methods_to_run = args.methods
     seed = args.seed
     m = args.bootstrap_repetitions
+    run = args.run
 
     results = {}
     results[dataset_name] = {}
@@ -405,7 +406,7 @@ if __name__ == "__main__":
             metadata,
             feature_engineering_function,
             target,
-        ) = load_dataset(dataset_name, method)
+        ) = load_dataset(dataset_name, method, run=run)
         task = target[2]
         for classifier, classifier_cls in classifiers[task].items():
             classifier_args_ = cls_args[classifier]
@@ -586,9 +587,9 @@ if __name__ == "__main__":
             list(real_classifier_rank), list(synthetic_classifier_rank)
         )
         results[dataset_name][method]["classifier_rank"] = spearman_rank.statistic
-        results[dataset_name][method][
-            "feature_importance_spearman"
-        ] = true_features_spearman_rank
+        results[dataset_name][method]["feature_importance_spearman"] = (
+            true_features_spearman_rank
+        )
         results[dataset_name][method]["feature_importance_spearman_mean"] = np.mean(
             feature_importances_spearman
         )
@@ -602,9 +603,9 @@ if __name__ == "__main__":
         results[dataset_name][method]["feature_importance_tau_se"] = np.std(
             feature_importances_tau
         ) / np.sqrt(m)
-        results[dataset_name][method][
-            "feature_importance_weighted"
-        ] = true_features_weighted_rank
+        results[dataset_name][method]["feature_importance_weighted"] = (
+            true_features_weighted_rank
+        )
         results[dataset_name][method]["feature_importance_weighted_mean"] = np.mean(
             feature_importances_weighted
         )
@@ -633,9 +634,9 @@ if __name__ == "__main__":
             classifier_rank_array_weighted
         ) / np.sqrt(m)
         results[dataset_name][method]["real_feature_order"] = real_feature_order
-        results[dataset_name][method][
-            "synthetic_feature_order"
-        ] = synthetic_feature_order
+        results[dataset_name][method]["synthetic_feature_order"] = (
+            synthetic_feature_order
+        )
 
         print()
         print(
