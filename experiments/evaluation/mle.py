@@ -396,6 +396,7 @@ if __name__ == "__main__":
 
     results = {}
     results[dataset_name] = {}
+    real_scores = {}
     for method in methods_to_run:
         print(f"Method: {method}, Dataset: {dataset_name}")
         results[dataset_name][method] = {}
@@ -409,6 +410,13 @@ if __name__ == "__main__":
         ) = load_dataset(dataset_name, method, run=run)
         task = target[2]
         for classifier, classifier_cls in classifiers[task].items():
+            real_scores.setdefault(classifier, {})
+            real_scores[classifier].setdefault("score", None)
+            real_scores[classifier].setdefault("se", None)
+            real_scores[classifier].setdefault("feature_importance", None)
+            score_real = real_scores[classifier]["score"]
+            se_real = real_scores[classifier]["se"]
+            feature_importance_real = real_scores[classifier]["feature_importance"]
             classifier_args_ = cls_args[classifier]
             if "random_state" in classifier_args_:
                 classifier_args_["random_state"] = seed
@@ -430,11 +438,18 @@ if __name__ == "__main__":
                 tables_test,
                 m=m,
                 feature_importance=classifier in feature_selection_models[task],
+                score_real=score_real,
+                se_real=se_real,
+                feature_importance_real=feature_importance_real,
             )
+            real_scores[classifier]["score"] = result["real_score"]
+            real_scores[classifier]["se"] = result["real_score_se"]
+            real_scores[classifier]["feature_importance"] = result[
+                "full_feature_importance_real"
+            ]
             print(
-                f"Classifier: {classifier} real_score: {result['real_score'] :.3f} +- {result['real_score_se']:.3f}, synthetic_score: {result['synthetic_score']:.3f} +- {result['synthetic_score_se']:.3f}"
+                f"Classifier: {classifier} real_score: {result['real_score'] :.3f} ± {result['real_score_se']:.3f}, synthetic_score: {result['synthetic_score']:.3f} ± {result['synthetic_score_se']:.3f}"
             )
-            importances_real = result.pop("importance_real", None)
             importances_syn = result.pop("importance_synthetic", None)
             results[dataset_name][method][classifier] = result
             if classifier in feature_selection_models[task]:
@@ -443,14 +458,14 @@ if __name__ == "__main__":
                 feature_importances_weighted = []
                 feature_names = np.array(result["feature_names"])
 
-                true_feature_importance_real = np.array(
-                    result["true_feature_importance_real"]
+                full_feature_importance_real = np.array(
+                    result["full_feature_importance_real"]
                 )
-                true_feature_importance_synthetic = np.array(
-                    result["true_feature_importance_synthetic"]
+                full_feature_importance_synthetic = np.array(
+                    result["full_feature_importance_synthetic"]
                 )
-                real_rank = np.argsort(true_feature_importance_real)
-                synthetic_rank = np.argsort(true_feature_importance_synthetic)
+                real_rank = np.argsort(full_feature_importance_real)
+                synthetic_rank = np.argsort(full_feature_importance_synthetic)
                 true_features_spearman_rank = spearmanr(
                     feature_names[real_rank], feature_names[synthetic_rank]
                 ).statistic
@@ -468,9 +483,7 @@ if __name__ == "__main__":
                 ).statistic
 
                 for i in range(m):
-                    # importance_real = importances_real[i]
                     importance_syn = importances_syn[i]
-                    # real_rank = np.argsort(importance_real)
                     synthetic_rank = np.argsort(importance_syn)
                     features_spearman_rank = spearmanr(
                         feature_names[real_rank], feature_names[synthetic_rank]
@@ -640,23 +653,23 @@ if __name__ == "__main__":
 
         print()
         print(
-            f"Boot spearman: {np.mean(classifier_rank_array_spearman):.3f}+-{np.std(classifier_rank_array_spearman) / np.sqrt(m):.4f}"
+            f"Boot spearman: {np.mean(classifier_rank_array_spearman):.3f}±{np.std(classifier_rank_array_spearman) / np.sqrt(m):.4f}"
         )
         print(
-            f"Boot kendall: {np.mean(classifier_rank_array_kendall) :.3f}+-{np.std(classifier_rank_array_kendall) / np.sqrt(m):.4f}"
+            f"Boot kendall: {np.mean(classifier_rank_array_kendall) :.3f}±{np.std(classifier_rank_array_kendall) / np.sqrt(m):.4f}"
         )
         print(
-            f"Boot weighted: {np.mean(classifier_rank_array_weighted) :.3f}+-{np.std(classifier_rank_array_weighted) / np.sqrt(m):.4f}"
+            f"Boot weighted: {np.mean(classifier_rank_array_weighted) :.3f}±{np.std(classifier_rank_array_weighted) / np.sqrt(m):.4f}"
         )
 
         print(
-            f"Feature importance spearman: {np.mean(feature_importances_spearman) :.3f}+-{np.std(feature_importances_spearman) / np.sqrt(m):.4f}"
+            f"Feature importance spearman: {np.mean(feature_importances_spearman) :.3f}±{np.std(feature_importances_spearman) / np.sqrt(m):.4f}"
         )
         print(
-            f"Feature importance tau: {np.mean(feature_importances_tau) :.3f}+-{np.std(feature_importances_tau) / np.sqrt(m):.4f}"
+            f"Feature importance tau: {np.mean(feature_importances_tau) :.3f}±{np.std(feature_importances_tau) / np.sqrt(m):.4f}"
         )
         print(
-            f"Feature importance weighted: {np.mean(feature_importances_weighted) :.3f}+-{np.std(feature_importances_weighted) / np.sqrt(m):.4f}"
+            f"Feature importance weighted: {np.mean(feature_importances_weighted) :.3f}±{np.std(feature_importances_weighted) / np.sqrt(m):.4f}"
         )
         print()
 

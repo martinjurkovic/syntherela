@@ -12,7 +12,6 @@ from syntherela.utils import CustomHyperTransformer
 
 
 class MachineLearningEfficacyMetric(BaseMetric):
-
     def __init__(
         self,
         target: Tuple[str, str],
@@ -112,6 +111,9 @@ class MachineLearningEfficacyMetric(BaseMetric):
         test_data,
         m=100,
         feature_importance=True,
+        score_real=None,
+        se_real=None,
+        feature_importance_real=None,
         **kwargs,
     ):
         if self.feature_engineering_function:
@@ -141,58 +143,59 @@ class MachineLearningEfficacyMetric(BaseMetric):
         self.X_test = X_test
         self.y_test = y_test
 
-        model_real, models_real, scores_array_real, score_real, se_real = self.compute(
-            X_real, y_real, X_test, y_test, m=m
-        )
+        compute_real = score_real is None or se_real is None
+
+        if compute_real:
+            model_real, _, _, score_real, se_real = self.compute(
+                X_real, y_real, X_test, y_test, m=m
+            )
         (
             model_synthetic,
             models_synthetic,
-            scores_array_synthetic,
+            score_array_synthetic,
             score_synthetic,
             se_synthetic,
         ) = self.compute(X_synthetic, y_synthetic, X_test, y_test, m=m)
         # compute the baseline score
         difference = score_synthetic - score_real
-        importances_real, importances_syn = [], []
-        feature_names = []
-        true_feature_importance_real = []
-        true_feature_importance_syn = []
+        importances_syn = []
         if feature_importance:
-            true_feature_importance_real, true_feature_importance_syn, feature_names = (
-                self.feature_importance(model_real, model_synthetic)
+            if compute_real:
+                full_feature_importance_real, _ = self.feature_importance(model_real)
+            else:
+                full_feature_importance_real = feature_importance_real
+            full_feature_importance_syn, feature_names = self.feature_importance(
+                model_synthetic
             )
-            for model_real, model_synthetic in zip(models_real, models_synthetic):
-                importance_real, importance_syn, feature_names = (
-                    self.feature_importance(model_real, model_synthetic)
-                )
-                importances_real.append(importance_real)
+            for model_synthetic in models_synthetic:
+                importance_syn, feature_names = self.feature_importance(model_synthetic)
                 importances_syn.append(importance_syn)
+        else:
+            feature_names = []
+            full_feature_importance_real = []
+            full_feature_importance_syn = []
 
         return {
-            "real_score_array": scores_array_real,
             "real_score": score_real,
             "real_score_se": se_real,
             "synthetic_score": score_synthetic,
-            "synthetic_score_array": scores_array_synthetic,
             "synthetic_score_se": se_synthetic,
+            "synthetic_score_array": score_array_synthetic,
             "difference": difference,
-            "importance_real": importances_real,
             "importance_synthetic": importances_syn,
             "feature_names": feature_names,
-            "true_feature_importance_real": true_feature_importance_real,
-            "true_feature_importance_synthetic": true_feature_importance_syn,
+            "full_feature_importance_real": full_feature_importance_real,
+            "full_feature_importance_synthetic": full_feature_importance_syn,
         }
 
-    def feature_importance(self, model_real, model_synthetic):
-        if hasattr(model_real["clf"], "feature_importances_"):
-            importance_real = model_real["clf"].feature_importances_
-            importance_syn = model_synthetic["clf"].feature_importances_
-        elif hasattr(model_real["clf"], "coef_"):
-            importance_real = model_real["clf"].coef_
-            importance_syn = model_synthetic["clf"].coef_
+    def feature_importance(self, model):
+        if hasattr(model["clf"], "feature_importances_"):
+            importance = model["clf"].feature_importances_
+        elif hasattr(model["clf"], "coef_"):
+            importance = model["clf"].coef_
         else:
             raise NotImplementedError(
-                f"Feature importance not supported for {type(model_real['clf'])}"
+                f"Feature importance not supported for {type(model['clf'])}"
             )
 
-        return importance_real, importance_syn, self.X_real.columns.tolist()
+        return importance, self.X_real.columns.tolist()
