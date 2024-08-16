@@ -17,6 +17,7 @@ def reproduce_figure(tables, tables_synthetic, metadata, dataset_name, figure_na
     xgb_cls = xgb.XGBClassifier
     xgb_args = {
         "seed": 0,
+        "importance_type": "gain",
     }
 
     metric = AggregationDetection(
