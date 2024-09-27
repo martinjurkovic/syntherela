@@ -308,6 +308,7 @@ methods = [
     "MOSTLYAI",
     "GRETEL_ACTGAN",
     "GRETEL_LSTM",
+    "ClavaDDPM"
 ]
 
 datasets = [
@@ -377,7 +378,7 @@ if __name__ == "__main__":
     )
     args.add_argument("--seed", type=int, default=0, help="Seed for reproducibility.")
     args.add_argument(
-        "--bootstrap_repetitions",
+        "--bootstrap-repetitions",
         type=int,
         default=100,
         help="Number of bootstrap samples.",
