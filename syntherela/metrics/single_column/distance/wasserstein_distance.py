@@ -1,7 +1,7 @@
 import pandas as pd
 from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
-from ot.lp import wasserstein_1d
+from scipy.stats import wasserstein_distance
 
 from syntherela.metrics.base import SingleColumnMetric, DistanceBaseMetric
 
@@ -31,7 +31,7 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
         # scale data to [0, 1]
         x_orig = ((orig_col - xmin) / (xmax - xmin)).values
         x_synth = ((synth_col - xmin) / (xmax - xmin)).values
-        return wasserstein_1d(x_orig, x_synth)
+        return wasserstein_distance(x_orig, x_synth)
 
     def run(self, real_data, synthetic_data, **kwargs):
         if is_datetime(real_data):
