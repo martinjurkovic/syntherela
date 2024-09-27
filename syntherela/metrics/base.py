@@ -307,7 +307,7 @@ class DetectionBaseMetric(BaseMetric):
             "copying_p_val": np.round(copying_p_val, decimals=16),
         }
 
-    def feature_importance(self, combine_categorical=False):
+    def feature_importance(self, combine_categorical=False, combine_datetime=False):
         if not len(self.classifiers):
             raise ValueError("No classifiers have been trained.")
         if not hasattr(self.classifiers[0], "feature_importances_"):
@@ -342,12 +342,45 @@ class DetectionBaseMetric(BaseMetric):
                     for f in feature_group:
                         features.pop(f)
 
+        if combine_datetime:
+            feature_names = dict()
+            for feature in features.keys():
+                # check if the feature is one-hot encoded
+                if not (
+                    feature.endswith("_Year")
+                    or feature.endswith("_Month")
+                    or feature.endswith("_Day")
+                    or feature.endswith("_Hour")
+                    or feature.endswith("_Minute")
+                    or feature.endswith("_Second")
+                ):
+                    continue
+                feature_name = "_".join(feature.split("_")[:-1])
+                if feature_name not in feature_names:
+                    feature_names[feature_name] = []
+                feature_names[feature_name].append(feature)
+            for feature_name, feature_group in feature_names.items():
+                if len(feature_group) > 1:
+                    features[feature_name] = np.concatenate(
+                        [features[f] for f in feature_group]
+                    )
+                    for f in feature_group:
+                        features.pop(f)
+
         return dict(sorted(features.items(), key=lambda x: np.mean(x[1]), reverse=True))
 
     def plot_feature_importance(
-        self, metadata, ax=None, combine_categorical=False, lab_fontsize=30, fontsize=23
+        self,
+        metadata,
+        ax=None,
+        combine_categorical=False,
+        combine_datetime=False,
+        lab_fontsize=30,
+        fontsize=23,
     ):
-        features = self.feature_importance(combine_categorical=combine_categorical)
+        features = self.feature_importance(
+            combine_categorical=combine_categorical, combine_datetime=combine_datetime
+        )
 
         def prettyify_feature_name(feature_name):
             split_name = feature_name.split("_")
@@ -434,7 +467,7 @@ class DetectionBaseMetric(BaseMetric):
         ax.tick_params(axis="x", labelsize=fontsize - 2)
         ax.tick_params(axis="y", labelsize=fontsize)
         labels = ax.get_legend_handles_labels()
-        unique_labels = {l: h for h, l in zip(*labels)}
+        unique_labels = {label: h for h, label in zip(*labels)}
         labels_handles = [*zip(*unique_labels.items())]
         legend = labels_handles[::-1]
         ax.legend(
