@@ -7,7 +7,6 @@ name = "syntherela"
 version = "0.0.0"
 dependencies = [
     "sdv>=1.9.0,<2",
-    "POT==0.9.3",
     "seaborn>=0.13.2",
     "xgboost>=1.7.6",
 ]
