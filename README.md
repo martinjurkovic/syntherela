@@ -33,6 +33,9 @@ chmod +x experiments/reproducibility/evaluate_relational.sh
 
 chmod +x experiments/reproducibility/evaluate_tabular.sh
 ./experiments/reproducibility/evaluate_tabular.sh
+
+chmod +x experiments/reproducibility/evaluate_utility.sh
+./experiments/reproducibility/evaluate_tabular.sh
 ```
 
 ### Generation of synthetic data
