@@ -35,3 +35,10 @@ conda activate gretel
 pip install .
 pip install -r experiments/generation/gretel/requirements.txt
 ```
+
+## Install ClavaDDPM
+```bash
+conda create -n clavaddpm python=3.9 -y
+conda activate clavaddpm
+pip install -r experiments/generation/clavaddpm/requirements.txt
+```
