@@ -1,4 +1,8 @@
-# SyntheRela (Synthetic Relational Data Generation Benchmark)
+# SyntheRela - Synthetic Relational Data Generation Benchmark
+
+<h2 align="center">
+    <img src="docs/SyntheRela.png" height="150px">
+</h2>
 
 ## Installation
 To install only the benchmark package, run the following command:
@@ -35,7 +39,7 @@ chmod +x experiments/reproducibility/evaluate_tabular.sh
 ./experiments/reproducibility/evaluate_tabular.sh
 
 chmod +x experiments/reproducibility/evaluate_utility.sh
-./experiments/reproducibility/evaluate_tabular.sh
+./experiments/reproducibility/evaluate_utility.sh
 ```
 
 ### Generation of synthetic data
@@ -68,7 +72,7 @@ python experiments/generation/gretel/generate_gretel.py --connection-uid  <conne
 To generate data with MOSTLYAI, insructions are provided in [experiments/generation/mostlyai/README.md](experiments/generation/mostlyai/README.md). <br>
 Further instructions for GRETELAI are provided in [experiments/generation/gretel/README.md](experiments/generation/gretel/README.md).
 
-### Visualising results
+### Visualising Results
 To visualize results, after running the benchmark you can run the below script. The figures will be saved to `results/figures/`:
 ```bash
 conda activate reproduce_benchmark
@@ -91,11 +95,12 @@ The documentation for adding a new metric can be found in [docs/ADDING_A_METRIC.
 - SDV: [The Synthetic Data Vault](https://ieeexplore.ieee.org/document/7796926)
 - RCTGAN: [Row Conditional-TGAN for Generating Synthetic Relational Databases](https://ieeexplore.ieee.org/abstract/document/10096001)
 - REaLTabFormer: [Generating Realistic Relational and Tabular Data using Transformers](https://arxiv.org/abs/2302.02041)
+- ClavaDDPM: [Multi-relational Data Synthesis with Cluster-guided Diffusion Models](https://arxiv.org/html/2405.17724v1)
 - IRG: [Generating Synthetic Relational Databases using GANs](https://arxiv.org/abs/2312.15187)
 - [Generating Realistic Synthetic Relational Data through Graph Variational Autoencoders](https://arxiv.org/abs/2211.16889)*
 - [Generative Modeling of Complex Data](https://arxiv.org/abs/2202.02145)*
 - BayesM2M & NeuralM2M: [Synthetic Data Generation of Many-to-Many Datasets via Random Graph Generation](https://iclr.cc/virtual/2023/poster/10982)*
-- ClavaDDPM: [Multi-relational Data Synthesis with Cluster-guided Diffusion Models](https://arxiv.org/html/2405.17724v1)*
+
 
 \* Denotes the method does not have a public implementation available.
 
