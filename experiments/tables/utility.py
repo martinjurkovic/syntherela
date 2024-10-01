@@ -7,6 +7,7 @@ import numpy as np
 
 warnings.filterwarnings("ignore")
 
+run = 1
 method_names_dict = {
     "SDV": "SDV",
     "RCTGAN": "RCTGAN",
@@ -14,7 +15,7 @@ method_names_dict = {
     "MOSTLYAI": "MOSTLYAI",
     "GRETEL_ACTGAN": "GRE-ACTGAN",
     "GRETEL_LSTM": "GRE-LSTM",
-    "ddpm": "DDPM",
+    "ClavaDDPM": "ClavaDDPM",
 }
 
 baselines = {"walmart": 7697, "rossmann": 345, "airbnb": 0.5}
@@ -107,7 +108,7 @@ def add_rank_results(df, dataset, data, feature_importance=False):
 
     header_row = pd.DataFrame(
         {
-            "Dataset": f"\multirow{{6}}{{*}}{{\\parbox{{1.3cm}}{{{dataset_names[dataset]}}}}}",
+            "Dataset": f"\multirow{{7}}{{*}}{{\\parbox{{1.3cm}}{{{dataset_names[dataset]}}}}}",
             "Method": method_names_dict[method],
             "Spearman": f"${spearman:.2f}\pm{spearman_se:.2f}$",
             "Kendall": f"${kendall_Kendall:.2f}\pm{kendall_Kendall_se:.2f}$",
@@ -150,7 +151,7 @@ df_feature = pd.DataFrame(
 )
 
 for dataset in ["airbnb", "rossmann", "walmart"]:
-    with open("results/mle_{}_0.json".format(dataset)) as f:
+    with open(f"results/mle_{dataset}_{run}_0.json") as f:
         results = json.load(f)
     round_score = dataset != "airbnb"
     df = add_utility_results(df, dataset, results, round_score)
@@ -165,12 +166,12 @@ table_latex = df_to_latex(df)
 with open("results/tables/table2.tex", "w") as f:
     f.write(table_latex)
 
-print("Saving Table 6 (best results were bolded manually).")
+print("Saving Table 7 (best results were bolded manually).")
 table_latex = df_to_latex(df_model)
-with open("results/tables/table6.tex", "w") as f:
+with open("results/tables/table7.tex", "w") as f:
     f.write(table_latex)
 
-print("Saving Table 7 (best results were bolded manually).")
+print("Saving Table 8 (best results were bolded manually).")
 table_latex = df_to_latex(df_feature)
-with open("results/tables/table7.tex", "w") as f:
+with open("results/tables/table8.tex", "w") as f:
     f.write(table_latex)

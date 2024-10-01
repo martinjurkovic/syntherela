@@ -1,36 +1,85 @@
-import shutil
-from syntherela.benchmark import Benchmark
+import xgboost as xgb
+import seaborn as sns
+from matplotlib import rc
+import matplotlib.pyplot as plt
+
+from syntherela.metadata import Metadata
+from syntherela.metrics.multi_table.detection import AggregationDetection
+from syntherela.data import load_tables, remove_sdv_columns
+
+sns.set_theme()
+rc("font", **{"family": "serif", "serif": ["Times"], "size": 30})
+rc("text", usetex=True)
 
 
-benchmark = Benchmark(
-    real_data_dir="data/original",
-    synthetic_data_dir="data/synthetic",
-    results_dir=f"results/1",
-    benchmark_name="Benchmark",
-    run_id="1",
-    sample_id="sample1",
-    datasets=["rossmann_subsampled", "Biodegradability_v1"],
-    methods=["SDV", "RCTGAN", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM"],
-    validate_metadata=False,
+def reproduce_figure(tables, tables_synthetic, metadata, dataset_name, figure_name):
+    # Compute the metric
+    xgb_cls = xgb.XGBClassifier
+    xgb_args = {
+        "seed": 0,
+        "importance_type": "gain",
+    }
+
+    metric = AggregationDetection(
+        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
+    )
+
+    for table in tables.keys():
+        tables_synthetic[table] = tables_synthetic[table][tables[table].columns]
+
+    if dataset_name == "imdb_MovieLens_v1":
+        target_table = "movies"
+    elif dataset_name == "Biodegradability_v1":
+        target_table = "molecule"
+
+    metric.run(
+        tables,
+        tables_synthetic,
+        metadata=metadata,
+        target_table=target_table,
+    )
+
+    # Plot the feature importance
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+    metric.plot_feature_importance(metadata, ax=ax, combine_categorical=True)
+    plt.savefig(
+        f"results/figures/figure4{figure_name}.png", bbox_inches="tight", dpi=600
+    )
+
+
+## FIGURE 4 (a)
+dataset_name = "Biodegradability_v1"
+method = "GRETEL_LSTM"
+
+metadata = Metadata().load_from_json(f"data/original/{dataset_name}/metadata.json")
+
+tables = load_tables(f"data/original/{dataset_name}/", metadata)
+tables_synthetic = load_tables(
+    f"data/synthetic/{dataset_name}/{method}/1/sample1", metadata
 )
 
-benchmark.read_results()
-
-benchmark.visualize_single_table_metrics(
-    save_figs=True,
-    save_figs_path="results/figures/tmp/",
-    distance=False,
-    detection=True,
-    title=False,
+tables, metadata = remove_sdv_columns(tables, metadata)
+tables_synthetic, metadata = remove_sdv_columns(
+    tables_synthetic, metadata, update_metadata=False
 )
 
-shutil.copy(
-    "results/figures/tmp/single_table/detection/Biodegradability_v1_molecule_per_table.png",
-    "results/figures/figure4a.png",
+reproduce_figure(tables, tables_synthetic, metadata, dataset_name, "a")
+
+## FIGURE 4 (a)
+dataset_name = "imdb_MovieLens_v1"
+method = "ClavaDDPM"
+
+metadata = Metadata().load_from_json(f"data/original/{dataset_name}/metadata.json")
+
+tables = load_tables(f"data/original/{dataset_name}/", metadata)
+tables_synthetic = load_tables(
+    f"data/synthetic/{dataset_name}/{method}/1/sample1", metadata
 )
-shutil.copy(
-    "results/figures/tmp/single_table/detection/rossmann_subsampled_store_per_table.png",
-    "results/figures/figure4b.png",
+
+tables, metadata = remove_sdv_columns(tables, metadata)
+tables_synthetic, metadata = remove_sdv_columns(
+    tables_synthetic, metadata, update_metadata=False
 )
-# remove the tmp folder
-shutil.rmtree("results/figures/tmp")
+
+reproduce_figure(tables, tables_synthetic, metadata, dataset_name, "b")

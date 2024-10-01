@@ -50,7 +50,7 @@ def visualize_single_table_distance_metrics(
             M = len(tables)  # number of tables
 
             ind = np.arange(M)
-            width = 0.15
+            width = 0.12
 
             fig, ax = plt.subplots(figsize=(10, 7))
             # set dpi
@@ -316,6 +316,7 @@ def visualize_single_table_detection_metrics_per_table(
                 "MOSTLYAI",
                 "GRETEL_ACTGAN",
                 "GRETEL_LSTM",
+                "ClavaDDPM",
             ],
         )
 
@@ -423,9 +424,8 @@ def visualize_single_table_detection_metrics_per_table(
             ax.set_ylabel("Means")
             x_tick_width_coef = get_x_tick_width_coef(N)
             ax.set_xticks(ind + x_tick_width_coef * width)
-            rotation = 20 if len(methods) > 6 else 0
             pretty_methods = [prettify_method_name(method) for method in methods]
-            ax.set_xticklabels(pretty_methods, rotation=rotation)
+            ax.set_xticklabels(pretty_methods, fontsize=9.4)
 
             # y_min = 0.4 if min_mean > 0.4 else np.floor((min_mean - 0.1)*10)/10
             y_min = 0.3

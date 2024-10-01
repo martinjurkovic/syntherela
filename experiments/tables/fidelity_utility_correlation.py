@@ -163,4 +163,4 @@ for dataset, result in results.items():
     diff = format_result(diff, ci=True)
     results_df.loc[len(results_df)] = [dataset_names[dataset], ddxgb, ld, diff]
 
-results_df.to_latex("results/tables/fidelity_utility_correlation.tex", index=False)
+results_df.to_latex("results/tables/table6.tex", index=False, column_format="lccc")

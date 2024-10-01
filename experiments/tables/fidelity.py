@@ -42,6 +42,7 @@ all_methods = [
     "MOSTLYAI",
     "GRETEL_ACTGAN",
     "GRETEL_LSTM",
+    "ClavaDDPM",
 ] + single_table_methods
 
 method_names_dict = {
@@ -51,6 +52,7 @@ method_names_dict = {
     "MOSTLYAI": "MOSTLYAI",
     "GRETEL_ACTGAN": "G-ACTGAN",
     "GRETEL_LSTM": "G-LSTM",
+    "ClavaDDPM": "ClavaDDPM",
     "ddpm": "DDPM",
     "ctgan": "CTGAN",
     "nflow": "NFLOW",
@@ -66,6 +68,7 @@ dataset_method_dict = {
         "MOSTLYAI",
         "GRETEL_ACTGAN",
         "GRETEL_LSTM",
+        "ClavaDDPM",
         "bayesian_network",
         "ctgan",
         "ddpm",
@@ -79,6 +82,7 @@ dataset_method_dict = {
         "MOSTLYAI",
         "GRETEL_ACTGAN",
         "GRETEL_LSTM",
+        "ClavaDDPM",
         "bayesian_network",
         "ctgan",
         "ddpm",
@@ -92,6 +96,7 @@ dataset_method_dict = {
         "MOSTLYAI",
         "GRETEL_ACTGAN",
         "GRETEL_LSTM",
+        "ClavaDDPM",
         "bayesian_network",
         "ctgan",
         "ddpm",
@@ -110,7 +115,7 @@ dataset_method_dict = {
         "nflow",
         "tvae",
     ],
-    "imdb_MovieLens_v1": ["RCTGAN", "MOSTLYAI", "GRETEL_ACTGAN", "ddpm"],
+    "imdb_MovieLens_v1": ["RCTGAN", "MOSTLYAI", "GRETEL_ACTGAN", "ClavaDDPM", "ddpm"],
     "CORA_v1": [
         "SDV",
         "RCTGAN",
@@ -132,20 +137,20 @@ ALPHA_DETECTION = 0.05
 
 INCLUDE_SINGLE_TABLE = True
 
+def get_methods(dataset, metric_type):
+    methods = dataset_method_dict[dataset]
+    if metric_type == "multi_table_metrics" or not INCLUDE_SINGLE_TABLE:
+        methods = [method for method in methods if method not in single_table_methods]
+    return methods
+
 
 def create_table(metric_type, table_name="table1"):
-    if metric_type == "multi_table_metrics" or not INCLUDE_SINGLE_TABLE:
-        for dataset in datasets:
-            dict_ = dataset_method_dict[dataset]
-            dict_ = [method for method in dict_ if method not in single_table_methods]
-            dataset_method_dict[dataset] = dict_
-
     all_results = {}
     for run_id in RUNS:
         all_results[run_id] = {}
         for dataset in datasets:
             all_results[run_id][dataset] = {}
-            methods = dataset_method_dict[dataset]
+            methods = get_methods(dataset, metric_type)
             # take only methods that are in all_methods
             methods = [method for method in methods if method in all_methods]
             for method in methods:
@@ -191,7 +196,7 @@ def create_table(metric_type, table_name="table1"):
         df_latex = df.copy()
         for idx, dataset in enumerate(datasets):
             cnt = True
-            methods = dataset_method_dict[dataset]
+            methods = get_methods(dataset, metric_type)
             for method in methods:
                 # append row with dataset, method and empty values for all metrics
                 df = pd.concat(
@@ -246,6 +251,7 @@ def create_table(metric_type, table_name="table1"):
                 "MOSTLYAI": {},
                 "GRETEL_ACTGAN": {},
                 "GRETEL_LSTM": {},
+                "ClavaDDPM": {},
                 "bayesian_network": {},
                 "ddpm": {},
                 "ctgan": {},
@@ -254,7 +260,7 @@ def create_table(metric_type, table_name="table1"):
             }
             if metric_type == "single_column_metrics":
                 for metric in base_metrics:
-                    methods = dataset_method_dict[dataset]
+                    methods = get_methods(dataset, metric_type)
                     for method in methods:
                         if (
                             metric
@@ -352,7 +358,7 @@ def create_table(metric_type, table_name="table1"):
 
             if metric_type == "single_table_metrics":
                 for metric in base_metrics:
-                    methods = dataset_method_dict[dataset]
+                    methods = get_methods(dataset, metric_type)
                     for method in methods:
                         if (
                             metric
@@ -445,7 +451,7 @@ def create_table(metric_type, table_name="table1"):
 
             if metric_type == "multi_table_metrics":
                 for metric in base_metrics:
-                    methods = dataset_method_dict[dataset]
+                    methods = get_methods(dataset, metric_type)
                     for method in methods:
                         if (
                             metric
@@ -690,5 +696,5 @@ def create_table(metric_type, table_name="table1"):
 
 
 create_table("multi_table_metrics", "1")
-create_table("single_column_metrics", "8")
-create_table("single_table_metrics", "9")
+create_table("single_column_metrics", "9")
+create_table("single_table_metrics", "10")

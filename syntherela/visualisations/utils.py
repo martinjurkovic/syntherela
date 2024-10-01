@@ -24,6 +24,7 @@ COLOR_DICT = {
     "GRE-LSTM": COLORMAP[5],
     "GRETEL_LSTM": COLORMAP[5],
     "REAL": COLORMAP[6],
+    "ClavaDDPM": COLORMAP[4],
 }
 
 
@@ -140,7 +141,7 @@ def get_dataset_info(
 
     method_order = kwargs.get(
         "method_order",
-        ["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM"],
+        ["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "ClavaDDPM"],
     )
 
     if method_order is not None:
