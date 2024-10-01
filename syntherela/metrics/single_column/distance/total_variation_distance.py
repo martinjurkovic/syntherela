@@ -8,7 +8,6 @@ from syntherela.metrics.single_column.distance.utils import get_histograms
 
 
 class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "TotalVariationDistance"

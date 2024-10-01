@@ -6,7 +6,10 @@ from pathlib import Path
 from syntherela.metadata import Metadata
 from syntherela.data import load_tables, remove_sdv_columns
 
-from ClavaDDPM.preprocess_utils import encode_and_save, calculate_days_since_earliest_date
+from ClavaDDPM.preprocess_utils import (
+    encode_and_save,
+    calculate_days_since_earliest_date,
+)
 
 
 def remap_ids(metadata, tables):
@@ -106,7 +109,7 @@ def main(args):
     dataset_name = args.dataset_name
     real_data_path = args.real_data_path
     run_id = 1
-    
+
     metadata = Metadata().load_from_json(
         Path(real_data_path) / f"{dataset_name}/metadata.json"
     )

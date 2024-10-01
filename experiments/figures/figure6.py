@@ -1,12 +1,10 @@
 import numpy as np
-import pandas as pd
 import xgboost as xgb
 from tqdm import tqdm
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sdmetrics.single_table.detection import LogisticDetection
 
 from syntherela.metadata import Metadata
 from syntherela.data import load_tables, remove_sdv_columns

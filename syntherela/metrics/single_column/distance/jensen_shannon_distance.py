@@ -9,7 +9,6 @@ from syntherela.metrics.single_column.distance.utils import get_histograms
 
 
 class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
-
     def __init__(self, base=np.e, **kwargs):
         super().__init__(**kwargs)
         self.name = "JensenShannonDistance"

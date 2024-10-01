@@ -223,7 +223,7 @@ for i in range(1, 4):
             if table in added_keys:
                 try:
                     synthetic_data[table].drop(columns=added_keys[table], inplace=True)
-                except:
+                except:  # noqa E722
                     pass
             if table in renamed_keys:
                 synthetic_data[table].rename(

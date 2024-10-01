@@ -46,7 +46,6 @@ def parse_args():
         help="Path to the original data.",
     )
 
-
     return parser.parse_args()
 
 
@@ -56,7 +55,7 @@ def main(args):
     real_data_path = args.real_data_path
     synthetic_data_path = args.synthetic_data_path
 
-    model_name = f"CLAVADDPM"
+    model_name = "CLAVADDPM"
 
     metadata = Metadata().load_from_json(
         Path(real_data_path) / f"{dataset_name}/metadata.json"
@@ -67,7 +66,9 @@ def main(args):
     tables, metadata = remove_sdv_columns(tables, metadata)
 
     processed_data_path = os.path.join("ClavaDDPM", "complex_data", dataset_name)
-    generated_data_path = os.path.join("ClavaDDPM", f"clavaDDPM_workspace_run{run}", dataset_name)
+    generated_data_path = os.path.join(
+        "ClavaDDPM", f"clavaDDPM_workspace_run{run}", dataset_name
+    )
     synthetic_data_path = os.path.join(synthetic_data_path, dataset_name)
 
     if os.path.exists(os.path.join(processed_data_path, "first_dates.json")):
@@ -81,7 +82,7 @@ def main(args):
             generated_data_path, table_name, "_final", f"{table_name}_synthetic.csv"
         )
         df = pd.read_csv(table_path)
-        
+
         datetime_columns = metadata.get_column_names(table_name, sdtype="datetime")
         numerical_columns = metadata.get_column_names(table_name, sdtype="numerical")
 

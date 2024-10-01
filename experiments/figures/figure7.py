@@ -73,6 +73,7 @@ target_tables = ["users", "molecule", "movies", "store", "stores"]
 
 ## Data Copying
 
+
 def symulate_data_copying(tables, target_table, seed=None, frac_copied=1.0):
     table = tables[target_table]
     table_perfect, table_original = train_test_split(

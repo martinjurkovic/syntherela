@@ -16,7 +16,6 @@ from syntherela.visualisations.distribution_visualisations import (
 
 
 class Report:
-
     def __init__(
         self,
         real_data,

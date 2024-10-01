@@ -7,10 +7,6 @@ from matplotlib import rc
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-
-rc("font", **{"family": "serif", "serif": ["Times"]})
-rc("text", usetex=True)
-
 from syntherela.visualisations.utils import (
     get_x_tick_width_coef,
     prettify_dataset_name,
@@ -18,6 +14,9 @@ from syntherela.visualisations.utils import (
     get_color,
     get_dataset_info,
 )
+
+rc("font", **{"family": "serif", "serif": ["Times"]})
+rc("text", usetex=True)
 
 
 def visualize_single_table_distance_metrics(
@@ -378,10 +377,6 @@ def visualize_single_table_detection_metrics_per_table(
                     ]
                     for method in methods
                 ]
-                # baseline_means = np.array([all_results[dataset][method]['single_table_metrics'][metric][table]["baseline_mean"] for method in methods])
-                baseline_means = np.array([0.5 for method in methods])
-                # baseline_ses = np.array([all_results[dataset][method]['single_table_metrics'][metric][table]["baseline_se"] for method in methods])
-                baseline_ses = np.array([0 for method in methods])
 
                 ax.bar(
                     ind + width * j,
@@ -408,10 +403,6 @@ def visualize_single_table_detection_metrics_per_table(
                     ]["SE"]
                     for method in methods
                 ]
-                # baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_mean"] for method in methods])
-                baseline_means = np.array([0.5 for method in methods])
-                # baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_se"] for method in methods])
-                baseline_ses = np.array([0 for method in methods])
 
                 ax.bar(
                     ind + width * (j + len(metrics)),

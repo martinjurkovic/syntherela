@@ -8,7 +8,6 @@ from syntherela.metrics.base import SingleColumnMetric, StatisticalBaseMetric
 
 
 class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "KolmogorovSmirnovTest"

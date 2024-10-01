@@ -32,7 +32,7 @@ def get_histograms(
     elif np.issubdtype(original.dtype, np.number):  # continuous
         original = original.dropna()
         synthetic = synthetic.dropna()
-        if type(bins) != np.ndarray:
+        if type(bins) is not np.ndarray:
             combined = pd.concat([original, synthetic])
             bins = np.histogram_bin_edges(combined, bins=bins)
         gt_vals, _ = np.histogram(original, bins=bins)
@@ -40,13 +40,13 @@ def get_histograms(
         gt = {k: v for k, v in zip(bins, gt_vals)}
         synth = {k: v for k, v in zip(bins, synth_vals)}
     else:
-        raise ValueError(f"Column is not categorical or continouous")
+        raise ValueError("Column is not categorical or continouous")
 
     # order the keys
     gt = {k: v for k, v in sorted(gt.items(), key=lambda item: item[0])}
     synth = {k: v for k, v in sorted(synth.items(), key=lambda item: item[0])}
 
-    assert gt.keys() == synth.keys(), f"Keys do not match for column"
+    assert gt.keys() == synth.keys(), "Keys do not match for column"
 
     if normalize:
         gt_sum = sum(gt.values())

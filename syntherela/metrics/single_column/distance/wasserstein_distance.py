@@ -7,7 +7,6 @@ from syntherela.metrics.base import SingleColumnMetric, DistanceBaseMetric
 
 
 class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "WassersteinDistance"

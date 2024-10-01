@@ -137,6 +137,7 @@ ALPHA_DETECTION = 0.05
 
 INCLUDE_SINGLE_TABLE = True
 
+
 def get_methods(dataset, metric_type):
     methods = dataset_method_dict[dataset]
     if metric_type == "multi_table_metrics" or not INCLUDE_SINGLE_TABLE:
@@ -273,7 +274,6 @@ def create_table(metric_type, table_name="table1"):
                             for column in all_results[run_id][dataset][method][
                                 metric_type
                             ][metric][table]:
-
                                 detection_dict[method].setdefault(metric, {})
                                 detection_dict[method][metric].setdefault("detected", 0)
                                 detection_dict[method][metric].setdefault("all", 0)

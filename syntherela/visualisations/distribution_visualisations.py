@@ -135,15 +135,15 @@ def visualize_bivariate_distributions(real_data, synthetic_data, metadata):
             sns.histplot(
                 data=data_real, x=pair[0], y=pair[1], ax=ax1, bins=(binsx, binsy)
             )
-            ax1.set_title(f"Real")
+            ax1.set_title("Real")
             sns.histplot(
                 data=data_synthetic, x=pair[0], y=pair[1], ax=ax2, bins=(binsx, binsy)
             )
-            ax2.set_title(f"Synthetic")
+            ax2.set_title("Synthetic")
             if (
-                type(binsx) == int
+                type(binsx) is int
                 and binsx > 16
-                or (type(binsx) == np.ndarray and len(binsx) > 16)
+                or (type(binsx) is np.ndarray and len(binsx) > 16)
             ):
                 ax1.tick_params("x", labelrotation=90)
                 ax2.tick_params("x", labelrotation=90)
@@ -201,17 +201,17 @@ def visualize_parent_child_bivariates(real_data, synthetic_data, metadata):
             sns.histplot(
                 data=data_real, x=pair[0], y=pair[1], ax=ax1, bins=(binsx, binsy)
             )
-            ax1.set_title(f"Real")
+            ax1.set_title("Real")
             ax1.set_xlabel(f"{parent_table}.{parent_column}")
             sns.histplot(
                 data=data_synthetic, x=pair[0], y=pair[1], ax=ax2, bins=(binsx, binsy)
             )
-            ax2.set_title(f"Synthetic")
+            ax2.set_title("Synthetic")
             ax2.set_xlabel(f"{parent_table}.{parent_column}")
             if (
-                type(binsx) == int
+                type(binsx) is int
                 and binsx > 16
-                or (type(binsx) == np.ndarray and len(binsx) > 16)
+                or (type(binsx) is np.ndarray and len(binsx) > 16)
             ):
                 ax1.tick_params("x", labelrotation=90)
                 ax2.tick_params("x", labelrotation=90)

@@ -10,7 +10,15 @@ sns.set_theme()
 rc("font", **{"family": "serif", "serif": ["Times"], "size": 30})
 rc("text", usetex=True)
 
-methods = ["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "CLAVADDPM"]
+methods = [
+    "SDV",
+    "RCTGAN",
+    "REALTABFORMER",
+    "MOSTLYAI",
+    "GRETEL_ACTGAN",
+    "GRETEL_LSTM",
+    "CLAVADDPM",
+]
 
 
 def prettify_method_name(method_name):
@@ -24,8 +32,8 @@ def prettify_method_name(method_name):
 
 
 # Load original data
-metadata = Metadata().load_from_json(f"data/original/rossmann_subsampled/metadata.json")
-tables = load_tables(f"data/original/rossmann_subsampled/", metadata)
+metadata = Metadata().load_from_json("data/original/rossmann_subsampled/metadata.json")
+tables = load_tables("data/original/rossmann_subsampled/", metadata)
 
 tables, metadata = remove_sdv_columns(tables, metadata)
 

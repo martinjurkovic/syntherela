@@ -5,7 +5,7 @@ from syntherela.benchmark import Benchmark
 benchmark = Benchmark(
     real_data_dir="data/original",
     synthetic_data_dir="data/synthetic",
-    results_dir=f"results/1",
+    results_dir="results/1",
     benchmark_name="Benchmark",
     run_id="1",
     sample_id="sample1",
@@ -32,12 +32,20 @@ shutil.copy(
 benchmark = Benchmark(
     real_data_dir="data/original",
     synthetic_data_dir="data/synthetic",
-    results_dir=f"results/1",
+    results_dir="results/1",
     benchmark_name="Benchmark",
     run_id="1",
     sample_id="sample1",
     datasets=["rossmann_subsampled"],
-    methods=["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "CLAVADDPM"],
+    methods=[
+        "SDV",
+        "RCTGAN",
+        "REALTABFORMER",
+        "MOSTLYAI",
+        "GRETEL_ACTGAN",
+        "GRETEL_LSTM",
+        "CLAVADDPM",
+    ],
     validate_metadata=False,
 )
 

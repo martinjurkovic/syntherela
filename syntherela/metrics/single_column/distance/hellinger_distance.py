@@ -11,7 +11,6 @@ _SQRT2 = np.sqrt(2)
 
 
 class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "HellingerDistance"

@@ -205,7 +205,6 @@ def visualize_parent_child_multi_table(all_results, datasets, methods, **kwargs)
 
 
 def visualize_multi_table(all_results, datasets, methods, **kwargs):
-
     save_figs = kwargs.get("save_figs", False)
     save_figs_path = kwargs.get("save_figs_path", "./figs/")
     save_figs_path = Path(save_figs_path) / "multi_table" / "detection"

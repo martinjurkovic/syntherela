@@ -4,7 +4,7 @@ from syntherela.benchmark import Benchmark
 benchmark = Benchmark(
     real_data_dir="data/original",
     synthetic_data_dir="data/synthetic",
-    results_dir=f"results/3",
+    results_dir="results/3",
     benchmark_name="Benchmark",
     single_column_metrics=[],
     single_table_metrics=[],
@@ -12,7 +12,15 @@ benchmark = Benchmark(
     run_id="3",
     sample_id="sample1",
     datasets=["rossmann_subsampled"],
-    methods=["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "CLAVADDPM"],
+    methods=[
+        "SDV",
+        "RCTGAN",
+        "REALTABFORMER",
+        "MOSTLYAI",
+        "GRETEL_ACTGAN",
+        "GRETEL_LSTM",
+        "CLAVADDPM",
+    ],
     validate_metadata=False,
 )
 

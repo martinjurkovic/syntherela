@@ -6,7 +6,6 @@ from syntherela.metrics.base import SingleColumnMetric, StatisticalBaseMetric
 
 
 class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "ChiSquareTest"
@@ -33,7 +32,7 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         freq_synth = freq_synth / freq_synth.sum() * freq_orig.sum()
         assert (
             freq_orig.index == freq_synth.index
-        ).all(), f"Indexes do not match for column"
+        ).all(), "Indexes do not match for column"
         # calculate the chi-square test
         statistic, pval, _, _ = chi2_contingency([freq_orig, freq_synth])
 

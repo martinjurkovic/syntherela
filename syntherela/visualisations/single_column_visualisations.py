@@ -25,7 +25,6 @@ def visualize_single_column_distance_metrics(
                 "single_column_metrics"
             ][base_metric].keys():
                 try:
-
                     N = len(methods)  # number of methods
                     M = len(
                         all_results[dataset][list(all_results[dataset].keys())[0]][
@@ -156,7 +155,6 @@ def visualize_single_column_detection_metrics(
             for table in all_results[dataset][list(all_results[dataset].keys())[0]][
                 "single_column_metrics"
             ][base_metric].keys():
-
                 N = len(methods)  # number of methods
                 M = len(
                     all_results[dataset][list(all_results[dataset].keys())[0]][

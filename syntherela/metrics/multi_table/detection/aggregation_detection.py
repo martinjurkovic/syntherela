@@ -74,9 +74,9 @@ class BaseAggregationDetection(DetectionBaseMetric):
                     suffixes=("", "_nunique"),
                 )
                 aggregated_data[parent_table_name][categorical_column_names] = (
-                    aggregated_data[parent_table_name][categorical_column_names].fillna(
-                        0
-                    )
+                    aggregated_data[
+                        parent_table_name
+                    ][categorical_column_names].fillna(0)
                 )
 
                 if update_metadata:

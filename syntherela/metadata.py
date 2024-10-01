@@ -3,7 +3,6 @@ from sdv.metadata import MultiTableMetadata
 
 
 class Metadata(MultiTableMetadata):
-
     def __init__(self, dataset_name=""):
         super().__init__()
         self.dataset_name = dataset_name
@@ -78,7 +77,6 @@ def convert_metadata_to_v0(metadata):
     metadata_v1 = metadata.to_dict()
     metadata_v0 = {"tables": {}}
     for table_name, table_info in metadata_v1["tables"].items():
-
         metadata_v0["tables"][table_name] = {"fields": {}}
         for column, column_info in table_info["columns"].items():
             metadata_v0["tables"][table_name]["fields"][column] = {
@@ -86,9 +84,9 @@ def convert_metadata_to_v0(metadata):
             }
             if column_info["sdtype"] == "boolean":
                 # convert boolean to categorical
-                metadata_v0["tables"][table_name]["fields"][column][
-                    "type"
-                ] = "categorical"
+                metadata_v0["tables"][table_name]["fields"][column]["type"] = (
+                    "categorical"
+                )
             if column_info["sdtype"] == "datetime":
                 metadata_v0["tables"][table_name]["fields"][column]["format"] = (
                     column_info["datetime_format"]

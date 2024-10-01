@@ -11,7 +11,6 @@ from syntherela.metrics.single_column.statistical import ChiSquareTest
 from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
 from syntherela.visualisations.multi_table_visualisations import (
     visualize_multi_table,
-    visualize_parent_child_multi_table,
 )
 from syntherela.visualisations.single_column_visualisations import (
     visualize_single_column_detection_metrics,
@@ -24,7 +23,6 @@ from syntherela.visualisations.single_table_visualisations import (
 
 
 class Benchmark:
-
     def __init__(
         self,
         real_data_dir,
@@ -139,9 +137,9 @@ class Benchmark:
 
                     self.reports.setdefault(dataset_name, {})[method_name] = report
 
-                    self.all_results.setdefault(dataset_name, {})[
-                        method_name
-                    ] = report.generate()
+                    self.all_results.setdefault(dataset_name, {})[method_name] = (
+                        report.generate()
+                    )
 
                     file_name = self.build_file_name(dataset_name, method_name)
 
@@ -156,21 +154,20 @@ class Benchmark:
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
                 file_name = self.build_file_name(dataset_name, method_name)
-                with open(self.results_dir / file_name, "r") as f:
-                    real_data, synthetic_data, metadata = self.load_data(
-                        dataset_name, method_name
-                    )
-                    temp_report = Report(
-                        real_data,
-                        synthetic_data,
-                        metadata,
-                        f"{dataset_name}_{method_name}",
-                        validate_metadata=self.validate_metadata,
-                    ).load_from_json(self.results_dir / file_name)
-                    self.reports.setdefault(dataset_name, {})[method_name] = temp_report
-                    self.all_results.setdefault(dataset_name, {})[
-                        method_name
-                    ] = temp_report.results
+                real_data, synthetic_data, metadata = self.load_data(
+                    dataset_name, method_name
+                )
+                temp_report = Report(
+                    real_data,
+                    synthetic_data,
+                    metadata,
+                    f"{dataset_name}_{method_name}",
+                    validate_metadata=self.validate_metadata,
+                ).load_from_json(self.results_dir / file_name)
+                self.reports.setdefault(dataset_name, {})[method_name] = temp_report
+                self.all_results.setdefault(dataset_name, {})[method_name] = (
+                    temp_report.results
+                )
         if not self.all_results:
             warnings.warn("No results found.")
 

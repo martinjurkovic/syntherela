@@ -5,10 +5,9 @@ from syntherela.metrics.base import StatisticalBaseMetric
 
 
 class CardinalityShapeSimilarity(StatisticalBaseMetric):
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = f"CardinalityShapeSimilarity"
+        self.name = "CardinalityShapeSimilarity"
 
     def validate(self, real_data, synthetic_data):
         return sorted(real_data.keys()) == sorted(synthetic_data.keys())

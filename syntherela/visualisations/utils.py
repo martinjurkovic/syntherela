@@ -141,7 +141,15 @@ def get_dataset_info(
 
     method_order = kwargs.get(
         "method_order",
-        ["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "CLAVADDPM"],
+        [
+            "SDV",
+            "RCTGAN",
+            "REALTABFORMER",
+            "MOSTLYAI",
+            "GRETEL_ACTGAN",
+            "GRETEL_LSTM",
+            "CLAVADDPM",
+        ],
     )
 
     if method_order is not None:
