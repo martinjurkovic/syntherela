@@ -13,7 +13,7 @@ def read_utility_results(dataset, model='xgboost', run="1"):
     dataset_name = dataset.split("-")[0].split("_")[0]
     with open(f"results/mle_{dataset_name}_{run}_0.json", "r") as f:
         results = json.load(f)[dataset_name]
-    for method in ["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "ClavaDDPM"]:
+    for method in ["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "CLAVADDPM"]:
         utility_model.append(results[method]["spearman_mean"])
         utility_feature.append(results[method]["feature_importance_spearman_mean"])
         utility_score.append(results[method][model]["synthetic_score"])
@@ -25,7 +25,7 @@ def read_utility_results(dataset, model='xgboost', run="1"):
 
 def read_fidelity_results(dataset, model, metric, target_table=None, target_column=None, run="1"):
     results = []
-    for method in ["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "ClavaDDPM"]:
+    for method in ["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "CLAVADDPM"]:
         with open(f"results/{run}/{dataset}_{method}_{run}_sample1.json", "r") as f:
             method_results = json.load(f)
         if 'Aggregation' in metric:

@@ -47,7 +47,7 @@ def reproduce_figure(
 
 
 dataset_name = "imdb_MovieLens_v1"
-method = "ClavaDDPM"
+method = "CLAVADDPM"
 
 metadata = Metadata().load_from_json(f"data/original/{dataset_name}/metadata.json")
 

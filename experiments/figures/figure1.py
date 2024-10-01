@@ -10,7 +10,7 @@ sns.set_theme()
 rc("font", **{"family": "serif", "serif": ["Times"], "size": 30})
 rc("text", usetex=True)
 
-methods = ["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "ClavaDDPM"]
+methods = ["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "CLAVADDPM"]
 
 
 def prettify_method_name(method_name):
@@ -60,7 +60,7 @@ COLOR_DICT = {
     "REALTABF.": COLORMAP[2],
     "G-ACTGAN": COLORMAP[3],
     "G-LSTM": COLORMAP[5],
-    "ClavaDDPM": COLORMAP[4],
+    "CLAVADDPM": COLORMAP[4],
 }
 
 fig, axes = plt.subplots(1, 2, figsize=(15, 5))

@@ -316,7 +316,7 @@ def visualize_single_table_detection_metrics_per_table(
                 "MOSTLYAI",
                 "GRETEL_ACTGAN",
                 "GRETEL_LSTM",
-                "ClavaDDPM",
+                "CLAVADDPM",
             ],
         )
 

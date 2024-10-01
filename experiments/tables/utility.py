@@ -15,7 +15,7 @@ method_names_dict = {
     "MOSTLYAI": "MOSTLYAI",
     "GRETEL_ACTGAN": "GRE-ACTGAN",
     "GRETEL_LSTM": "GRE-LSTM",
-    "ClavaDDPM": "ClavaDDPM",
+    "CLAVADDPM": "CLAVADDPM",
 }
 
 baselines = {"walmart": 7697, "rossmann": 345, "airbnb": 0.5}

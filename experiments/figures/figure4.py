@@ -68,7 +68,7 @@ reproduce_figure(tables, tables_synthetic, metadata, dataset_name, "a")
 
 ## FIGURE 4 (a)
 dataset_name = "imdb_MovieLens_v1"
-method = "ClavaDDPM"
+method = "CLAVADDPM"
 
 metadata = Metadata().load_from_json(f"data/original/{dataset_name}/metadata.json")
 

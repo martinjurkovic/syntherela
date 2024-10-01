@@ -37,7 +37,7 @@ benchmark = Benchmark(
     run_id="1",
     sample_id="sample1",
     datasets=["rossmann_subsampled"],
-    methods=["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "ClavaDDPM"],
+    methods=["SDV", "RCTGAN", "REALTABFORMER", "MOSTLYAI", "GRETEL_ACTGAN", "GRETEL_LSTM", "CLAVADDPM"],
     validate_metadata=False,
 )
 

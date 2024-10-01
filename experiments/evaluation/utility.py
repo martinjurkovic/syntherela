@@ -308,7 +308,7 @@ methods = [
     "MOSTLYAI",
     "GRETEL_ACTGAN",
     "GRETEL_LSTM",
-    "ClavaDDPM"
+    "CLAVADDPM"
 ]
 
 datasets = [
