@@ -1,0 +1,31 @@
+[build-system]
+requires = ['setuptools', 'wheel']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = "syntherela"
+version = "0.0.0"
+dependencies = [
+    "sdv>=1.9.0,<2",
+    "seaborn>=0.13.2",
+    "xgboost>=1.7.6",
+]
+authors = [
+  { name="Anon", email="Anon@anon.com" },
+]
+description = "SyntheRela - Synthetic Relational Data Generation Benchmark"
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+keywords = ["python", "syntherela", "synthetic data", "relational data", "evaluation", "benchmark"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Research, Education, Commercial",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+
