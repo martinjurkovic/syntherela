@@ -89,6 +89,10 @@ def main(args):
         with open(le_path, "rb") as f:
             label_encoders = pickle.load(f)
 
+        for column in label_encoders.keys():
+            if column in df.columns:
+                df[column] = df[column].astype(int)
+
         df = table_label_decode(df, label_encoders)
 
         if len(datetime_columns):
@@ -100,8 +104,6 @@ def main(args):
                 df[col] = df[col].dt.strftime(column_format)
 
         for col in numerical_columns:
-            if f"{col}_na" in df.columns:
-                df.loc[df[f"{col}_na"] == 1, col] = float("nan")
             dtype = table_meta[col]["computer_representation"]
             if dtype == "Int64":
                 df[col] = df[col].round().astype(dtype)
