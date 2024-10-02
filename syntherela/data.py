@@ -61,13 +61,16 @@ def save_tables(tables, path):
         table.to_csv(os.path.join(path, f"{table_name}.csv"), index=False)
 
 
-def download_sdv_relational_datasets(data_path="data/original"):
+def download_sdv_relational_datasets(data_path="data/original", datasets=None):
     """
     Download all the available relational datasets from SDV
     https://docs.sdv.dev/sdv/single-table-data/data-preparation/loading-data
     """
     sdv_relational_datasets = get_available_demos("multi_table")
-
+    if datasets is not None:
+        sdv_relational_datasets = sdv_relational_datasets[
+            sdv_relational_datasets.dataset_name.isin(datasets)
+        ]
     # iterate through the dataframe
     for dataset_name in sdv_relational_datasets.dataset_name:
         print(f"Downloading {dataset_name}...", end=" ")
