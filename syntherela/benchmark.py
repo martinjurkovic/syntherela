@@ -43,8 +43,8 @@ class Benchmark:
         validate_metadata=True,
     ):
         self.datasets = datasets
-        self.run_id = str(run_id)
-        self.sample_id = str(sample_id)
+        self.run_id = run_id
+        self.sample_id = sample_id
         self.validate_metadata = validate_metadata
 
         self.benchmark_name = (benchmark_name,)
