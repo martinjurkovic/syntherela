@@ -4,6 +4,8 @@
     <img src="docs/SyntheRela.png" height="150px">
 </h2>
 
+Our paper **Benchmarking the Fidelity and Utility of Synthetic Relational Data** is available on [arxiv](https://arxiv.org/abs/2410.03411).
+
 ## Installation
 To install only the benchmark package, run the following command:
 
@@ -113,3 +115,17 @@ A list of commercial synthetic relational data providers is available in [docs/S
 
 ## Conflicts of Interest
 The authors declare no conflict of interest and are not associated with any of the evaluated commercial synthetic data providers.
+
+## Citation
+If you use SyntheRela in your work, please cite our paper:
+```
+@misc{hudovernik2024benchmarkingsyntheticrelationaldata,
+      title={Benchmarking the Fidelity and Utility of Synthetic Relational Data}, 
+      author={Valter Hudovernik and Martin Jurkovič and Erik Štrumbelj},
+      year={2024},
+      eprint={2410.03411},
+      archivePrefix={arXiv},
+      primaryClass={cs.DB},
+      url={https://arxiv.org/abs/2410.03411}, 
+}
+```
