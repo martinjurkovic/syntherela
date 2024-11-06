@@ -25,7 +25,6 @@ The data and results can be downloaded and extracted with the below script, or a
 
 ```bash
 conda activate reproduce_benchmark
-chmod +x experiments/reproducibility/download_data_and_results.sh
 ./experiments/reproducibility/download_data_and_results.sh
 ```
 
@@ -34,13 +33,10 @@ To run the benchmark and get the results of the metrics, run:
 
 ```bash
 conda activate reproduce_benchmark
-chmod +x experiments/reproducibility/evaluate_relational.sh
 ./experiments/reproducibility/evaluate_relational.sh
 
-chmod +x experiments/reproducibility/evaluate_tabular.sh
 ./experiments/reproducibility/evaluate_tabular.sh
 
-chmod +x experiments/reproducibility/evaluate_utility.sh
 ./experiments/reproducibility/evaluate_utility.sh
 ```
 
@@ -51,19 +47,15 @@ After installing the required environment, the synthetic data can be generated b
 
 ```bash
 conda activate reproduce_benchmark
-chmod +x ./experiments/reproducibility/generation/generate_sdv.sh
 ./experiments/reproducibility/generation/generate_sdv.sh
 
 conda activate rctgan
-chmod +x ./experiments/reproducibility/generation/generate_rctgan.sh
 ./experiments/reproducibility/generation/generate_rctgan.sh
 
 conda activate realtabformer
-chmod +x ./experiments/reproducibility/generation/generate_realtabformer.sh
 ./experiments/reproducibility/generation/generate_realtabformer.sh
 
 conda activate tabular
-chmod +x ./experiments/reproducibility/generation/generate_tabular.sh
 ./experiments/reproducibility/generation/generate_tabular.sh
 
 conda activate gretel
@@ -71,7 +63,6 @@ python experiments/generation/gretel/generate_gretel.py --connection-uid  <conne
 python experiments/generation/gretel/generate_gretel.py --connection-uid  <connection-uid> --model actgan
 
 cd experiments/generation/clavaddpm
-chmod +x generate_clavaddpm.sh
 ./generate_clavaddpm.sh <dataset-name> <real-data-path> <synthetic-data-path>  
 ```
 
@@ -82,14 +73,12 @@ Further instructions for GRETELAI are provided in [experiments/generation/gretel
 To visualize results, after running the benchmark you can run the below script. The figures will be saved to `results/figures/`:
 ```bash
 conda activate reproduce_benchmark
-chmod +x ./experiments/reproducibility/generate_figures.sh
 ./experiments/reproducibility/generate_figures.sh
 ```
 ### Reproducing Tables
 To reproduce the tables you can run the below script. The tables will be saved as .tex files in `results/tables/`:
 ```bash
 conda activate reproduce_benchmark
-chmod +x ./experiments/reproducibility/generate_tables.sh
 ./experiments/reproducibility/generate_tables.sh
 ```
 
