@@ -1,5 +1,14 @@
 # SyntheRela - Synthetic Relational Data Generation Benchmark
 
+<p align="center">
+  <a href="https://github.com/martinjurkovic/syntherela/blob/main/LICENSE">
+    <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-yellow.svg">
+  </a>
+  <a href="https://arxiv.org/abs/2410.03411">
+    <img alt="Paper URL" src="https://img.shields.io/badge/cs.DB-2410.03411-B31B1B.svg">
+  </a>
+</p>
+
 <h2 align="center">
     <img src="docs/SyntheRela.png" height="150px">
 </h2>
