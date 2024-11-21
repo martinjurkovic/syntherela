@@ -10,7 +10,7 @@
 </p>
 
 <h2 align="center">
-    <img src="docs/SyntheRela.png" height="150px">
+    <img src="https://raw.githubusercontent.com/martinjurkovic/syntherela/refs/heads/main/docs/SyntheRela.png" height="150px">
 </h2>
 
 Our paper **Benchmarking the Fidelity and Utility of Synthetic Relational Data** is available on [arxiv](https://arxiv.org/abs/2410.03411).
@@ -19,7 +19,7 @@ Our paper **Benchmarking the Fidelity and Utility of Synthetic Relational Data**
 To install only the benchmark package, run the following command:
 
 ```bash
-pip install .
+pip install syntherela
 ```
 
 ## Replicating the paper's results
