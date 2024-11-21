@@ -1,16 +1,21 @@
 # SyntheRela - Synthetic Relational Data Generation Benchmark
 
-<p align="center">
-  <a href="https://github.com/martinjurkovic/syntherela/blob/main/LICENSE">
-    <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-yellow.svg">
-  </a>
-  <a href="https://arxiv.org/abs/2410.03411">
-    <img alt="Paper URL" src="https://img.shields.io/badge/cs.DB-2410.03411-B31B1B.svg">
-  </a>
-</p>
-
 <h2 align="center">
     <img src="https://raw.githubusercontent.com/martinjurkovic/syntherela/refs/heads/main/docs/SyntheRela.png" height="150px">
+    <div align="center">
+      <a href="https://pypi.org/project/syntherela/">
+        <img src="https://img.shields.io/pypi/v/syntherela" alt="PyPI">
+      </a>
+      <a href="https://github.com/martinjurkovic/syntherela/blob/main/LICENSE">
+        <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-yellow.svg">
+      </a>
+      <a href="https://arxiv.org/abs/2410.03411">
+        <img alt="Paper URL" src="https://img.shields.io/badge/cs.DB-2410.03411-B31B1B.svg">
+      </a>
+      <a href="https://pypi.org/pypi/syntherela/">
+        <img src="https://img.shields.io/pypi/pyversions/syntherela" alt="PyPI pyversions">
+      </a>
+  </div>
 </h2>
 
 Our paper **Benchmarking the Fidelity and Utility of Synthetic Relational Data** is available on [arxiv](https://arxiv.org/abs/2410.03411).

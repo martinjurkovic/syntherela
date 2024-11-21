@@ -4,7 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "syntherela"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
     "sdv>=1.9.0,<2",
     "seaborn>=0.13.2",
@@ -19,11 +19,21 @@ readme = "README.md"
 requires-python = ">=3.8"
 keywords = ["python", "syntherela", "synthetic data", "relational data", "evaluation", "benchmark"]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Development Status :: 3 - Alpha",
+    "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Healthcare Industry"
     ]
 
 [project.urls]
