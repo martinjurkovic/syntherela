@@ -76,6 +76,9 @@ conda activate gretel
 python experiments/generation/gretel/generate_gretel.py --connection-uid  <connection-uid> --model lstm
 python experiments/generation/gretel/generate_gretel.py --connection-uid  <connection-uid> --model actgan
 
+conda activate mostlyai
+python experiments/generation/mostlyai/generate_mostlyai.py --api-key <api-key>
+
 cd experiments/generation/clavaddpm
 ./generate_clavaddpm.sh <dataset-name> <real-data-path> <synthetic-data-path>  
 ```
