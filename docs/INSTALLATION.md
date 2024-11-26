@@ -9,7 +9,7 @@ pip install -r requirements.txt
 ```bash
 conda create -n tabular python=3.9 -y
 conda activate tabular
-pip install .
+pip install syntherela
 pip install -r experiments/generation/tabular/requirements.txt
 ```
 
@@ -24,7 +24,7 @@ pip install experiments/generation/rctgan/RCTGAN
 ```bash
 conda create -n realtabformer python=3.9 -y
 conda activate realtabformer
-pip install .
+pip install syntherela
 pip install -r experiments/generation/realtabformer/requirements.txt
 ```
 
@@ -32,8 +32,16 @@ pip install -r experiments/generation/realtabformer/requirements.txt
 ```bash
 conda create -n gretel python=3.9 -y
 conda activate gretel
-pip install .
+pip install syntherela
 pip install -r experiments/generation/gretel/requirements.txt
+```
+
+## Install mostlyai
+```bash
+conda create -n mostlyai python=3.9 -y
+conda activate mostlyai
+pip install syntherela
+pip install -r experiments/generation/mostlyai/requirements.txt
 ```
 
 ## Install ClavaDDPM
