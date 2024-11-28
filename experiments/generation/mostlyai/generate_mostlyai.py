@@ -125,7 +125,7 @@ if __name__ == "__main__":
         sd = mostly.generate(g, name=f"{dataset_name} - {run_id} - {sample_id}")
         if sd.generation_status != ProgressStatus("DONE"):
             print(f"Failed to generate sample {sample_id}")
-            continue
+            break
         synthetic_data = sd.data()
         synthetic_data = postprocess_data(synthetic_data, metadata)
         # Ensure the data follows the metadata
