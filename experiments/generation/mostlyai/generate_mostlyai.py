@@ -38,12 +38,12 @@ def create_config_from_metadata(
             column_type = column_info["sdtype"]
             if column_type == "id":
                 encoding = "AUTO"
-            elif column_type == "categorical":
+            elif column_type == "categorical" or column_type == "boolean":
                 encoding = "TABULAR_CATEGORICAL"
             elif column_type == "numerical":
                 encoding = "TABULAR_NUMERIC_AUTO"
             elif column_type == "datetime":
-                column_config = "TABULAR_DATETIME"
+                encoding = "TABULAR_DATETIME"
             else:
                 raise ValueError(
                     f"Unsupported column type: {column_type} for column {column}"
@@ -76,6 +76,8 @@ def postprocess_data(synthetic_data, metadata):
                 synthetic_data[table][column] = pd.to_datetime(
                     synthetic_data[table][column]
                 )
+            elif column_type == "boolean":
+                synthetic_data[table][column] = synthetic_data[table][column] == "True"
     return synthetic_data
 
 
