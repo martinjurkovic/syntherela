@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 from mostlyai import MostlyAI
+from mostlyai.model import ProgressStatus
 from syntherela.metadata import Metadata
 from syntherela.data import load_tables, remove_sdv_columns, save_tables
 
@@ -49,17 +50,19 @@ def create_config_from_metadata(
                 )
             column_config = {"name": column, "model_encoding_type": encoding}
             table_config["columns"].append(column_config)
-        # is_context = True
+
+        is_context = True
         for parent in metadata.get_parents(table):
             table_config.setdefault("foreign_keys", [])
             for foreign_key in metadata.get_foreign_keys(parent, table):
                 fk_dict = {
                     "column": foreign_key,
                     "referenced_table": parent,
-                    "is_context": True,
+                    "is_context": is_context,
                 }
                 table_config["foreign_keys"].append(fk_dict)
-                # is_context = False
+                # Use only the first foreign key of the first parent as context
+                is_context = False
         config["tables"].append(table_config)
     return config
 
@@ -85,6 +88,7 @@ if __name__ == "__main__":
     args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
     args.add_argument("--api-key", type=str, required=True)
     args.add_argument("--run-id", type=str, default="1")
+    args.add_argument("--generator-id", type=str)
     args = args.parse_args()
 
     dataset_name = args.dataset_name
@@ -92,6 +96,7 @@ if __name__ == "__main__":
     synthetic_data_path = args.synthetic_data_path
     api_key = args.api_key
     run_id = args.run_id
+    generator_id = args.generator_id
 
     # load the data
     metadata = Metadata().load_from_json(
@@ -107,12 +112,20 @@ if __name__ == "__main__":
 
     # Train the model
     mostly = MostlyAI(api_key=api_key)
-    g = mostly.train(config=config)
+    if generator_id:
+        # Load the trained generator
+        g = mostly.generators.get(generator_id=generator_id)
+    else:
+        # Train a new generator
+        g = mostly.train(config=config)
 
     # Sample the model three times
     for sample in range(3):
         sample_id = str(sample + 1)
         sd = mostly.generate(g, name=f"{dataset_name} - {run_id} - {sample_id}")
+        if sd.generation_status != ProgressStatus("DONE"):
+            print(f"Failed to generate sample {sample_id}")
+            continue
         synthetic_data = sd.data()
         synthetic_data = postprocess_data(synthetic_data, metadata)
         # Ensure the data follows the metadata
