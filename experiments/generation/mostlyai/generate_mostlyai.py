@@ -7,29 +7,6 @@ from syntherela.metadata import Metadata
 from syntherela.data import load_tables, remove_sdv_columns, save_tables
 
 
-args = argparse.ArgumentParser()
-args.add_argument("--dataset-name", type=str, default="airbnb-simplified_subsampled")
-args.add_argument("--real-data-path", type=str, default="data/original")
-args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
-args.add_argument("--api_key", type=str, required=True)
-args.add_argument("--run-id", type=str, default="1")
-args = args.parse_args()
-
-dataset_name = args.dataset_name
-real_data_path = args.real_data_path
-synthetic_data_path = args.synthetic_data_path
-api_key = args.connection_uid
-run_id = args.run_id
-
-
-# load the data
-metadata = Metadata().load_from_json(
-    Path(real_data_path) / f"{dataset_name}/metadata.json"
-)
-real_data = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
-real_data, metadata = remove_sdv_columns(real_data, metadata)
-
-
 def create_config_from_metadata(
     metadata: Metadata, tables: dict[pd.DataFrame], name: str
 ) -> dict:
@@ -87,16 +64,6 @@ def create_config_from_metadata(
     return config
 
 
-# create MOSTLY AI configuration
-config = create_config_from_metadata(
-    metadata, tables=real_data, name=f"{dataset_name} - {run_id}"
-)
-
-
-mostly = MostlyAI(api_key=api_key)
-g = mostly.train(config=config)
-
-
 def postprocess_data(synthetic_data, metadata):
     for table in metadata.get_tables():
         table_meta = metadata.get_table_metadata(table)
@@ -109,14 +76,49 @@ def postprocess_data(synthetic_data, metadata):
     return synthetic_data
 
 
-for sample in range(3):
-    sample_id = str(sample + 1)
-    sd = mostly.generate(g, name=f"{dataset_name} - {run_id} - {sample_id}")
-    synthetic_data = sd.data()
-    synthetic_data = postprocess_data(synthetic_data, metadata)
-    metadata.validate_data(synthetic_data)
-    path_synthetic = (
-        f"{synthetic_data_path}/{dataset_name}/MOSTLYAI/{run_id}/sample{sample_id}"
+if __name__ == "__main__":
+    args = argparse.ArgumentParser()
+    args.add_argument(
+        "--dataset-name", type=str, default="airbnb-simplified_subsampled"
     )
-    print(f"Saving sample {sample_id}")
-    save_tables(synthetic_data, path=Path(path_synthetic))
+    args.add_argument("--real-data-path", type=str, default="data/original")
+    args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
+    args.add_argument("--api-key", type=str, required=True)
+    args.add_argument("--run-id", type=str, default="1")
+    args = args.parse_args()
+
+    dataset_name = args.dataset_name
+    real_data_path = args.real_data_path
+    synthetic_data_path = args.synthetic_data_path
+    api_key = args.api_key
+    run_id = args.run_id
+
+    # load the data
+    metadata = Metadata().load_from_json(
+        Path(real_data_path) / f"{dataset_name}/metadata.json"
+    )
+    real_data = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
+    real_data, metadata = remove_sdv_columns(real_data, metadata)
+
+    # create MOSTLY AI configuration
+    config = create_config_from_metadata(
+        metadata, tables=real_data, name=f"{dataset_name} - {run_id}"
+    )
+
+    # Train the model
+    mostly = MostlyAI(api_key=api_key)
+    g = mostly.train(config=config)
+
+    # Sample the model three times
+    for sample in range(3):
+        sample_id = str(sample + 1)
+        sd = mostly.generate(g, name=f"{dataset_name} - {run_id} - {sample_id}")
+        synthetic_data = sd.data()
+        synthetic_data = postprocess_data(synthetic_data, metadata)
+        # Ensure the data follows the metadata
+        metadata.validate_data(synthetic_data)
+        path_synthetic = (
+            f"{synthetic_data_path}/{dataset_name}/MOSTLYAI/{run_id}/sample{sample_id}"
+        )
+        print(f"Saving sample {sample_id}")
+        save_tables(synthetic_data, path=Path(path_synthetic))
