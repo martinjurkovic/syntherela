@@ -73,8 +73,12 @@ conda activate tabular
 ./experiments/reproducibility/generation/generate_tabular.sh
 
 conda activate gretel
+# The method requires a separate connection-uid for each dataset see the README for more information
 python experiments/generation/gretel/generate_gretel.py --connection-uid  <connection-uid> --model lstm
 python experiments/generation/gretel/generate_gretel.py --connection-uid  <connection-uid> --model actgan
+
+conda activate mostlyai
+./experiments/reproducibility/generation/generate_mostlyai.sh <api-key>
 
 cd experiments/generation/clavaddpm
 ./generate_clavaddpm.sh <dataset-name> <real-data-path> <synthetic-data-path>  

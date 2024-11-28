@@ -1,20 +1,23 @@
 ## Generating Data using MOSTLY AI
 
-To use MOSTLY AI, navigate to the platform's user interface at [https://app.mostly.ai](https://app.mostly.ai) <br>
-For a more detailed instructions for generating synthetic relational data we refer the platform's video guide: [Mastering Multi-Table Data Synthesization](https://www.youtube.com/watch?v=ecIn84sn0KI).
+In this repository we use the [MostlyAI API](https://mostly.ai/docs/generators/configure/set-table-relationships/multi-table) for generating synthetic data, which uses the [mostlyai Python package](https://github.com/mostly-ai/mostly-python).
 
 ## Model Configuration
 
 We use the following parameters when setting up the generators:
 
-| Parameter              | Value  |
-|------------------------|--------|
-| **Configuration presets** | Accuracy |
-| **Max sample size**      | 100%   |
-| **Model size**           | Large  |
-| **Batch size**           | Auto   |
-| **Flexible generation**  | Off    |
-| **Value protection**     | Off    |
+| **Parameter**                     | **Value**               |
+|-----------------------------------|-------------------------|
+| model                             | MOSTLY_AI/Large         |
+| maxSampleSize                     | None                   |
+| batchSize                         | None                   |
+| maxTrainingTime                   | 120                    |
+| maxEpochs                         | 100                    |
+| maxSequenceWindow                 | 100                    |
+| enableFlexibleGeneration          | False                  |
+| valueProtection                   | False                  |
+| rareCategoryReplacementMethod     | CONSTANT               |
+| differentialPrivacy               | None                   |
 
 
 ## A Note on Reproducibility
