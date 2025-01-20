@@ -36,6 +36,15 @@ classifiers = [
     "Intended Audience :: Healthcare Industry"
     ]
 
+[project.optional-dependencies]
+gnn-utility=[
+  "relbench[full,example]@git+https://github.com/martinjurkovic/relbench.git@task_missing_data",
+  "torch_geometric",
+  "shap",
+  "tqdm",
+  "lightgbm"
+]
+
 [project.urls]
 Homepage = "https://github.com/martinjurkovic/syntherela"
 Issues = "https://github.com/martinjurkovic/syntherela/issues"
