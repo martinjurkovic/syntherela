@@ -23,11 +23,16 @@ from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_g
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
 from relbench.base.task_column import PredictColumnTask
-from gnn_datasets import RossmannDataset
+from gnn_datasets import RossmannDataset, WalmartDataset
+
+DATASETS = {
+    RossmannDataset.name: RossmannDataset,
+    WalmartDataset.name: WalmartDataset,
+}
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--dataset", type=str, default="rel-rossmann")
+parser.add_argument("--dataset", type=str, default="walmart_subsampled")
 parser.add_argument("--task", type=str, default="predict-column")
 
 parser.add_argument(
@@ -36,18 +41,18 @@ parser.add_argument(
     default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--entity_table", type=str, default="historical")
-parser.add_argument("--entity_col", type=str, default="Id")
+parser.add_argument("--entity_table", type=str, default="depts")
+parser.add_argument("--entity_col", type=str)
 parser.add_argument("--time_col", type=str, default="Date")
-parser.add_argument("--target_col", type=str, default="Customers")
+parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
-parser.add_argument("--lr", type=float, default=0.01)
-parser.add_argument("--epochs", type=int, default=20)
-parser.add_argument("--batch_size", type=int, default=512)
+parser.add_argument("--lr", type=float, default=0.1)
+parser.add_argument("--epochs", type=int, default=10)
+parser.add_argument("--batch_size", type=int, default=128)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
-parser.add_argument("--num_neighbors", type=int, default=128)
+parser.add_argument("--num_neighbors", type=int, default=200)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
@@ -76,7 +81,7 @@ predict_column_task_config = {
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = RossmannDataset()
+dataset: Dataset = DATASETS[args.dataset]()
 dataset.target_col = args.target_col
 dataset.entity_table = args.entity_table
 task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
