@@ -34,6 +34,8 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--dataset", type=str, default="walmart_subsampled")
 parser.add_argument("--task", type=str, default="predict-column")
+parser.add_argument("--run_id", type=str, default="1")
+parser.add_argument("--method", type=str, default="ORIGINAL")
 
 parser.add_argument(
     "--task_type",
@@ -46,13 +48,13 @@ parser.add_argument("--entity_col", type=str)
 parser.add_argument("--time_col", type=str, default="Date")
 parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
-parser.add_argument("--lr", type=float, default=0.1)
+parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=128)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
-parser.add_argument("--num_neighbors", type=int, default=200)
+parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
@@ -81,7 +83,7 @@ predict_column_task_config = {
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = DATASETS[args.dataset]()
+dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id)
 dataset.target_col = args.target_col
 dataset.entity_table = args.entity_table
 task = PredictColumnTask(dataset=dataset, **predict_column_task_config)

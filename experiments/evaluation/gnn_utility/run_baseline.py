@@ -8,12 +8,19 @@ from scipy.stats import mode
 from torch_geometric.seed import seed_everything
 
 from relbench.base import Dataset, Table, TaskType, PredictColumnTask
-from gnn_datasets import RossmannDataset
+from gnn_datasets import RossmannDataset, WalmartDataset
+
+DATASETS = {
+    RossmannDataset.name: RossmannDataset,
+    WalmartDataset.name: WalmartDataset,
+}
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--dataset", type=str, default="rel-rossmann")
+parser.add_argument("--dataset", type=str, default="rossmann_subsampled")
 parser.add_argument("--task", type=str, default="predict-column")
+parser.add_argument("--run_id", type=str, default="1")
+parser.add_argument("--method", type=str, default="ORIGINAL")
 
 parser.add_argument(
     "--task_type",
@@ -42,7 +49,7 @@ predict_column_task_config = {
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = RossmannDataset()
+dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id)
 dataset.target_col = args.target_col
 dataset.entity_table = args.entity_table
 
