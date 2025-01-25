@@ -49,5 +49,6 @@ pip install -r experiments/generation/mostlyai/requirements.txt
 ```bash
 conda create -n clavaddpm python=3.9 -y
 conda activate clavaddpm
+git clone https://github.com/weipang142857/ClavaDDPM.git experiments/generation/clavaddpm/ClavaDDPM
 pip install -r experiments/generation/clavaddpm/requirements.txt
 ```

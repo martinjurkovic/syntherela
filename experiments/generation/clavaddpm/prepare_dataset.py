@@ -9,6 +9,7 @@ from syntherela.data import load_tables, remove_sdv_columns
 from ClavaDDPM.preprocess_utils import (
     encode_and_save,
     calculate_days_since_earliest_date,
+    topological_sort,
 )
 
 
@@ -58,8 +59,8 @@ def rename_ids(metadata, tables):
         ids[table_name] = []
         primary_key = metadata.get_primary_key(table_name)
         if primary_key is not None:
-            tables[table_name][f"{table_name}_id"] = tables[table_name][primary_key]
             pk = tables[table_name].pop(primary_key)
+            tables[table_name][f"{table_name}_id"] = pk
             ids[table_name].append(f"{table_name}_id")
             if pk.dtype != "int64":
                 non_integer_ids = True
@@ -68,12 +69,12 @@ def rename_ids(metadata, tables):
             ids[table_name].append(f"{table_name}_id")
         for parent in metadata.get_parents(table_name):
             foreign_keys = metadata.get_foreign_keys(parent, table_name)
-            assert (
-                len(foreign_keys) == 1
-            ), "CLAVADDPM only supports one foreign key per table pair."
+            assert len(foreign_keys) == 1, (
+                "CLAVADDPM only supports one foreign key per table pair."
+            )
             foreign_key = foreign_keys[0]
-            tables[table_name][f"{parent}_id"] = tables[table_name][foreign_key]
             fk = tables[table_name].pop(foreign_key)
+            tables[table_name][f"{parent}_id"] = fk
             ids[table_name].append(f"{parent}_id")
             if fk.dtype != "int64":
                 non_integer_ids = True
@@ -120,7 +121,6 @@ def main(args):
     os.makedirs(processed_data_path, exist_ok=True)
 
     tables = dict()
-    relation_order = []
     for table in metadata.get_tables():
         parents = metadata.get_parents(table)
         children = metadata.get_children(table)
@@ -128,13 +128,8 @@ def main(args):
             "children": list(children),
             "parents": list(parents),
         }
-        if not len(parents):
-            relation_order.append([None, table])
 
-    for relation in metadata.relationships:
-        parent = relation["parent_table_name"]
-        child = relation["child_table_name"]
-        relation_order.append([parent, child])
+    relation_order = topological_sort(tables)
 
     dataset_meta = {
         "relation_order": relation_order,
