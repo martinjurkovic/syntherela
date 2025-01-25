@@ -1,3 +1,4 @@
+#!/bin/bash
 DATASETS=(
     airbnb-simplified_subsampled
     Biodegradability_v1

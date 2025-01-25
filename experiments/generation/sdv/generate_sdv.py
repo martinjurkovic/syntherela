@@ -69,7 +69,7 @@ model.save(model_path)
 logger.info("Sampling and saving synthetic data...")
 for i in range(1, 4):
     logger.debug(f"Sampling sample {i}")
-    model.seed = i
+    model.seed = i + 10 * int(run_id)
     synthetic_data = model.sample()
     save_data_path = (
         Path(synthetic_data_path) / dataset_name / MODEL_NAME / run_id / f"sample{i}"
