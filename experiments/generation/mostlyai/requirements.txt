@@ -1,1 +1,1 @@
-mostlyai
+mostlyai==4.0.2

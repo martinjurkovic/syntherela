@@ -2,8 +2,7 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
-from mostlyai import MostlyAI
-from mostlyai.model import ProgressStatus
+from mostlyai.sdk import MostlyAI
 from syntherela.metadata import Metadata
 from syntherela.data import load_tables, remove_sdv_columns, save_tables
 
@@ -84,7 +83,7 @@ def postprocess_data(synthetic_data, metadata):
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
     args.add_argument(
-        "--dataset-name", type=str, default="airbnb-simplified_subsampled"
+        "--dataset-name", type=str, default="walmart_subsampled"
     )
     args.add_argument("--real-data-path", type=str, default="data/original")
     args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
@@ -124,10 +123,7 @@ if __name__ == "__main__":
     # Sample the model three times
     for sample in range(3):
         sample_id = str(sample + 1)
-        sd = mostly.generate(g, name=f"{dataset_name} - {run_id} - {sample_id}")
-        if sd.generation_status != ProgressStatus("DONE"):
-            print(f"Failed to generate sample {sample_id}")
-            break
+        sd = mostly.generate(g, config = config, name=f"{dataset_name} - {run_id} - {sample_id}")
         synthetic_data = sd.data()
         synthetic_data = postprocess_data(synthetic_data, metadata)
         # Ensure the data follows the metadata

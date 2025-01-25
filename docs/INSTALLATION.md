@@ -38,7 +38,7 @@ pip install -r experiments/generation/gretel/requirements.txt
 
 ## Install mostlyai
 ```bash
-conda create -n mostlyai python=3.9 -y
+conda create -n mostlyai python=3.10 -y
 conda activate mostlyai
 pip install syntherela
 pip install -r experiments/generation/mostlyai/requirements.txt
