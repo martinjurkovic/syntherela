@@ -27,17 +27,6 @@ def load_data(dataset_name, target_table):
     return tables, table_meta, metadata
 
 
-def symulate_generation(tables, target_table, seed=None):
-    table = tables[target_table]
-    table_perfect, table_original = train_test_split(
-        table, test_size=0.5, random_state=seed
-    )
-    table_shuffled = table_perfect.copy()
-    for column in table_shuffled.columns:
-        table_shuffled[column] = table_shuffled[column].sample(frac=1).values
-    return table_perfect, table_original, table_shuffled
-
-
 def initialize_metrics(seed):
     xgb_cls = xgb.XGBClassifier
     xgb_args = {"seed": seed}
@@ -81,7 +70,7 @@ def symulate_data_copying(tables, target_table, seed=None, frac_copied=1.0):
     )
     table_copied = pd.concat(
         [
-            table_original.sample(frac=frac_copied),
+            table_original.sample(frac=frac_copied, replace=True),
             table_perfect.sample(frac=1 - frac_copied),
         ]
     )
