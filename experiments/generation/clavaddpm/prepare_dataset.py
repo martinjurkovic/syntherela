@@ -117,7 +117,9 @@ def main(args):
     real_data = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
     real_data, metadata = remove_sdv_columns(real_data, metadata)
 
-    processed_data_path = os.path.join("complex_data", dataset_name)
+    processed_data_path = (
+        Path().absolute() / "ClavaDDPM" / "complex_data" / dataset_name
+    )
     os.makedirs(processed_data_path, exist_ok=True)
 
     tables = dict()
@@ -138,7 +140,7 @@ def main(args):
 
     # Create a dataset_meta.json, in which tables should be manually created to
     #    specify all foreign key relationships in a multi-table dataset.
-    with open(os.path.join(processed_data_path, "dataset_meta.json"), "w") as f:
+    with open(processed_data_path / "dataset_meta.json", "w") as f:
         json.dump(dataset_meta, f, indent=4)
 
     first_dates = dict()
@@ -177,13 +179,13 @@ def main(args):
         )
 
     if len(first_dates) > 0:
-        with open(os.path.join(processed_data_path, "first_dates.json"), "w") as f:
+        with open(processed_data_path / "first_dates.json", "w") as f:
             json.dump(first_dates, f, indent=4)
 
     # create config.json
     config = {
         "general": {
-            "data_dir": processed_data_path.replace("\\", "/"),
+            "data_dir": f"complex_data/{dataset_name}",
             "exp_name": f"{dataset_name}_train",
             "workspace_dir": f"clavaDDPM_workspace_run{run_id}/{dataset_name}",
             "sample_prefix": "",
@@ -223,11 +225,7 @@ def main(args):
     }
 
     with open(
-        os.path.join(
-            "ClaVaDDPM",
-            "configs",
-            f"{dataset_name}_run{run_id}.json",
-        ),
+        Path("ClavaDDPM") / "configs" / f"{dataset_name}_run{run_id}.json",
         "w",
     ) as f:
         json.dump(config, f, indent=4)
