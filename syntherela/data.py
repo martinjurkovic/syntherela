@@ -11,15 +11,15 @@ def load_tables(data_path, metadata):
             continue
         table_name = file_name.split(".")[0]
         dtypes = {}
-        parse_dates = []
+        parse_dates = {}
         for column, column_info in metadata.tables[table_name].columns.items():
             if column_info["sdtype"] == "categorical":
                 dtypes[column] = "category"
             elif column_info["sdtype"] == "boolean":
                 dtypes[column] = "bool"
             elif column_info["sdtype"] == "datetime":
-                parse_dates.append(column)
-            # for ids and numerical values let pandas infer the type
+                date_format = column_info.get("format", True)
+                parse_dates[column] = date_format
         table = pd.read_csv(
             f"{data_path}/{file_name}",
             low_memory=False,
