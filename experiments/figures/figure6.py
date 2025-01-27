@@ -181,6 +181,7 @@ for ax in axes:
 
 axes[0].set_ylabel("Classification Accuracy")
 axes[0].set_title("Perfectly Generated Data")
+axes[1].set_ylabel("Classification Accuracy")
 axes[1].set_title("Shuffled Data")
 
 fig.tight_layout()
