@@ -191,9 +191,9 @@ class DetectionBaseMetric(BaseMetric):
         **kwargs,
     ):
         if isinstance(real_data, pd.DataFrame):
-            assert real_data.columns.equals(
-                synthetic_data.columns
-            ), "Columns of real and synthetic data do not match"
+            assert real_data.columns.equals(synthetic_data.columns), (
+                "Columns of real and synthetic data do not match"
+            )
 
         # sample the same number of rows from the real and synthetic data
         n = min(len(real_data), len(synthetic_data))
@@ -230,7 +230,10 @@ class DetectionBaseMetric(BaseMetric):
         y = y[idx]
         kf = StratifiedKFold(n_splits=self.folds)
         for i, (train_index, test_index) in enumerate(kf.split(X, y)):
-            np.random.seed(self.random_state + i)
+            if self.random_state:
+                np.random.seed(self.random_state + i)
+            else:
+                np.random.seed(i)
             model = Pipeline(
                 [
                     ("imputer", SimpleImputer()),

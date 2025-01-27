@@ -65,6 +65,24 @@ class Metadata(MultiTableMetadata):
             root_tables.discard(relation["child_table_name"])
         return list(root_tables)
 
+    def get_table_levels(self):
+        # return the length of the path from any root table
+        root_tables = self.get_root_tables()
+        table_levels = {}
+        for root_table in root_tables:
+            table_levels[root_table] = 0
+
+        relationships = self.relationships.copy()
+        while len(relationships) > 0:
+            relationship = relationships.pop(0)
+            if relationship["parent_table_name"] in table_levels:
+                table_levels[relationship["child_table_name"]] = (
+                    table_levels[relationship["parent_table_name"]] + 1
+                )
+            else:
+                relationships.append(relationship)
+        return table_levels
+
 
 def drop_ids(table: pd.DataFrame, metadata: dict):
     for column, column_info in metadata["columns"].items():
