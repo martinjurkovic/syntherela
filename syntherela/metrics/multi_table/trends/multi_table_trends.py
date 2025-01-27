@@ -1,3 +1,7 @@
+"""
+Based on https://github.com/weipang142857/ClavaDDPM/blob/main/gen_multi_report.py
+"""
+
 from copy import deepcopy
 from collections import defaultdict
 

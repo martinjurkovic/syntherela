@@ -1,3 +1,7 @@
+"""
+Based on https://github.com/sdv-dev/SDMetrics/blob/main/sdmetrics/reports/multi_table_report/quality_report.py
+"""
+
 from sdmetrics.reports.multi_table._properties import ColumnShapes
 from sdmetrics.reports.multi_table.base_multi_table_report import BaseMultiTableReport
 
