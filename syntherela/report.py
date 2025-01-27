@@ -6,6 +6,9 @@ from datetime import datetime
 from tqdm import tqdm
 
 from syntherela.utils import NpEncoder
+from syntherela.metrics.multi_table.trends import multi_table_trends
+from syntherela.metrics.single_table.trends import ColumnPairsReport
+from syntherela.metrics.single_column.trends import ColumnShapesReport
 from syntherela.metrics.single_column.statistical import ChiSquareTest
 from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
 from syntherela.visualisations.distribution_visualisations import (
@@ -30,12 +33,14 @@ class Report:
         ],
         multi_table_metrics=[],
         validate_metadata=True,
+        compute_trends=True,
     ):
         if validate_metadata:
             metadata.validate_data(real_data)
             metadata.validate_data(synthetic_data)
         self.real_data = real_data
         self.synthetic_data = synthetic_data
+        self.evaluate_trends = compute_trends
 
         # reorder synthetic data columns to match real data
         for table in metadata.get_tables():
@@ -100,7 +105,10 @@ class Report:
                                 )
                                 print(e)
                             pbar.update(1)
-
+            if self.evaluate_trends:
+                self.compute_trends(
+                    single_column=True, single_table=False, multi_table=False
+                )
         # single_table_metrics
         if len(self.single_table_metrics) == 0:
             print("No single table metrics to run. Skipping.")
@@ -130,7 +138,10 @@ class Report:
                             )
                             print(e)
                         pbar.update(1)
-
+            if self.evaluate_trends:
+                self.compute_trends(
+                    single_column=False, single_table=True, multi_table=False
+                )
         # multi_table_metrics
         if len(self.multi_table_metrics) == 0:
             print("No multi table metrics to run. Skipping.")
@@ -147,10 +158,71 @@ class Report:
                 except Exception as e:
                     print(f"There was a problem with metric {metric.name}")
                     print(e)
+            if self.evaluate_trends:
+                self.compute_trends(
+                    single_column=False, single_table=False, multi_table=True
+                )
 
         self.report_datetime = datetime.now()
 
         return self.results
+
+    def compute_trends(
+        self, single_table=True, single_column=True, multi_table=True, verbose=True
+    ):
+        if single_column:
+            trends_report = ColumnShapesReport()
+            trends_report.generate(
+                self.real_data,
+                self.synthetic_data,
+                self.metadata.to_dict(),
+                verbose=verbose,
+            )
+            shapes_df = trends_report.get_details("Column Shapes")
+            self.results["single_column_metrics"]["Trends"] = {
+                "shapes": {
+                    "mean": shapes_df.Score.mean(),
+                    "se": shapes_df.Score.std() / len(shapes_df) ** 0.5,
+                }
+            }
+            # TODO: we could also store individual scores for each column
+        if single_table:
+            trends_report = ColumnPairsReport()
+            trends_report.generate(
+                self.real_data,
+                self.synthetic_data,
+                self.metadata.to_dict(),
+                verbose=verbose,
+            )
+            pairs_df = trends_report.get_details("Column Pair Trends")
+            if not pairs_df.empty:
+                # This can happen with tables with only one column
+                self.results["single_table_metrics"]["Trends"] = {
+                    "pairs": {
+                        "mean": pairs_df.Score.mean(),
+                        "se": pairs_df.Score.std() / len(pairs_df) ** 0.5,
+                    }
+                }
+        if multi_table:
+            multi_table_trends_results = multi_table_trends(
+                self.real_data,
+                self.synthetic_data,
+                self.metadata,
+                verbose=verbose,
+            )
+            self.results["multi_table_metrics"]["Trends"] = {
+                "cardinality": multi_table_trends_results["cardinality"],
+                "k_hop_similarity": {},
+            }
+            hop_scores = multi_table_trends_results["avg_scores"]
+            hop_se = multi_table_trends_results["scores_se"]
+            for hop in multi_table_trends_results["hop_relation"]:
+                self.results["multi_table_metrics"]["Trends"]["k_hop_similarity"][
+                    hop
+                ] = {
+                    "mean": hop_scores[hop],
+                    "se": hop_se[hop],
+                }
 
     def load_from_json(self, path):
         """

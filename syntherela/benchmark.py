@@ -41,11 +41,13 @@ class Benchmark:
         run_id=None,
         sample_id=None,
         validate_metadata=True,
+        compute_trends=True,
     ):
         self.datasets = datasets
         self.run_id = str(run_id)
         self.sample_id = str(sample_id)
         self.validate_metadata = validate_metadata
+        self.compute_trends = compute_trends
 
         self.benchmark_name = (benchmark_name,)
         self.real_data_dir = Path(real_data_dir)
@@ -133,6 +135,7 @@ class Benchmark:
                         single_table_metrics=self.single_table_metrics,
                         multi_table_metrics=self.multi_table_metrics,
                         validate_metadata=self.validate_metadata,
+                        compute_trends=self.compute_trends,
                     )
 
                     self.reports.setdefault(dataset_name, {})[method_name] = report
@@ -154,9 +157,15 @@ class Benchmark:
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
                 file_name = self.build_file_name(dataset_name, method_name)
-                real_data, synthetic_data, metadata = self.load_data(
-                    dataset_name, method_name
-                )
+                try:
+                    real_data, synthetic_data, metadata = self.load_data(
+                        dataset_name, method_name
+                    )
+                except FileNotFoundError:
+                    warnings.warn(
+                        f"Results for {dataset_name}, method {method_name} not found."
+                    )
+                    continue
                 temp_report = Report(
                     real_data,
                     synthetic_data,
