@@ -23,16 +23,17 @@ from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_g
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
 from relbench.base.task_column import PredictColumnTask
-from gnn_datasets import RossmannDataset, WalmartDataset
+from gnn_datasets import RossmannDataset, WalmartDataset, F1Dataset
 
 DATASETS = {
     RossmannDataset.name: RossmannDataset,
     WalmartDataset.name: WalmartDataset,
+    F1Dataset.name: F1Dataset,
 }
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--dataset", type=str, default="walmart_subsampled")
+parser.add_argument("--dataset", type=str, default="f1")
 parser.add_argument("--task", type=str, default="predict-column")
 parser.add_argument("--run_id", type=str, default="1")
 parser.add_argument("--method", type=str, default="ORIGINAL")
@@ -43,10 +44,10 @@ parser.add_argument(
     default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--entity_table", type=str, default="depts")
-parser.add_argument("--entity_col", type=str)
-parser.add_argument("--time_col", type=str, default="Date")
-parser.add_argument("--target_col", type=str, default="Weekly_Sales")
+parser.add_argument("--entity_table", type=str, default="results")
+parser.add_argument("--entity_col", type=str, default="resultId")
+parser.add_argument("--time_col", type=str, default="date")
+parser.add_argument("--target_col", type=str, default="position")
 
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=10)
