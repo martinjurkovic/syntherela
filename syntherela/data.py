@@ -1,5 +1,6 @@
 import os
-from typing import Dict, Optional, Union
+from typing import Optional, Union
+from syntherela.typing import Tables
 
 import pandas as pd
 from sdv.datasets.demo import get_available_demos, download_demo
@@ -7,7 +8,7 @@ from syntherela.metadata import Metadata
 
 
 def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
-    tables = {}
+    tables: Tables = {}
     for file_name in os.listdir(data_path):
         if not file_name.endswith(".csv"):
             continue
@@ -41,7 +42,7 @@ def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
 
 
 def remove_sdv_columns(
-    tables: Dict[str, pd.DataFrame],
+    tables: Tables,
     metadata: Metadata,
     update_metadata=True,
     validate=True,
@@ -70,7 +71,7 @@ def remove_sdv_columns(
 
 
 def save_tables(
-    tables: Dict[str, pd.DataFrame],
+    tables: Tables,
     path: Union[str, os.PathLike],
     metadata: Optional[Metadata] = None,
 ):
@@ -92,7 +93,7 @@ def save_tables(
 
 
 def download_sdv_relational_datasets(
-    data_path: Union[str, os.PathLike] = "data/original"
+    data_path: Union[str, os.PathLike] = "data/original",
 ):
     """
     Download all the available relational datasets from SDV
@@ -111,7 +112,7 @@ def download_sdv_relational_datasets(
         print("Done.")
 
 
-def denormalize_tables(tables: Dict[str, pd.DataFrame], metadata: Metadata):
+def denormalize_tables(tables: Tables, metadata: Metadata):
     relationships = metadata.relationships.copy()
     denormalized_table = tables[relationships[0]["parent_table_name"]]
     already_merged_tables = [relationships[0]["parent_table_name"]]
@@ -160,8 +161,8 @@ def drop_column_if_in_table(table: pd.DataFrame, column: str):
 
 
 def make_column_names_unique(
-    real_data: Dict[str, pd.DataFrame],
-    synthetic_data: Dict[str, pd.DataFrame],
+    real_data: Tables,
+    synthetic_data: Tables,
     metadata: Metadata,
     validate=True,
 ):
