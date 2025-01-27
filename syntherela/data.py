@@ -1,36 +1,51 @@
 import os
+from typing import Dict, Optional, Union
 
 import pandas as pd
 from sdv.datasets.demo import get_available_demos, download_demo
+from syntherela.metadata import Metadata
 
 
-def load_tables(data_path, metadata):
+def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
     tables = {}
     for file_name in os.listdir(data_path):
         if not file_name.endswith(".csv"):
             continue
         table_name = file_name.split(".")[0]
         dtypes = {}
-        parse_dates = {}
+        parse_dates = []
+        datetime_formats = {}
         for column, column_info in metadata.tables[table_name].columns.items():
             if column_info["sdtype"] == "categorical":
                 dtypes[column] = "category"
             elif column_info["sdtype"] == "boolean":
                 dtypes[column] = "bool"
             elif column_info["sdtype"] == "datetime":
-                date_format = column_info.get("format", True)
-                parse_dates[column] = date_format
+                parse_dates.append(column)
+                datetime_format = column_info.get("datetime_format")
+                if not datetime_format:
+                    raise ValueError(
+                        f'"datetime_format" not found in metadata for column "{column}" in table "{table_name}"'
+                    )
+                datetime_formats[column] = datetime_format
+
         table = pd.read_csv(
             f"{data_path}/{file_name}",
             low_memory=False,
             dtype=dtypes,
             parse_dates=parse_dates,
+            date_format=datetime_formats,
         )
         tables[table_name] = table
     return tables
 
 
-def remove_sdv_columns(tables, metadata, update_metadata=True, validate=True):
+def remove_sdv_columns(
+    tables: Dict[str, pd.DataFrame],
+    metadata: Metadata,
+    update_metadata=True,
+    validate=True,
+):
     """
     "_v1" Versions of the relational demo datasets in SDV have some columns that are not present in the original datasets.
     We created this function to remove these columns from the tables and the metadata.
@@ -54,14 +69,31 @@ def remove_sdv_columns(tables, metadata, update_metadata=True, validate=True):
     return tables, metadata
 
 
-def save_tables(tables, path):
+def save_tables(
+    tables: Dict[str, pd.DataFrame],
+    path: Union[str, os.PathLike],
+    metadata: Optional[Metadata] = None,
+):
     if not os.path.exists(path):
         os.makedirs(path)
+    if metadata:
+        metadata.save_to_json(os.path.join(path, "metadata.json"))
     for table_name, table in tables.items():
+        if metadata:
+            for col in table.columns:
+                # if col in metadata is datetime, convert to string with datetime_format
+                if metadata.tables[table_name].columns[col]["sdtype"] == "datetime":
+                    datetime_format = (
+                        metadata.tables[table_name].columns[col].get("datetime_format")
+                    )
+                    if datetime_format:
+                        table[col] = table[col].dt.strftime(datetime_format)
         table.to_csv(os.path.join(path, f"{table_name}.csv"), index=False)
 
 
-def download_sdv_relational_datasets(data_path="data/original"):
+def download_sdv_relational_datasets(
+    data_path: Union[str, os.PathLike] = "data/original"
+):
     """
     Download all the available relational datasets from SDV
     https://docs.sdv.dev/sdv/single-table-data/data-preparation/loading-data
@@ -79,7 +111,7 @@ def download_sdv_relational_datasets(data_path="data/original"):
         print("Done.")
 
 
-def denormalize_tables(tables, metadata):
+def denormalize_tables(tables: Dict[str, pd.DataFrame], metadata: Metadata):
     relationships = metadata.relationships.copy()
     denormalized_table = tables[relationships[0]["parent_table_name"]]
     already_merged_tables = [relationships[0]["parent_table_name"]]
@@ -121,13 +153,18 @@ def denormalize_tables(tables, metadata):
     return denormalized_table
 
 
-def drop_column_if_in_table(table, column):
+def drop_column_if_in_table(table: pd.DataFrame, column: str):
     if column in table.columns:
         table = table.drop(columns=column, axis=1)
     return table
 
 
-def make_column_names_unique(real_data, synthetic_data, metadata, validate=True):
+def make_column_names_unique(
+    real_data: Dict[str, pd.DataFrame],
+    synthetic_data: Dict[str, pd.DataFrame],
+    metadata: Metadata,
+    validate=True,
+):
     for table_name in metadata.get_tables():
         if not real_data[table_name].columns.equals(synthetic_data[table_name].columns):
             raise ValueError("Real and synthetic data column names are not the same")
