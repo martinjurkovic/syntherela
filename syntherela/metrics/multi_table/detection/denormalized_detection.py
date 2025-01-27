@@ -7,6 +7,9 @@ from syntherela.metrics.base import DetectionBaseMetric
 
 
 class DenormalizedDetection(DetectionBaseMetric):
+    """This metric is only intended as a base class for other metrics
+    and should not be called on its own (see https://arxiv.org/abs/2410.03411)."""
+
     @staticmethod
     def bootstrap_sample(
         real_data: dict, metadata: Metadata, random_state: Union[int, None] = None
