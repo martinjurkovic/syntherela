@@ -109,7 +109,7 @@ def main(args):
     num_clusters = args.num_clusters
     dataset_name = args.dataset_name
     real_data_path = args.real_data_path
-    run_id = 1
+    run_id = args.run_id
 
     metadata = Metadata().load_from_json(
         Path(real_data_path) / f"{dataset_name}/metadata.json"
