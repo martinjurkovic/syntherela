@@ -165,6 +165,8 @@ def main(args):
             # TODO: handle missing values in datetime columns
             if df[col].isnull().sum() > 0:
                 df[col] = df[col].fillna(df[col].mode().iloc[0])
+            # clip dates to 1900-01-01 to avoid negative values
+            df[col] = df[col].clip("1900-01-01", None)
             df[col], first_dates[table_name][col] = calculate_days_since_earliest_date(
                 df[col].dt.strftime("%y%m%d")
             )
