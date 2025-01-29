@@ -7,6 +7,22 @@ from sdv.datasets.demo import get_available_demos, download_demo
 from syntherela.metadata import Metadata
 
 
+def get_dataset_stats(tables: Tables, metadata: Metadata) -> dict:
+    total_rows = 0
+    total_columns = 0
+    for table_name, table in tables.items():
+        total_rows += len(table)
+        id_columns = metadata.get_column_names(table_name, sdtype="id")
+        total_columns += len(table.columns) - len(id_columns)
+
+    return {
+        "num_tables": len(tables),
+        "num_rows": total_rows,
+        "num_columns": total_columns,
+        "num_relationships": len(metadata.relationships),
+    }
+
+
 def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
     tables: Tables = {}
     table_names = metadata.get_tables()
