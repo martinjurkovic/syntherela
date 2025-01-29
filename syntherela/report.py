@@ -25,6 +25,9 @@ class Report:
         synthetic_data,
         metadata,
         report_name,
+        method_name,
+        dataset_name,
+        run_id,
         single_column_metrics=[
             ChiSquareTest(),
         ],
@@ -34,6 +37,7 @@ class Report:
         multi_table_metrics=[],
         validate_metadata=True,
         compute_trends=True,
+        sample_id=None,
     ):
         if validate_metadata:
             metadata.validate_data(real_data)
@@ -59,6 +63,10 @@ class Report:
         self.multi_table_metrics = multi_table_metrics
         self.report_datetime = datetime.now()
         self.results = {
+            "method_name": method_name,
+            "dataset_name": dataset_name,
+            "run_id": run_id,
+            "sample_id": sample_id,
             "single_column_metrics": {},
             "single_table_metrics": {},
             "multi_table_metrics": {},

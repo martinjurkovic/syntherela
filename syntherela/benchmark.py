@@ -131,11 +131,15 @@ class Benchmark:
                         synthetic_data=synthetic_data,
                         metadata=metadata,
                         report_name=f"{self.benchmark_name}_{dataset_name}_{method_name}",
+                        method_name=method_name,
+                        dataset_name=dataset_name,
+                        run_id=self.run_id,
                         single_column_metrics=self.single_column_metrics,
                         single_table_metrics=self.single_table_metrics,
                         multi_table_metrics=self.multi_table_metrics,
                         validate_metadata=self.validate_metadata,
                         compute_trends=self.compute_trends,
+                        sample_id=self.sample_id,
                     )
 
                     self.reports.setdefault(dataset_name, {})[method_name] = report
