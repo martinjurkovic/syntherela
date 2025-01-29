@@ -9,10 +9,13 @@ from syntherela.metadata import Metadata
 
 def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
     tables: Tables = {}
+    table_names = metadata.get_tables()
     for file_name in os.listdir(data_path):
         if not file_name.endswith(".csv"):
             continue
         table_name = file_name.split(".")[0]
+        if table_name not in table_names:
+            continue
         dtypes = {}
         parse_dates = []
         datetime_formats = {}
