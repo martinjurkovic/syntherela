@@ -1,11 +1,34 @@
 import os
 from typing import Optional
 
+
 import pandas as pd
+from syntherela.typing import Tables
 from syntherela.data import load_tables
 
 from relbench.base import Database, Dataset, Table
 from syntherela.metadata import Metadata
+
+
+def append_test_set(
+    tables_train: Tables, tables_test: Tables, metadata: Metadata
+) -> Tables:
+    tables = {}
+    for table in tables_train.keys():
+        id_columns = metadata.get_column_names(table, sdtype="id")
+        # Add test and train prefix to the id columns
+        for column in id_columns:
+            tables_train[table].df[column] = (
+                tables_train[table].df[column].apply(lambda x: f"train_{x}")
+            )
+            tables_test[table].df[column] = (
+                tables_test[table].df[column].apply(lambda x: f"test_{x}")
+            )
+            # Add the concatenated dataframe to the tables dict
+            tables[table] = pd.concat(
+                [tables_train[table].df, tables_test[table].df], ignore_index=True
+            )
+    return tables
 
 
 class RossmannDataset(Dataset):
@@ -34,7 +57,9 @@ class RossmannDataset(Dataset):
             path = os.path.join(path, self.method, str(self.run_id), "sample1")
         # store = os.path.join(path, "store.csv")
         # historical = os.path.join(path, "historical.csv")
-        metadata_path = os.path.join("data", "original", "rossmann_subsampled", "metadata.json")
+        metadata_path = os.path.join(
+            "data", "original", "rossmann_subsampled", "metadata.json"
+        )
         metadata = Metadata.load_from_json(metadata_path)
 
         tables = load_tables(path, metadata)
@@ -45,7 +70,9 @@ class RossmannDataset(Dataset):
         # if max Date is smaller than self.upto_timestamp
         if historical_df["Date"].max() < self.test_timestamp:
             print("APPENDING TEST DATA")
-            original_tables = load_tables(os.path.join("data", "original", "rossmann"), metadata)
+            original_tables = load_tables(
+                os.path.join("data", "original", "rossmann"), metadata
+            )
             # copy data from original store_df from dateself.upto_timestamp to historical_df
             original_historical_df = original_tables["historical"]
             # take data only from self.upto_timestamp onward
@@ -145,6 +172,7 @@ class WalmartDataset(Dataset):
         db = db.upto(self.upto_timestamp)
 
         return db
+
 
 class F1Dataset(Dataset):
     name = "f1"
@@ -396,3 +424,129 @@ class F1Dataset(Dataset):
 
         return Database(tables)
 
+
+class Berka(Dataset):
+    name = "Berka"
+    val_timestamp = pd.Timestamp("1997-12-01")
+    test_timestamp = pd.Timestamp("1998-01-01")
+
+    def __init__(
+        self,
+        cache_dir: Optional[str] = None,
+        predict_column_task_config: dict = {},
+        method: str = "ORIGINAL",
+        run_id: int = 0,
+    ):
+        super().__init__(cache_dir, predict_column_task_config)
+        self.method = method
+        self.run_id = run_id
+
+    def make_db(self) -> Database:
+        data_type = "original" if self.method == "ORIGINAL" else "synthetic"
+        path = os.path.join("data", data_type, "Berka_subsampled")
+        test_path = os.path.join("data", "original", "Berka")
+        if self.method != "ORIGINAL":
+            path = os.path.join(path, self.method, str(self.run_id), "sample1")
+
+        metadata_path = os.path.join(
+            "data", "original", "Berka_subsampled", "metadata.json"
+        )
+        metadata = Metadata.load_from_json(metadata_path)
+
+        tables = load_tables(path, metadata)
+        tables_test = load_tables(test_path, metadata)
+
+        tables = append_test_set(tables, tables_test, metadata)
+
+        account = tables["account"]
+        card = tables["card"]
+        client = tables["client"]
+        disp = tables["disp"]
+        district = tables["district"]
+        loan = tables["loan"]
+        order = tables["order"]
+        trans = tables["trans"]
+
+        # Only look if the loan was good (A, C) or bad (B, D)
+        def remap_status(x):
+            if x == "C":
+                return "A"
+            elif x == "D":
+                return "B"
+            else:
+                return x
+
+        loan.status = loan.status.apply(remap_status)
+
+        tables = {}
+
+        tables["account"] = Table(
+            df=pd.DataFrame(account),
+            fkey_col_to_pkey_table={
+                "district_id": "district",
+            },
+            pkey_col="account_id",
+            time_col="date",
+        )
+
+        tables["card"] = Table(
+            df=pd.DataFrame(card),
+            fkey_col_to_pkey_table={
+                "disp_id": "disp",
+            },
+            pkey_col="card_id",
+            time_col="issued",
+        )
+
+        tables["client"] = Table(
+            df=pd.DataFrame(client),
+            fkey_col_to_pkey_table={},
+            pkey_col="client_id",
+            time_col=None,
+        )
+
+        tables["disp"] = Table(
+            df=pd.DataFrame(disp),
+            fkey_col_to_pkey_table={
+                "client_id": "client",
+                "account_id": "account",
+            },
+            pkey_col="disp_id",
+            time_col=None,
+        )
+
+        tables["district"] = Table(
+            df=pd.DataFrame(district),
+            fkey_col_to_pkey_table={},
+            pkey_col="district_id",
+            time_col=None,
+        )
+
+        tables["loan"] = Table(
+            df=pd.DataFrame(loan),
+            fkey_col_to_pkey_table={
+                "account_id": "account",
+            },
+            pkey_col="loan_id",
+            time_col="date",
+        )
+
+        tables["order"] = Table(
+            df=pd.DataFrame(order),
+            fkey_col_to_pkey_table={
+                "account_id": "account",
+            },
+            pkey_col="order_id",
+            time_col=None,
+        )
+
+        tables["trans"] = Table(
+            df=pd.DataFrame(trans),
+            fkey_col_to_pkey_table={
+                "account_id": "account",
+            },
+            pkey_col="trans_id",
+            time_col="date",
+        )
+
+        return Database(tables)
