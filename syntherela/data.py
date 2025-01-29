@@ -93,10 +93,11 @@ def save_tables(
     tables: Tables,
     path: Union[str, os.PathLike],
     metadata: Optional[Metadata] = None,
+    save_metadata: bool = False,
 ):
     if not os.path.exists(path):
         os.makedirs(path)
-    if metadata:
+    if metadata and save_metadata:
         metadata.save_to_json(os.path.join(path, "metadata.json"))
     for table_name, table in tables.items():
         if metadata:
