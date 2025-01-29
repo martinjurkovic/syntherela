@@ -500,7 +500,9 @@ class Berka(Dataset):
 
         tables["client"] = Table(
             df=pd.DataFrame(client),
-            fkey_col_to_pkey_table={},
+            fkey_col_to_pkey_table={
+                "district_id": "district",
+            },
             pkey_col="client_id",
             time_col=None,
         )
