@@ -145,8 +145,7 @@ class AggregationDetection(
         classifier_cls: ClassifierMixin,
         classifier_args: dict = {},
         random_state: Optional[int] = None,
-        folds: int = 10,
-        m: int = 10,
+        folds: int = 5,
         levels: int = 1,
     ):
         super().__init__(
@@ -154,7 +153,6 @@ class AggregationDetection(
             classifier_args=classifier_args,
             random_state=random_state,
             folds=folds,
-            m=m,
         )
         self.levels = levels
 
