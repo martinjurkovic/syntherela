@@ -170,8 +170,7 @@ class DetectionBaseMetric(BaseMetric):
         classifier_cls,
         classifier_args={},
         random_state=None,
-        folds=10,
-        m=10,
+        folds=5,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -179,7 +178,6 @@ class DetectionBaseMetric(BaseMetric):
         self.classifier_args = classifier_args
         self.random_state = random_state
         self.folds = folds
-        self.m = m
         self.classifiers = []
         self.models = []
         self.name = f"{type(self).__name__}-{classifier_cls.__name__}"
