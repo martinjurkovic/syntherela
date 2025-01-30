@@ -481,15 +481,7 @@ class DetectionBaseMetric(BaseMetric):
             markerscale=2,
         )
 
-    def plot_partial_dependence(self, feature, lab_fontsize=30, seed=None):
-        features = self.feature_importance(combine_categorical=False)
-        # sort by average importance
-        features = {
-            k: v.mean()
-            for k, v in sorted(
-                features.items(), key=lambda item: np.mean(item[1]), reverse=True
-            )
-        }
+    def plot_partial_dependence(self, feature, lab_fontsize=30, seed=0):
         from sklearn.inspection import PartialDependenceDisplay
 
         # TODO: move these functions to some utility module
@@ -508,26 +500,26 @@ class DetectionBaseMetric(BaseMetric):
                 )
             return feature_name[0].upper() + feature_name[1:]
 
-        def get_average_pds(feature, seed=0):
+        def get_average_pds(feature, seed=0, num_ice=30, subsample_avg=0.5):
             plt.ioff()
             ys = []
             disps_ind = []
-            for i in range(10):
+            for i, model in enumerate(self.models):
                 disp_ind = PartialDependenceDisplay.from_estimator(
-                    self.models[i],
-                    self.X.sample(30, random_state=seed + i),
+                    model,
+                    self.X.sample(num_ice, random_state=seed + i),
                     [feature],
                     kind="individual",
                     response_method="predict_proba",
                 )
                 np.random.seed(seed + i)
                 disp = PartialDependenceDisplay.from_estimator(
-                    self.models[i],
+                    model,
                     self.X,
                     [feature],
                     kind="average",
                     response_method="predict_proba",
-                    subsample=0.5,
+                    subsample=subsample_avg,
                     percentiles=(0, 1),
                 )
                 disps_ind.append(disp_ind)
