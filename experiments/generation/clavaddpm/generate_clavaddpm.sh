@@ -6,9 +6,9 @@ SYNTHETIC_DATA_PATH=$3
 
 # Preprocess the dataset and compare configurations
 conda activate reproduce_benchmark
-python postprocess_dataset.py $DATASET_NAME --real-data-path $REAL_DATA_PATH --run-id 1
-python postprocess_dataset.py $DATASET_NAME --real-data-path $REAL_DATA_PATH --run-id 2
-python postprocess_dataset.py $DATASET_NAME --real-data-path $REAL_DATA_PATH --run-id 3
+python prepare_dataset.py $DATASET_NAME --real-data-path $REAL_DATA_PATH --run-id 1
+python prepare_dataset.py $DATASET_NAME --real-data-path $REAL_DATA_PATH --run-id 2
+python prepare_dataset.py $DATASET_NAME --real-data-path $REAL_DATA_PATH --run-id 3
 
 # Generate synthetic data using ClavADDPM
 cd ClavaDDPM
