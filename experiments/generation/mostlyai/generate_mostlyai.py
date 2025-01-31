@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from time import sleep
 
 import pandas as pd
 from mostlyai.sdk import MostlyAI
@@ -124,6 +125,7 @@ if __name__ == "__main__":
     for sample in range(3):
         sample_id = str(sample + 1)
         sd = mostly.generate(g, config = config, name=f"{dataset_name} - {run_id} - {sample_id}")
+        sleep(60)
         synthetic_data = sd.data()
         synthetic_data = postprocess_data(synthetic_data, metadata)
         # Ensure the data follows the metadata
