@@ -1,3 +1,5 @@
+import json
+import os
 from typing import Union
 
 import graphviz
@@ -183,9 +185,9 @@ def convert_metadata_to_v0(metadata: Metadata) -> dict:
             }
             if column_info["sdtype"] == "boolean":
                 # convert boolean to categorical
-                metadata_v0["tables"][table_name]["fields"][column]["type"] = (
-                    "categorical"
-                )
+                metadata_v0["tables"][table_name]["fields"][column][
+                    "type"
+                ] = "categorical"
             if column_info["sdtype"] == "datetime":
                 metadata_v0["tables"][table_name]["fields"][column]["format"] = (
                     column_info["datetime_format"]
@@ -211,3 +213,9 @@ def convert_metadata_to_v0(metadata: Metadata) -> dict:
             "subtype"
         ] = "string"
     return metadata_v0
+
+
+def convert_and_save_metadata_v0(metadata: Metadata, path: Union[str, os.PathLike]):
+    metadata_v0 = convert_metadata_to_v0(metadata)
+    with open(os.path.join(path, "metadata_v0.json"), "w") as f:
+        json.dump(metadata_v0, f, indent=4)
