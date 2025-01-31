@@ -1,6 +1,8 @@
+from typing import Union
+
 import graphviz
 import pandas as pd
-from sdv.metadata import MultiTableMetadata
+from sdv.metadata import MultiTableMetadata, SingleTableMetadata
 from sdv.metadata.visualization import _get_graphviz_extension
 
 
@@ -12,33 +14,38 @@ class Metadata(MultiTableMetadata):
     def get_tables(self):
         return list(self.tables.keys())
 
-    def get_primary_key(self, table_name):
-        return self.tables[table_name].primary_key
+    def get_primary_key(self, table_name: str) -> str:
+        table_meta: SingleTableMetadata = self.tables[table_name]
+        return table_meta.primary_key
 
-    def get_table_meta(self, table_name, to_dict=True):
-        table_meta = self.tables[table_name]
+    def get_table_meta(
+        self, table_name: str, to_dict: bool = True
+    ) -> Union[dict, SingleTableMetadata]:
+        table_meta: SingleTableMetadata = self.tables[table_name]
         if to_dict:
             return table_meta.to_dict()
         return table_meta
 
-    def get_children(self, table_name):
+    def get_children(self, table_name: str) -> set:
         children = set()
         for relation in self.relationships:
             if relation["parent_table_name"] == table_name:
                 children.add(relation["child_table_name"])
         return children
 
-    def get_parents(self, table_name):
+    def get_parents(self, table_name: str) -> set:
         parents = set()
         for relation in self.relationships:
             if relation["child_table_name"] == table_name:
                 parents.add(relation["parent_table_name"])
         return parents
 
-    def get_foreign_keys(self, parent_table_name, child_table_name):
+    def get_foreign_keys(self, parent_table_name: str, child_table_name: str) -> list:
         return self._get_foreign_keys(parent_table_name, child_table_name)
 
-    def rename_column(self, table_name, old_column_name, new_column_name):
+    def rename_column(
+        self, table_name: str, old_column_name: str, new_column_name: str
+    ):
         self.tables[table_name].columns[new_column_name] = self.tables[
             table_name
         ].columns.pop(old_column_name)
@@ -61,13 +68,13 @@ class Metadata(MultiTableMetadata):
                 relationship["child_foreign_key"] = new_column_name
         return self
 
-    def get_root_tables(self):
+    def get_root_tables(self) -> list:
         root_tables = set(self.tables.keys())
         for relation in self.relationships:
             root_tables.discard(relation["child_table_name"])
         return list(root_tables)
 
-    def get_table_levels(self):
+    def get_table_levels(self) -> dict:
         # return the length of the path from any root table
         root_tables = self.get_root_tables()
         table_levels = {}
@@ -85,7 +92,7 @@ class Metadata(MultiTableMetadata):
                 relationships.append(relationship)
         return table_levels
 
-    def visualize(metadata, output_filename=None):
+    def visualize(self, output_filename=None) -> graphviz.Digraph:
         """Generates a Graphviz node with an HTML-like table label.
 
         Args:
@@ -106,13 +113,13 @@ class Metadata(MultiTableMetadata):
             "datetime": "#f2f2f2",
         }
 
-        def create_table_node(table_name, metadata, font="Arial"):
+        def create_table_node(table_name: str, metadata: Metadata, font: str = "Arial"):
             table_meta = metadata.get_table_meta(table_name)
             table_label = (
                 '< <table cellpadding="0" cellborder="0" cellspacing="0" border="0">'
             )
             table_label += f'<tr><td bgcolor="#476893">  </td> <td align="left" bgcolor="#476893"><font color="white"><b>{table_name}</b></font></td> <td align="right" bgcolor="#476893"></td></tr>'
-            primary_key = table_meta["primary_key"]
+            primary_key = metadata.get_primary_key(table_name)
             for col, info in table_meta["columns"].items():
                 sdtype = info["sdtype"]
                 fontspec = f'face="{font}"'
@@ -127,15 +134,15 @@ class Metadata(MultiTableMetadata):
             node_attr={"shape": "plaintext"},
         )
 
-        for table_name in metadata.get_tables():
+        for table_name in self.get_tables():
             dot.node(
                 table_name,
                 shape="plain",
-                label=create_table_node(table_name, metadata),
+                label=create_table_node(table_name, self),
                 fontname="Arial",
             )
 
-        for relationship in metadata.relationships:
+        for relationship in self.relationships:
             parent_table = relationship["parent_table_name"]
             child_table = relationship["child_table_name"]
             dot.edge(
@@ -164,14 +171,14 @@ class Metadata(MultiTableMetadata):
         return dot
 
 
-def drop_ids(table: pd.DataFrame, metadata: dict):
+def drop_ids(table: pd.DataFrame, metadata: dict) -> pd.DataFrame:
     for column, column_info in metadata["columns"].items():
         if column_info["sdtype"] == "id" and column in table.columns:
             table = table.drop(columns=column, axis=1)
     return table
 
 
-def convert_metadata_to_v0(metadata):
+def convert_metadata_to_v0(metadata: Metadata) -> dict:
     metadata_v1 = metadata.to_dict()
     metadata_v0 = {"tables": {}}
     for table_name, table_info in metadata_v1["tables"].items():
