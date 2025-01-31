@@ -106,13 +106,6 @@ class Metadata(MultiTableMetadata):
                 "'png', 'jpg' or 'pdf'. For a full list, see 'https://graphviz.org/docs/outputs/'"
             )
 
-        colors = {
-            "id": "#e2edf1",
-            "numerical": "#f2f2f2",
-            "categorical": "#f2f2f2",
-            "datetime": "#f2f2f2",
-        }
-
         def create_table_node(table_name: str, metadata: Metadata, font: str = "Arial"):
             table_meta = metadata.get_table_meta(table_name)
             table_label = (
@@ -125,7 +118,8 @@ class Metadata(MultiTableMetadata):
                 fontspec = f'face="{font}"'
                 if col == primary_key:
                     col = f"<u><b>{col}</b></u>"
-                table_label += f'<tr><td bgcolor="{colors[sdtype]}">  </td> <td align="left" bgcolor="{colors[sdtype]}"><font color="#6e6e6e"  {fontspec}>{col} </font></td> <td align="right" bgcolor="{colors[sdtype]}"><font color="#9b9c9c" {fontspec}>{sdtype}</font></td></tr>'
+                color = "#e2edf1" if sdtype == "id" else "#f2f2f2"
+                table_label += f'<tr><td bgcolor="{color}">  </td> <td align="left" bgcolor="{color}"><font color="#6e6e6e"  {fontspec}>{col} </font></td> <td align="right" bgcolor="{color}"><font color="#9b9c9c" {fontspec}>{sdtype}</font></td></tr>'
             table_label += "</table> >"
             return table_label
 
