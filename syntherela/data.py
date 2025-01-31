@@ -56,6 +56,12 @@ def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
             parse_dates=parse_dates,
             date_format=datetime_formats,
         )
+        for column, format in datetime_formats.items():
+            # If pandas can't parse the datetime format set it manually,
+            # if the format is correct, this will not change the column.
+            table[column] = pd.to_datetime(table[column]).dt.strftime(format)
+            table[column] = pd.to_datetime(table[column], format=format)
+
         tables[table_name] = table
     return tables
 
@@ -108,7 +114,11 @@ def save_tables(
                         metadata.tables[table_name].columns[col].get("datetime_format")
                     )
                     if datetime_format:
-                        table[col] = table[col].dt.strftime(datetime_format)
+                        # If the column is already a string, convert it to datetime first
+                        # to ensure the datetime_format is applied correctly.
+                        table[col] = pd.to_datetime(table[col]).dt.strftime(
+                            datetime_format
+                        )
         table.to_csv(os.path.join(path, f"{table_name}.csv"), index=False)
 
 
