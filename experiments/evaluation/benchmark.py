@@ -66,9 +66,9 @@ single_column_metrics = [
         classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
     ),
     # SingleColumnDetection(classifier_cls=rf_cls, classifier_args=rf_args),
-    SingleColumnDetection(
-        classifier_cls=logistic, classifier_args=logistic_args, random_state=42
-    ),
+    # SingleColumnDetection(
+    #     classifier_cls=logistic, classifier_args=logistic_args, random_state=42
+    # ),
 ]
 single_table_metrics = [
     MaximumMeanDiscrepancy(),
@@ -77,9 +77,9 @@ single_table_metrics = [
         classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
     ),
     # SingleTableDetection(classifier_cls=rf_cls, classifier_args=rf_args),
-    SingleTableDetection(
-        classifier_cls=logistic, classifier_args=logistic_args, random_state=42
-    ),
+    # SingleTableDetection(
+    #     classifier_cls=logistic, classifier_args=logistic_args, random_state=42
+    # ),
 ]
 multi_table_metrics = [
     CardinalityShapeSimilarity(),
@@ -87,21 +87,21 @@ multi_table_metrics = [
         classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
     ),
     # AggregationDetection(classifier_cls=rf_cls, classifier_args=rf_args),
-    AggregationDetection(
-        classifier_cls=logistic, classifier_args=logistic_args, random_state=42
-    ),
+    # AggregationDetection(
+    #     classifier_cls=logistic, classifier_args=logistic_args, random_state=42
+    # ),
     ParentChildDetection(
         classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
     ),
-    ParentChildDetection(
-        classifier_cls=logistic, classifier_args=logistic_args, random_state=42
-    ),
+    # ParentChildDetection(
+    #     classifier_cls=logistic, classifier_args=logistic_args, random_state=42
+    # ),
     ParentChildAggregationDetection(
         classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
     ),
-    ParentChildAggregationDetection(
-        classifier_cls=logistic, classifier_args=logistic_args, random_state=42
-    ),
+    # ParentChildAggregationDetection(
+    #     classifier_cls=logistic, classifier_args=logistic_args, random_state=42
+    # ),
 ]
 
 benchmark = Benchmark(
