@@ -86,8 +86,17 @@ class Benchmark:
         self.multi_table_metrics = multi_table_metrics
         self.benchmark_datetime = datetime.now()
 
+        # Initialize results containers
         self.all_results = {}
         self.reports = {}
+
+        # Try to read existing results during initialization
+        try:
+            self.read_results()
+        except Exception as e:
+            warnings.warn(
+                f"No existing results found or could not read them: {str(e)}. This is expected if running the benchmark for the first time."
+            )
 
     def load_data(self, dataset_name, method_name):
         real_data_path = self.real_data_dir / dataset_name
@@ -115,6 +124,40 @@ class Benchmark:
 
         return real_data, synthetic_data, metadata
 
+    def merge_results(self, dataset_name, method_name, new_results):
+        """Merge new results with existing results for a given dataset and method.
+
+        Args:
+            dataset_name (str): Name of the dataset
+            method_name (str): Name of the method
+            new_results (dict): New results to merge
+
+        Returns:
+            dict: Merged results
+        """
+        existing_results = None
+        if (
+            dataset_name in self.all_results
+            and method_name in self.all_results[dataset_name]
+        ):
+            existing_results = self.all_results[dataset_name][method_name]
+
+        if existing_results:
+            # Update only the metrics that were run
+            for metric_type, metrics in new_results.items():
+                if metric_type in existing_results:
+                    # If the existing metric is a dictionary, update it
+                    if isinstance(existing_results[metric_type], dict) and isinstance(metrics, dict):
+                        existing_results[metric_type].update(metrics)
+                    else:
+                        # If either is not a dictionary, just replace with new value
+                        existing_results[metric_type] = metrics
+                else:
+                    existing_results[metric_type] = metrics
+            return existing_results
+        else:
+            return new_results
+
     def run(self):
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
@@ -126,6 +169,7 @@ class Benchmark:
                     print(
                         f"Starting benchmark for {dataset_name}, method_name {method_name}"
                     )
+
                     report = Report(
                         real_data=real_data,
                         synthetic_data=synthetic_data,
@@ -144,13 +188,20 @@ class Benchmark:
 
                     self.reports.setdefault(dataset_name, {})[method_name] = report
 
-                    self.all_results.setdefault(dataset_name, {})[method_name] = (
-                        report.generate()
+                    # Generate and merge new results
+                    new_results = report.generate()
+                    merged_results = self.merge_results(
+                        dataset_name, method_name, new_results
                     )
+                    self.all_results.setdefault(dataset_name, {})[
+                        method_name
+                    ] = merged_results
 
+                    # Update report results with merged results before saving
+                    report.results = merged_results
                     file_name = self.build_file_name(dataset_name, method_name)
-
                     report.save_results(self.results_dir, file_name)
+
                 except Exception as e:
                     print(
                         f"There was an error with dataset: {dataset_name}, method: {method_name}."
@@ -176,11 +227,15 @@ class Benchmark:
                     metadata,
                     f"{dataset_name}_{method_name}",
                     validate_metadata=self.validate_metadata,
+                    method_name=method_name,
+                    dataset_name=dataset_name,
+                    run_id=self.run_id,
+                    sample_id=self.sample_id,
                 ).load_from_json(self.results_dir / file_name)
                 self.reports.setdefault(dataset_name, {})[method_name] = temp_report
-                self.all_results.setdefault(dataset_name, {})[method_name] = (
-                    temp_report.results
-                )
+                self.all_results.setdefault(dataset_name, {})[
+                    method_name
+                ] = temp_report.results
         if not self.all_results:
             warnings.warn("No results found.")
 
