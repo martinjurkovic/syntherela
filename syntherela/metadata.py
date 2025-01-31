@@ -1,5 +1,7 @@
+import graphviz
 import pandas as pd
 from sdv.metadata import MultiTableMetadata
+from sdv.metadata.visualization import _get_graphviz_extension
 
 
 class Metadata(MultiTableMetadata):
@@ -82,6 +84,84 @@ class Metadata(MultiTableMetadata):
             else:
                 relationships.append(relationship)
         return table_levels
+
+    def visualize(metadata, output_filename=None):
+        """Generates a Graphviz node with an HTML-like table label.
+
+        Args:
+            output_filename: The name of the output file.
+        """
+        try:
+            filename, graphviz_extension = _get_graphviz_extension(output_filename)
+        except ValueError:
+            raise ValueError(
+                "Unable to save a visualization with this file type. Try a supported file type like "
+                "'png', 'jpg' or 'pdf'. For a full list, see 'https://graphviz.org/docs/outputs/'"
+            )
+
+        colors = {
+            "id": "#e2edf1",
+            "numerical": "#f2f2f2",
+            "categorical": "#f2f2f2",
+            "datetime": "#f2f2f2",
+        }
+
+        def create_table_node(table_name, metadata, font="Arial"):
+            table_meta = metadata.get_table_meta(table_name)
+            table_label = (
+                '< <table cellpadding="0" cellborder="0" cellspacing="0" border="0">'
+            )
+            table_label += f'<tr><td bgcolor="#476893">  </td> <td align="left" bgcolor="#476893"><font color="white"><b>{table_name}</b></font></td> <td align="right" bgcolor="#476893"></td></tr>'
+            primary_key = table_meta["primary_key"]
+            for col, info in table_meta["columns"].items():
+                sdtype = info["sdtype"]
+                fontspec = f'face="{font}"'
+                if col == primary_key:
+                    col = f"<u><b>{col}</b></u>"
+                table_label += f'<tr><td bgcolor="{colors[sdtype]}">  </td> <td align="left" bgcolor="{colors[sdtype]}"><font color="#6e6e6e"  {fontspec}>{col} </font></td> <td align="right" bgcolor="{colors[sdtype]}"><font color="#9b9c9c" {fontspec}>{sdtype}</font></td></tr>'
+            table_label += "</table> >"
+            return table_label
+
+        dot = graphviz.Digraph(
+            graph_attr={"splines": "ortho", "ranksep": "0.8"},
+            node_attr={"shape": "plaintext"},
+        )
+
+        for table_name in metadata.get_tables():
+            dot.node(
+                table_name,
+                shape="plain",
+                label=create_table_node(table_name, metadata),
+                fontname="Arial",
+            )
+
+        for relationship in metadata.relationships:
+            parent_table = relationship["parent_table_name"]
+            child_table = relationship["child_table_name"]
+            dot.edge(
+                parent_table,
+                child_table,
+                arrowhead="crow",
+                arrowtail="tee",
+                color="#78a9d2",
+                arrowsize="0.9",
+            )
+
+        if filename:
+            dot.render(filename=filename, cleanup=True, format=graphviz_extension)
+        else:
+            try:
+                graphviz.version()
+            except graphviz.ExecutableNotFound:
+                from warnings import warn
+
+                warning_message = (
+                    "Graphviz does not seem to be installed on this system. For full "
+                    "metadata visualization capabilities, please make sure to have its "
+                    "binaries propertly installed: https://graphviz.gitlab.io/download/"
+                )
+                warn(warning_message, RuntimeWarning)
+        return dot
 
 
 def drop_ids(table: pd.DataFrame, metadata: dict):
