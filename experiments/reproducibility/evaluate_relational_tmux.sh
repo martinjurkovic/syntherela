@@ -19,18 +19,19 @@ METHODS_LIST=(
 "SDV RCTGAN MOSTLYAI"
 )
 
-# List of run IDs
-RUN_IDS=(
-    1 
-    2 
-    3
-)
+RUN_IDS=(1 2 3)
 
-# Loop over each dataset and run ID
+# Loop over each dataset
 for i in "${!DATASETS[@]}"
 do
     DATASET=${DATASETS[$i]}
     METHODS=${METHODS_LIST[$i]}
+    
+    # Create a new tmux window for this dataset
+    tmux new-window -d -n "$DATASET" "bash"
+    PATH=/lfs/local/0/$USER/.pixi/bin:$PATH
+    eval "$(/dfs/user/roed/st environ hook --lfs-home --mamba-root-prefix /lfs/local/0/$USER/env/micromamba)"
+    conda activate syntherela_2
     
     for RUN_ID in "${RUN_IDS[@]}"
     do
@@ -40,8 +41,10 @@ do
         do
             METHOD_ARGS+="-m $METHOD "
         done
-        echo Evaluating dataset $DATASET, run-id $RUN_ID methods $METHOD_ARGS
-        # Run the Python script with the dataset, run ID, and methods
-        python experiments/evaluation/benchmark.py --dataset-name $DATASET --run-id $RUN_ID $METHOD_ARGS
+        
+        echo "Evaluating dataset $DATASET, run-id $RUN_ID methods $METHOD_ARGS"
+        
+        # Send the command to the tmux window
+        tmux send-keys -t "$DATASET" "python experiments/evaluation/benchmark.py --dataset-name $DATASET --run-id $RUN_ID $METHOD_ARGS" C-m
     done
 done
