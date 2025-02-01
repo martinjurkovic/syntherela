@@ -18,12 +18,11 @@ UTILITY_TASKS = [
         "methods": [
             "ORIGINAL",
             "CLAVADDPM",
-            "GRETEL_ACTGAN",
-            "GRETEL_LSTM",
             "MOSTLYAI",
             "RCTGAN",
             "REALTABFORMER",
             "SDV",
+            "RGCLD",
         ],
     },
     {
@@ -36,13 +35,13 @@ UTILITY_TASKS = [
         "methods": [
             "ORIGINAL",
             "CLAVADDPM",
-            "GRETEL_ACTGAN",
-            "GRETEL_LSTM",
             "MOSTLYAI",
+            "RGCLD",
             "RCTGAN",
             "REALTABFORMER",
             "SDV",
         ],
+        "--lr": 0.1,
     },
 ]
 
@@ -58,7 +57,7 @@ if not os.path.exists(results_file):
 with open(results_file, "r") as f:
     existing_results = json.load(f)
 
-print(existing_results)
+# print(existing_results)
 
 for task in UTILITY_TASKS:
     dataset = task["dataset"]
@@ -68,24 +67,30 @@ for task in UTILITY_TASKS:
     time_col = task["time_col"]
     target_col = task["target_col"]
 
-    if dataset == "walmart_subsampled":
-        continue
+    # if dataset != "walmart_subsampled":
+    #     continue
 
     if dataset not in existing_results:
-            existing_results[dataset] = {}
+        existing_results[dataset] = {}
 
     for method in task["methods"]:
         if method not in existing_results[dataset]:
             existing_results[dataset][method] = {}
         try:
-            for run_id in (1,2,3):
+            for run_id in (1, 2, 3):
                 # check if the result already exists
                 if str(run_id) in existing_results[dataset][method]:
-                    print(f"SKIPPING: {task['dataset']}, Method: {method}, Run ID: {run_id}")
-                    continue
+                    if existing_results[dataset][method][str(run_id)] != {}:
+                        print(
+                            f"SKIPPING: {task['dataset']}, Method: {method}, Run ID: {run_id}"
+                        )
+                        continue
+
                 existing_results[dataset][method][run_id] = {}
 
-                print(f"Running task: {task['dataset']}, Method: {method}, Run ID: {run_id}")
+                print(
+                    f"Running task: {task['dataset']}, Method: {method}, Run ID: {run_id}"
+                )
 
                 command = [
                     "python",
@@ -113,12 +118,12 @@ for task in UTILITY_TASKS:
                 best_test_metrics = None
                 lines = result.stdout.splitlines()
                 final_line = lines[-1]
-                
+
                 best_test_metrics = final_line.split("Best test metrics: ")[1]
 
                 # convert string to dictionary
                 best_test_metrics = json.loads(best_test_metrics.replace("'", '"'))
-                    
+
                 existing_results[dataset][method][run_id] = best_test_metrics
 
                 with open(results_file, "w") as f:

@@ -18,17 +18,51 @@ def append_test_set(
         id_columns = metadata.get_column_names(table, sdtype="id")
         # Add test and train prefix to the id columns
         for column in id_columns:
-            tables_train[table].df[column] = (
-                tables_train[table].df[column].apply(lambda x: f"train_{x}")
+            tables_train[table][column] = tables_train[table][column].apply(
+                lambda x: f"train_{x}"
             )
-            tables_test[table].df[column] = (
-                tables_test[table].df[column].apply(lambda x: f"test_{x}")
+            tables_test[table][column] = tables_test[table][column].apply(
+                lambda x: f"test_{x}"
             )
-            # Add the concatenated dataframe to the tables dict
-            tables[table] = pd.concat(
-                [tables_train[table].df, tables_test[table].df], ignore_index=True
-            )
+        # Add the concatenated dataframe to the tables dict
+        tables[table] = pd.concat(
+            [tables_train[table], tables_test[table]], ignore_index=True
+        )
     return tables
+
+
+def cut_off_set(
+    tables_train: Tables,
+    metadata: Metadata,
+    test_timestamp: pd.Timestamp,
+    before: bool = True,
+) -> Tables:
+    tables = {}
+    for table in tables_train.keys():
+        datetime_columns = metadata.get_column_names(table, sdtype="datetime")
+        tables[table] = tables_train[table]
+        for column in datetime_columns:
+            if before:
+                tables[table] = tables[table][tables[table][column] < test_timestamp]
+            else:
+                tables[table] = tables[table][tables[table][column] >= test_timestamp]
+    return tables
+
+
+def get_tables_and_metadata(
+    dataset: str, method: str, run_id: int
+) -> tuple[Tables, Metadata]:
+    data_type = "original" if method == "ORIGINAL" else "synthetic"
+    path = os.path.join("data", data_type, dataset)
+    if method != "ORIGINAL":
+        path = os.path.join(path, method, str(run_id), "sample1")
+
+    metadata_path = os.path.join("data", "original", dataset, "metadata.json")
+    metadata = Metadata.load_from_json(metadata_path)
+
+    tables = load_tables(path, metadata)
+
+    return tables, metadata
 
 
 class RossmannDataset(Dataset):
@@ -51,38 +85,20 @@ class RossmannDataset(Dataset):
         self.run_id = run_id
 
     def make_db(self) -> Database:
-        data_type = "original" if self.method == "ORIGINAL" else "synthetic"
-        path = os.path.join("data", data_type, "rossmann_subsampled")
-        if self.method != "ORIGINAL":
-            path = os.path.join(path, self.method, str(self.run_id), "sample1")
-        # store = os.path.join(path, "store.csv")
-        # historical = os.path.join(path, "historical.csv")
-        metadata_path = os.path.join(
-            "data", "original", "rossmann_subsampled", "metadata.json"
-        )
-        metadata = Metadata.load_from_json(metadata_path)
+        tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
 
-        tables = load_tables(path, metadata)
+        tables = cut_off_set(tables, metadata, self.test_timestamp)
+
+        # TEST TABLES
+        tables_test = load_tables(
+            os.path.join("data", "original", "rossmann"), metadata
+        )
+        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
+
+        tables = append_test_set(tables, tables_test, metadata)
 
         store_df = tables["store"]
         historical_df = tables["historical"]
-
-        # if max Date is smaller than self.upto_timestamp
-        if historical_df["Date"].max() < self.test_timestamp:
-            print("APPENDING TEST DATA")
-            original_tables = load_tables(
-                os.path.join("data", "original", "rossmann"), metadata
-            )
-            # copy data from original store_df from dateself.upto_timestamp to historical_df
-            original_historical_df = original_tables["historical"]
-            # take data only from self.upto_timestamp onward
-            original_historical_df = original_historical_df[
-                original_historical_df["Date"] >= self.test_timestamp
-            ]
-            historical_df = pd.concat([historical_df, original_historical_df])
-
-        # store_df = pd.read_csv(store)
-        # historical_df = pd.read_csv(historical)
         historical_df["Date"] = pd.to_datetime(historical_df["Date"], format="%Y-%m-%d")
 
         db = Database(
@@ -111,37 +127,37 @@ class RossmannDataset(Dataset):
 
 class WalmartDataset(Dataset):
     name = "walmart_subsampled"
-    val_timestamp = pd.Timestamp("2011-09-26")
-    test_timestamp = pd.Timestamp("2012-09-01")
+    val_timestamp = pd.Timestamp("2012-01-24")
+    test_timestamp = pd.Timestamp("2012-02-01")
 
-    from_timestamp = pd.Timestamp("2011-09-01")
-    upto_timestamp = pd.Timestamp("2012-10-01")
+    from_timestamp = pd.Timestamp("2012-01-01")
+    upto_timestamp = pd.Timestamp("2012-03-01")
+
+    def __init__(
+        self,
+        cache_dir: Optional[str] = None,
+        predict_column_task_config: dict = {},
+        method: str = "ORIGINAL",
+        run_id: int = 0,
+    ):
+        super().__init__(cache_dir, predict_column_task_config)
+        self.method = method
+        self.run_id = run_id
 
     def make_db(self) -> Database:
-        path = os.path.join("data", "original", "walmart")
-        metadata_path = os.path.join(path, "metadata.json")
-        metadata = Metadata.load_from_json(metadata_path)
+        tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
+        tables = cut_off_set(tables, metadata, self.test_timestamp)
 
-        tables = load_tables(path, metadata)
+        # TEST TABLES
+        tables_test = load_tables(os.path.join("data", "original", "walmart"), metadata)
+        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
+        tables_test = cut_off_set(tables_test, metadata, self.upto_timestamp, True)
+
+        tables = append_test_set(tables, tables_test, metadata)
 
         depts_df = tables["depts"]
         stores_df = tables["stores"]
         features_df = tables["features"]
-
-        depts_df = depts_df[depts_df["Date"] <= pd.Timestamp("2011-10-01")]
-
-        if depts_df["Date"].max() < self.test_timestamp:
-            print("APPENDING TEST DATA")
-            original_tables = load_tables(
-                os.path.join("data", "original", "walmart"), metadata
-            )
-            # copy data from original store_df from dateself.upto_timestamp to historical_df
-            original_depts_df = original_tables["depts"]
-            # take data only from self.upto_timestamp onward
-            original_depts_df = original_depts_df[
-                original_depts_df["Date"] >= self.test_timestamp
-            ]
-            depts_df = pd.concat([depts_df, original_depts_df])
 
         depts_df["Date"] = pd.to_datetime(depts_df["Date"], format="%Y-%m-%d")
 

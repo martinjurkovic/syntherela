@@ -33,10 +33,10 @@ DATASETS = {
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--dataset", type=str, default="f1")
+parser.add_argument("--dataset", type=str, default="walmart_subsampled")
 parser.add_argument("--task", type=str, default="predict-column")
 parser.add_argument("--run_id", type=str, default="1")
-parser.add_argument("--method", type=str, default="ORIGINAL")
+parser.add_argument("--method", type=str, default="SDV")
 
 parser.add_argument(
     "--task_type",
@@ -44,10 +44,10 @@ parser.add_argument(
     default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--entity_table", type=str, default="results")
-parser.add_argument("--entity_col", type=str, default="resultId")
-parser.add_argument("--time_col", type=str, default="date")
-parser.add_argument("--target_col", type=str, default="position")
+parser.add_argument("--entity_table", type=str, default="depts")
+parser.add_argument("--entity_col", type=str)
+parser.add_argument("--time_col", type=str, default="Date")
+parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=10)
