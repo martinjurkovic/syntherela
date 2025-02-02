@@ -2,6 +2,7 @@
 Based on https://github.com/weipang142857/ClavaDDPM/blob/main/gen_multi_report.py
 """
 
+import warnings
 from copy import deepcopy
 from collections import defaultdict
 
@@ -89,7 +90,15 @@ def evaluate_long_path(
     quality.generate(real_joined, syn_joined, metadata.to_dict(), verbose=verbose)
 
     column_pair_quality = quality.get_details("Column Pair Trends")
-
+    if "Error" in column_pair_quality.columns:
+        errors = column_pair_quality["Error"]
+        error_types = {str(e).split(":")[0] for e in errors if str(e) != "None"}
+        warnings.warn(
+            f"Found the following error types in the column pair trends: {error_types}"
+        )
+        mask = errors == errors  # Select rows with errors (not None)
+        column_pair_quality.loc[mask.values, "Score"] = 0
+        # set scores
     top_table_cols = set(top_table_cols)
     bottom_table_cols = set(bottom_table_cols)
 
