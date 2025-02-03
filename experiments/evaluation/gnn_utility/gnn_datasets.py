@@ -43,9 +43,15 @@ def cut_off_set(
         tables[table] = tables_train[table]
         for column in datetime_columns:
             if before:
-                tables[table] = tables[table][(tables[table][column] < test_timestamp) | (tables[table][column].isna())]
+                tables[table] = tables[table][
+                    (tables[table][column] < test_timestamp)
+                    | (tables[table][column].isna())
+                ]
             else:
-                tables[table] = tables[table][(tables[table][column] >= test_timestamp) | (tables[table][column].isna())]
+                tables[table] = tables[table][
+                    (tables[table][column] >= test_timestamp)
+                    | (tables[table][column].isna())
+                ]
     return tables
 
 
@@ -124,6 +130,7 @@ class RossmannDataset(Dataset):
 
         return db
 
+
 class AirbnbDataset(Dataset):
     name = "airbnb-simplified_subsampled"
     val_timestamp = pd.Timestamp("2014-05-15")
@@ -166,11 +173,14 @@ class AirbnbDataset(Dataset):
         tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
         tables_test = cut_off_set(tables_test, metadata, self.upto_timestamp, True)
 
-
         tables = append_test_set(tables, tables_test, metadata)
 
         users_df = tables["users"]
         sessions_df = tables["sessions"]
+
+        tables["users"]["country_destination"] = (
+            tables["users"]["country_destination"] == "NDF"
+        )
 
         db = Database(
             table_dict={
@@ -494,8 +504,8 @@ class F1Dataset(Dataset):
         return Database(tables)
 
 
-class Berka(Dataset):
-    name = "Berka"
+class BerkaDataset(Dataset):
+    name = "Berka_subsampled"
     val_timestamp = pd.Timestamp("1997-12-01")
     test_timestamp = pd.Timestamp("1998-01-01")
 
@@ -511,19 +521,12 @@ class Berka(Dataset):
         self.run_id = run_id
 
     def make_db(self) -> Database:
-        data_type = "original" if self.method == "ORIGINAL" else "synthetic"
-        path = os.path.join("data", data_type, "Berka_subsampled")
-        test_path = os.path.join("data", "original", "Berka")
-        if self.method != "ORIGINAL":
-            path = os.path.join(path, self.method, str(self.run_id), "sample1")
+        tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
+        tables = cut_off_set(tables, metadata, self.test_timestamp)
 
-        metadata_path = os.path.join(
-            "data", "original", "Berka_subsampled", "metadata.json"
-        )
-        metadata = Metadata.load_from_json(metadata_path)
-
-        tables = load_tables(path, metadata)
-        tables_test = load_tables(test_path, metadata)
+        # TEST TABLES
+        tables_test = load_tables(os.path.join("data", "original", "Berka"), metadata)
+        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
 
         tables = append_test_set(tables, tables_test, metadata)
 
@@ -546,6 +549,7 @@ class Berka(Dataset):
                 return x
 
         loan.status = loan.status.apply(remap_status)
+        loan.status = loan.status.map({"A": 0, "B": 1})
 
         tables = {}
 
