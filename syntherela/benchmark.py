@@ -94,6 +94,8 @@ class Benchmark:
         try:
             self.read_results()
         except Exception as e:
+            # FIXME: Running the benchmark for the first time should
+            # be expected and not raise a warning
             warnings.warn(
                 f"No existing results found or could not read them: {str(e)}. This is expected if running the benchmark for the first time."
             )
@@ -147,7 +149,9 @@ class Benchmark:
             for metric_type, metrics in new_results.items():
                 if metric_type in existing_results:
                     # If the existing metric is a dictionary, update it
-                    if isinstance(existing_results[metric_type], dict) and isinstance(metrics, dict):
+                    if isinstance(existing_results[metric_type], dict) and isinstance(
+                        metrics, dict
+                    ):
                         existing_results[metric_type].update(metrics)
                     else:
                         # If either is not a dictionary, just replace with new value
@@ -193,9 +197,9 @@ class Benchmark:
                     merged_results = self.merge_results(
                         dataset_name, method_name, new_results
                     )
-                    self.all_results.setdefault(dataset_name, {})[
-                        method_name
-                    ] = merged_results
+                    self.all_results.setdefault(dataset_name, {})[method_name] = (
+                        merged_results
+                    )
 
                     # Update report results with merged results before saving
                     report.results = merged_results
@@ -233,9 +237,9 @@ class Benchmark:
                     sample_id=self.sample_id,
                 ).load_from_json(self.results_dir / file_name)
                 self.reports.setdefault(dataset_name, {})[method_name] = temp_report
-                self.all_results.setdefault(dataset_name, {})[
-                    method_name
-                ] = temp_report.results
+                self.all_results.setdefault(dataset_name, {})[method_name] = (
+                    temp_report.results
+                )
         if not self.all_results:
             warnings.warn("No results found.")
 
