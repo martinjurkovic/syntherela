@@ -23,11 +23,7 @@ from syntherela.metrics.single_table.distance import (
 )
 from syntherela.metrics.single_column.detection import SingleColumnDetection
 from syntherela.metrics.single_table.detection import SingleTableDetection
-from syntherela.metrics.multi_table.detection import (
-    AggregationDetection,
-    ParentChildDetection,
-    ParentChildAggregationDetection,
-)
+from syntherela.metrics.multi_table.detection import AggregationDetection
 from syntherela.metrics.multi_table.statistical import CardinalityShapeSimilarity
 
 args = argparse.ArgumentParser()
