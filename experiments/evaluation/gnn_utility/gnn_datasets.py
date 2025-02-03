@@ -43,9 +43,9 @@ def cut_off_set(
         tables[table] = tables_train[table]
         for column in datetime_columns:
             if before:
-                tables[table] = tables[table][tables[table][column] < test_timestamp]
+                tables[table] = tables[table][(tables[table][column] < test_timestamp) | (tables[table][column].isna())]
             else:
-                tables[table] = tables[table][tables[table][column] >= test_timestamp]
+                tables[table] = tables[table][(tables[table][column] >= test_timestamp) | (tables[table][column].isna())]
     return tables
 
 
@@ -124,6 +124,73 @@ class RossmannDataset(Dataset):
 
         return db
 
+class AirbnbDataset(Dataset):
+    name = "airbnb-simplified_subsampled"
+    val_timestamp = pd.Timestamp("2014-05-15")
+    test_timestamp = pd.Timestamp("2014-06-01")
+
+    from_timestamp = pd.Timestamp("2014-01-01")
+    upto_timestamp = pd.Timestamp("2014-07-01")
+
+    def __init__(
+        self,
+        cache_dir: Optional[str] = None,
+        predict_column_task_config: dict = {},
+        method: str = "ORIGINAL",
+        run_id: int = 0,
+    ):
+        super().__init__(cache_dir, predict_column_task_config)
+        self.method = method
+        self.run_id = run_id
+
+    def make_db(self) -> Database:
+        tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
+
+        # TEST TABLES
+        tables_test = load_tables(
+            os.path.join("data", "original", self.name, "test"), metadata
+        )
+
+        cols_to_drop = ["date_first_booking"]
+
+        # Remove country_destination and timestamp_first_active from metadata
+        for col in cols_to_drop:
+            del metadata.tables["users"].columns[col]
+
+        tables["users"] = tables["users"].drop(columns=cols_to_drop)
+        tables = cut_off_set(tables, metadata, self.from_timestamp, False)
+        tables = cut_off_set(tables, metadata, self.test_timestamp)
+
+        tables_test["users"] = tables_test["users"].drop(columns=cols_to_drop)
+
+        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
+        tables_test = cut_off_set(tables_test, metadata, self.upto_timestamp, True)
+
+
+        tables = append_test_set(tables, tables_test, metadata)
+
+        users_df = tables["users"]
+        sessions_df = tables["sessions"]
+
+        db = Database(
+            table_dict={
+                "users": Table(
+                    df=users_df,
+                    fkey_col_to_pkey_table={},
+                    pkey_col="id",
+                    time_col="date_account_created",
+                ),
+                "sessions": Table(
+                    df=sessions_df,
+                    fkey_col_to_pkey_table={
+                        "user_id": "users",
+                    },
+                ),
+            }
+        )
+
+        return db
+
 
 class WalmartDataset(Dataset):
     name = "walmart_subsampled"
@@ -191,7 +258,7 @@ class WalmartDataset(Dataset):
 
 
 class F1Dataset(Dataset):
-    name = "f1"
+    name = "f1_subsampled"
     val_timestamp = pd.Timestamp("2005-01-01")
     test_timestamp = pd.Timestamp("2010-01-01")
 
@@ -207,28 +274,14 @@ class F1Dataset(Dataset):
         self.run_id = run_id
 
     def make_db(self) -> Database:
-        data_type = "original" if self.method == "ORIGINAL" else "synthetic"
-        path = os.path.join("data", data_type, "f1")
-        if self.method != "ORIGINAL":
-            path = os.path.join(path, self.method, str(self.run_id), "sample1")
-        # store = os.path.join(path, "store.csv")
-        # historical = os.path.join(path, "historical.csv")
-        metadata_path = os.path.join("data", "original", "f1", "metadata.json")
-        metadata = Metadata.load_from_json(metadata_path)
+        tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
+        tables = cut_off_set(tables, metadata, self.test_timestamp)
 
-        tables = load_tables(path, metadata)
+        # TEST TABLES
+        tables_test = load_tables(os.path.join("data", "original", "f1"), metadata)
+        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
 
-        # circuits = pd.read_csv(os.path.join(path, "circuits.csv"))
-        # drivers = pd.read_csv(os.path.join(path, "drivers.csv"))
-        # results = pd.read_csv(os.path.join(path, "results.csv"))
-        # races = pd.read_csv(os.path.join(path, "races.csv"))
-        # standings = pd.read_csv(os.path.join(path, "driver_standings.csv"))
-        # constructors = pd.read_csv(os.path.join(path, "constructors.csv"))
-        # constructor_results = pd.read_csv(os.path.join(path, "constructor_results.csv"))
-        # constructor_standings = pd.read_csv(
-        #     os.path.join(path, "constructor_standings.csv")
-        # )
-        # qualifying = pd.read_csv(os.path.join(path, "qualifying.csv"))
+        tables = append_test_set(tables, tables_test, metadata)
 
         circuits = tables["circuits"]
         drivers = tables["drivers"]
