@@ -64,13 +64,12 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
 
         # drop columns with zero variance
         std_orig = orig.std()
-        std_synth = synth.std()
-        zero_variance_columns = set(
-            std_orig[std_orig == 0].index.tolist()
-            + std_synth[std_synth == 0].index.tolist()
-        )
+        zero_variance_columns = std_orig[std_orig == 0].index.tolist()
         orig.drop(columns=zero_variance_columns, inplace=True)
         synth.drop(columns=zero_variance_columns, inplace=True)
+        assert (synth.std() > 0).all(), (
+            "Synthetic data includes invalid columns with zero variance."
+        )
 
         # compute the correlation matrix
         orig_corr = orig.corr(method=self.correlation_method)
