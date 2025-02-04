@@ -4,6 +4,7 @@ from syntherela.typing import Tables
 
 import pandas as pd
 from sdv.datasets.demo import get_available_demos, download_demo
+from sdv.utils import drop_unknown_references
 from syntherela.metadata import Metadata
 
 
@@ -63,6 +64,7 @@ def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
             table[column] = pd.to_datetime(table[column], format=format)
 
         tables[table_name] = table
+    tables = drop_unknown_references(tables, metadata)
     return tables
 
 
