@@ -4,7 +4,7 @@ from typing import Optional
 
 import pandas as pd
 from syntherela.typing import Tables
-from syntherela.data import load_tables
+from syntherela.data import load_tables, remove_sdv_columns
 
 from relbench.base import Database, Dataset, Table
 from syntherela.metadata import Metadata
@@ -71,6 +71,28 @@ def get_tables_and_metadata(
     return tables, metadata
 
 
+def keep_only_seen_values(
+    tables: Tables, tables_test: Tables, metadata: Metadata
+) -> Tables:
+    # no feature engineering necessary 🤡
+    for table in tables.keys():
+        for column in tables[table].columns:
+            if column in metadata.get_column_names(
+                table_name=table, sdtype="categorical"
+            ) or column in metadata.get_column_names(
+                table_name=table, sdtype="boolean"
+            ):
+                values = tables_test[table][column].unique()
+                # remove nan, na_values, and empty strings
+                values = [str(v) for v in values if v == v]
+                # set categories with pd.categorical from test to train
+                tables[table][column] = pd.Categorical(
+                    tables[table][column].astype(str), categories=values
+                )
+
+    return tables
+
+
 class RossmannDataset(Dataset):
     name = "rossmann_subsampled"
     val_timestamp = pd.Timestamp("2014-09-20")
@@ -85,23 +107,29 @@ class RossmannDataset(Dataset):
         predict_column_task_config: dict = {},
         method: str = "ORIGINAL",
         run_id: int = 0,
+        type: str = "train",
     ):
         super().__init__(cache_dir, predict_column_task_config)
         self.method = method
         self.run_id = run_id
+        self.type = type
 
     def make_db(self) -> Database:
-        tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
+        tables_train, metadata = get_tables_and_metadata(
+            self.name, self.method, self.run_id
+        )
 
-        tables = cut_off_set(tables, metadata, self.test_timestamp)
-
-        # TEST TABLES
         tables_test = load_tables(
             os.path.join("data", "original", "rossmann"), metadata
         )
-        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
+        tables_test, metadata = remove_sdv_columns(tables_test, metadata)
 
-        tables = append_test_set(tables, tables_test, metadata)
+        tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
+
+        if self.type == "test":
+            tables = tables_test
+        else:
+            tables = tables_train
 
         store_df = tables["store"]
         historical_df = tables["historical"]
@@ -216,21 +244,31 @@ class WalmartDataset(Dataset):
         predict_column_task_config: dict = {},
         method: str = "ORIGINAL",
         run_id: int = 0,
+        type: str = "train",
     ):
         super().__init__(cache_dir, predict_column_task_config)
         self.method = method
         self.run_id = run_id
+        self.type = type
 
     def make_db(self) -> Database:
-        tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
-        tables = cut_off_set(tables, metadata, self.test_timestamp)
-
-        # TEST TABLES
+        tables_train, metadata = get_tables_and_metadata(
+            self.name, self.method, self.run_id
+        )
         tables_test = load_tables(os.path.join("data", "original", "walmart"), metadata)
-        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
-        tables_test = cut_off_set(tables_test, metadata, self.upto_timestamp, True)
+        tables_test, metadata = remove_sdv_columns(tables_test, metadata)
 
-        tables = append_test_set(tables, tables_test, metadata)
+        tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
+
+        if self.type == "test":
+            tables = tables_test
+        else:
+            tables = tables_train
+
+        # drop isHoliday column in depts and features table
+        tables["depts"].pop("IsHoliday")
+        tables["features"].pop("IsHoliday")
+        tables["depts"].pop("Dept")
 
         depts_df = tables["depts"]
         stores_df = tables["stores"]
@@ -278,20 +316,24 @@ class F1Dataset(Dataset):
         predict_column_task_config: dict = {},
         method: str = "ORIGINAL",
         run_id: int = 0,
+        type: str = "train",
     ):
         super().__init__(cache_dir, predict_column_task_config)
         self.method = method
         self.run_id = run_id
+        self.type = type
 
     def make_db(self) -> Database:
         tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
-        tables = cut_off_set(tables, metadata, self.test_timestamp)
+        # tables = cut_off_set(tables, metadata, self.test_timestamp)
 
         # TEST TABLES
-        tables_test = load_tables(os.path.join("data", "original", "f1"), metadata)
-        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
+        # tables_test = load_tables(os.path.join("data", "original", "f1"), metadata)
+        # tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
 
-        tables = append_test_set(tables, tables_test, metadata)
+        # tables = append_test_set(tables, tables_test, metadata)
+        if self.type == "test":
+            tables = load_tables(os.path.join("data", "original", "f1"), metadata)
 
         circuits = tables["circuits"]
         drivers = tables["drivers"]
@@ -302,6 +344,13 @@ class F1Dataset(Dataset):
         constructor_results = tables["constructor_results"]
         constructor_standings = tables["constructor_standings"]
         qualifying = tables["qualifying"]
+
+        # Add date column to races by extracting date from datetime
+        # races["date"] = pd.to_datetime(pd.to_datetime(races["datetime"]).dt.date)
+        # races["time"] = pd.to_datetime(races["datetime"]).dt.time
+        # races.pop("datetime")
+
+        races["date"] = pd.to_datetime(races.pop("datetime"))
 
         # Remove columns that are irrelevant, leak time,
         # or have too many missing values
@@ -394,13 +443,13 @@ class F1Dataset(Dataset):
         #     races[["raceId", "date"]], on="raceId", how="left"
         # )
 
-        # qualifying = qualifying.merge(
-        #     races[["raceId", "date"]], on="raceId", how="left"
-        # )
+        qualifying = qualifying.merge(
+            races[["raceId", "date"]], on="raceId", how="left"
+        )
 
         # # Subtract a day from the date to account for the fact
         # # that the qualifying time is the day before the main race
-        # qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
+        qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
         # # Replace "\N" with NaN in results tables
         # results = results.replace(r"^\\N$", np.nan, regex=True)
@@ -434,7 +483,7 @@ class F1Dataset(Dataset):
                 "circuitId": "circuits",
             },
             pkey_col="raceId",
-            time_col="datetime",
+            time_col="date",
         )
 
         tables["circuits"] = Table(
@@ -498,7 +547,7 @@ class F1Dataset(Dataset):
                 "constructorId": "constructors",
             },
             pkey_col="qualifyId",
-            time_col=None,
+            time_col="date",
         )
 
         return Database(tables)
@@ -515,20 +564,18 @@ class BerkaDataset(Dataset):
         predict_column_task_config: dict = {},
         method: str = "ORIGINAL",
         run_id: int = 0,
+        type: str = "train",
     ):
         super().__init__(cache_dir, predict_column_task_config)
         self.method = method
         self.run_id = run_id
+        self.type = type
 
     def make_db(self) -> Database:
         tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
-        tables = cut_off_set(tables, metadata, self.test_timestamp)
 
-        # TEST TABLES
-        tables_test = load_tables(os.path.join("data", "original", "Berka"), metadata)
-        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
-
-        tables = append_test_set(tables, tables_test, metadata)
+        if self.type == "test":
+            tables = load_tables(os.path.join("data", "original", "Berka"), metadata)
 
         account = tables["account"]
         card = tables["card"]

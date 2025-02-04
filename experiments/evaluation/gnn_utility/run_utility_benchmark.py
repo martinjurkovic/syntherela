@@ -7,6 +7,8 @@ load_dotenv()
 
 PROJECT_PATH = os.getenv("PROJECT_PATH")
 
+RUN_DATASETS = ["f1_subsampled"]
+
 UTILITY_TASKS = [
     {
         "dataset": "rossmann_subsampled",
@@ -24,6 +26,7 @@ UTILITY_TASKS = [
             "RGCLD",
             "SDV",
         ],
+        "task": "predict-column",
     },
     {
         "dataset": "walmart_subsampled",
@@ -38,30 +41,34 @@ UTILITY_TASKS = [
             "MOSTLYAI",
             "RCTGAN",
             "REALTABFORMER",
-            "RGCLDSDV",
+            "RGCLD",
+            "SDV",
         ],
         "--lr": 0.1,
+        "task": "predict-column",
     },
     {
         "dataset": "f1_subsampled",
         "task_type": "REGRESSION",
-        "entity_table": "constructor_results",
-        "entity_col": "constructorResultsId",
+        "entity_table": "constructor_standings",
+        "entity_col": "constructorStandingsId",
         "time_col": "date",
-        "target_col": "points",
+        "target_col": "position",
         "methods": ["ORIGINAL", "CLAVADDPM", "MOSTLYAI", "RCTGAN", "RGCLD", "SDV"],
-        "--lr": 0.1,
+        "--lr": 0.001,
+        "task": "driver-top3",
     },
     {
         "dataset": "airbnb-simplified_subsampled",
-        "task_type": "REGRESSION",
+        "task_type": "BINARY_CLASSIFICATION",
         "entity_table": "users",
-        "entity_col": "user_id",
+        "entity_col": "id",
         "time_col": "date_account_created",
-        "target_col": "age",
+        "target_col": "country_destination",
         "methods": ["ORIGINAL", "CLAVADDPM", "MOSTLYAI", "RCTGAN", "RGCLD", "SDV"],
         "--lr": 0.1,
         "--batch_size": 64,
+        "task": "predict-column",
     },
     {
         "dataset": "Berka_subsampled",
@@ -82,6 +89,7 @@ UTILITY_TASKS = [
         ],
         "--lr": 0.1,
         "--batch_size": 64,
+        "task": "predict-column",
     },
 ]
 
@@ -107,8 +115,8 @@ for task in UTILITY_TASKS:
     time_col = task["time_col"]
     target_col = task["target_col"]
 
-    # if dataset != "walmart_subsampled":
-    #     continue
+    if dataset not in RUN_DATASETS:
+        continue
 
     if dataset not in existing_results:
         existing_results[dataset] = {}
@@ -151,21 +159,36 @@ for task in UTILITY_TASKS:
                     method,
                     "--torch_device",
                     "cuda:9",
+                    "--task",
+                    task,
                 ]
                 if entity_col is not None:
                     command.extend(["--entity_col", entity_col])
-                subprocess.run(command)
+                if "--lr" in task:
+                    command.extend(["--lr", str(task["--lr"])])
+                if "--batch_size" in task:
+                    command.extend(["--batch_size", str(task["--batch_size"])])
+                # subprocess.run(command)
                 result = subprocess.run(command, capture_output=True, text=True)
+
+                # Clean up temporary torch_geometric files
+                subprocess.run(["rm", "-f", "torch_geometric.*"])
+                
                 # print(f"Task: {task['dataset']}, Output: {result.stdout}, Error: {result.stderr}")
                 best_test_metrics = None
-                lines = result.stdout.splitlines()
-                final_line = lines[-1]
+                try:
+                    lines = result.stdout.splitlines()
+                    final_line = lines[-1]
 
-                best_test_metrics = final_line.split("Best test metrics: ")[1]
+                    best_test_metrics = final_line.split("Best test metrics: ")[1]
+                    print(f"STRING BEST TEST METRICS: {best_test_metrics}")
+                except Exception as e:
+                    print(f"Task: {task['dataset']}, Output: {result.stdout}, Error: {result.stderr}")
+                    raise e
 
                 # convert string to dictionary
                 best_test_metrics = json.loads(best_test_metrics.replace("'", '"'))
-
+                print(f"JSON TEST METRICS: {best_test_metrics}")
                 existing_results[dataset][method][run_id] = best_test_metrics
 
                 with open(results_file, "w") as f:
@@ -179,7 +202,7 @@ for task in UTILITY_TASKS:
                 with open(results_file, "w") as f:
                     json.dump(existing_results, f, indent=4)
 
-        except Exception as e:
+        except ValueError as e:
             print(f"Task: {task['dataset']}, Method: {method}, Error: {e}")
             continue
 

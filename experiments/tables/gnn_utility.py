@@ -8,6 +8,15 @@ load_dotenv()
 
 PROJECT_PATH = os.getenv("PROJECT_PATH")
 
+# Define which metric to use for each dataset
+dataset_metrics = {
+    "f1": "mae",
+    "Berka_subsampled": "mae",
+    "rossmann_subsampled": "mae",
+    "walmart_subsampled": "mae",
+    "airbnb-simplified_subsampled": "roc_auc"
+}
+
 results_dir = os.path.join(PROJECT_PATH, "results")
 results_file = os.path.join(results_dir, "gnn_utility_results.json")
 
@@ -31,19 +40,28 @@ for dataset, method_data in data.items():
     results[dataset] = {}
     for method, runs in method_data.items():
         methods.add(method)
-        rmse_values = [run["mae"] for run in runs.values()]
-        mean_rmse, se_rmse = compute_mean_and_se(rmse_values)
-        results[dataset][method] = (mean_rmse, se_rmse)
+        # Try to get MAE values, if not available use AUC
+        metric_values = []
+        for run in runs.values():
+            if "mae" in run:
+                metric_values.append(run["mae"])
+            elif "roc_auc" in run:
+                metric_values.append(run["roc_auc"])
+            else:
+                raise ValueError(f"No valid metric found for method {method} in dataset {dataset}")
+        mean_value, se_value = compute_mean_and_se(metric_values)
+        results[dataset][method] = (mean_value, se_value)
 
 # Set the desired order of methods
 method_order = [
-    "BASELINE",
+    # "BASELINE",
     "ORIGINAL",
     "SDV",
     "RCTGAN",
     "REALTABFORMER",
     "CLAVADDPM",
     "MOSTLYAI",
+    "RGCLD",
 ]
 
 method_rename = {
@@ -54,6 +72,7 @@ method_rename = {
     "REALTABFORMER": "REALTABF.",
     "CLAVADDPM": "CLAVADDPM",
     "MOSTLYAI": "MOSTLYAI",
+    "RGCLD": "RGCLD",
 }
 
 dataset_rename = {
@@ -61,6 +80,7 @@ dataset_rename = {
     "Berka_subsampled": "Berka",
     "rossmann_subsampled": "Rossmann",
     "walmart_subsampled": "Walmart",
+    "airbnb-simplified_subsampled": "Airbnb",
 }
 
 methods = [method_rename[method] for method in method_order if method in methods]
@@ -91,9 +111,20 @@ for dataset in datasets:
                 scores.append((float("inf"), 0, method))
 
     # Sort scores to find best and second best
-    sorted_scores = sorted(
-        (s for s in scores if s[0] != float("inf")), key=lambda x: x[0]
-    )
+    metric_type = dataset_metrics.get(dataset, "mae")  # Default to mae if not specified
+    if metric_type == "roc_auc":
+        # For ROC AUC, higher is better
+        sorted_scores = sorted(
+            (s for s in scores if s[0] != float("inf")), 
+            key=lambda x: x[0], 
+            reverse=True
+        )
+    else:
+        # For MAE, lower is better
+        sorted_scores = sorted(
+            (s for s in scores if s[0] != float("inf")), 
+            key=lambda x: x[0]
+        )
     best_method = sorted_scores[0][2] if sorted_scores else None
     second_best_method = sorted_scores[1][2] if len(sorted_scores) > 1 else None
 
@@ -102,9 +133,9 @@ for dataset in datasets:
         original_method = next(k for k, v in method_rename.items() if v == method)
         if original_method in results[dataset]:
             mean, se = results[dataset][original_method]
-            score_str = f"{mean:.0f}"
+            score_str = f"{mean:.2f}" if mean < 1 else f"{mean:.0f}"
             if se > 0:
-                score_str += f" \\pm {se:.0f}"
+                score_str += f" \\pm {se:.2f}" if se < 1 else f" \\pm {se:.0f}"
 
             # Only highlight if method is not ORIGINAL or BASELINE
             if original_method not in ["ORIGINAL", "BASELINE"]:

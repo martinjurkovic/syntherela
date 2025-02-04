@@ -4,7 +4,11 @@ import json
 import math
 import os
 from pathlib import Path
+import subprocess
 from typing import Dict
+
+# Set CUDA_LAUNCH_BLOCKING=1 to get better error messages
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 import numpy as np
 import torch
@@ -21,15 +25,30 @@ from relbench.base import Dataset, EntityTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
-from relbench.tasks import get_task
+from relbench.tasks import get_task, BaseTask
 from relbench.base.task_column import PredictColumnTask
-from gnn_datasets import RossmannDataset, WalmartDataset, F1Dataset, AirbnbDataset
+from relbench.tasks.f1 import DriverPositionTask, DriverTop3Task
+from gnn_datasets import (
+    RossmannDataset,
+    WalmartDataset,
+    F1Dataset,
+    AirbnbDataset,
+    BerkaDataset,
+)
+
 
 DATASETS = {
     RossmannDataset.name: RossmannDataset,
     WalmartDataset.name: WalmartDataset,
     F1Dataset.name: F1Dataset,
     AirbnbDataset.name: AirbnbDataset,
+    BerkaDataset.name: BerkaDataset,
+}
+
+TASKS = {
+    "driver-position": DriverPositionTask,
+    "driver-top3": DriverTop3Task,
+    "predict-column": PredictColumnTask,
 }
 
 parser = argparse.ArgumentParser()
@@ -44,15 +63,15 @@ parser.add_argument(
     default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--dataset", type=str, default="airbnb-simplified_subsampled")
-parser.add_argument("--entity_table", type=str, default="users")
-parser.add_argument("--entity_col", type=str, default="id")
-parser.add_argument("--time_col", type=str, default="date_account_created")
-parser.add_argument("--target_col", type=str, default="age")
+parser.add_argument("--dataset", type=str, default="walmart_subsampled")
+parser.add_argument("--entity_table", type=str, default="depts")
+parser.add_argument("--entity_col", type=str)
+parser.add_argument("--time_col", type=str, default="Date")
+parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
 parser.add_argument("--lr", type=float, default=0.01)
-parser.add_argument("--epochs", type=int, default=30)
-parser.add_argument("--batch_size", type=int, default=64)
+parser.add_argument("--epochs", type=int, default=2)
+parser.add_argument("--batch_size", type=int, default=128)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
@@ -61,7 +80,7 @@ parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument("--torch_device", type=str, default="cuda")
+parser.add_argument("--torch_device", type=str, default="cuda:9")
 parser.add_argument(
     "--cache_dir",
     type=str,
@@ -86,15 +105,31 @@ predict_column_task_config = {
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
 dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id)
-dataset.target_col = args.target_col
-dataset.entity_table = args.entity_table
-task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
+dataset_test: Dataset = DATASETS[args.dataset](
+    method=args.method, run_id=args.run_id, type="test"
+)
+
+# task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
+if args.task == "predict-column":
+    dataset.target_col = args.target_col
+    dataset.entity_table = args.entity_table
+    dataset_test.target_col = args.target_col
+    dataset_test.entity_table = args.entity_table
+    task: PredictColumnTask = TASKS[args.task](
+        dataset=dataset, **predict_column_task_config
+    )
+    task_test: PredictColumnTask = TASKS[args.task](
+        dataset=dataset_test, **predict_column_task_config
+    )
+else:
+    task: BaseTask = TASKS[args.task](dataset=dataset)
+    task_test: BaseTask = TASKS[args.task](dataset=dataset_test)
 
 # task.get_table("train")
 # task.get_table("val")
 # task.get_table("test")
 
-# task.get_table("test")
+task_test.get_table("test", mask_input_cols=False)
 
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -106,12 +141,22 @@ try:
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
     col_to_stype_dict = get_stype_proposal(dataset.get_db())
-    Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
-    with open(stypes_cache_path, "w") as f:
-        json.dump(col_to_stype_dict, f, indent=2, default=str)
+    # Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
+    # with open(stypes_cache_path, "w") as f:
+    #     json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 data, col_stats_dict = make_pkey_fkey_graph(
     dataset.get_db(
+        upto_test_timestamp=False,
+    ),
+    col_to_stype_dict=col_to_stype_dict,
+    text_embedder_cfg=TextEmbedderConfig(
+        text_embedder=GloveTextEmbedding(device=device), batch_size=256
+    ),
+    # cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
+)
+data_test, col_stats_dict_test = make_pkey_fkey_graph(
+    dataset_test.get_db(
         upto_test_timestamp=False,
     ),
     col_to_stype_dict=col_to_stype_dict,
@@ -147,11 +192,19 @@ else:
 
 loader_dict: Dict[str, NeighborLoader] = {}
 for split in ["train", "val", "test"]:
-    table = task.get_table(split)
-    table_input = get_node_train_table_input(table=table, task=task)
+    tmp_data = None
+    if split == "test":
+        table = task_test.get_table(split)
+        table_input = get_node_train_table_input(table=table, task=task_test)
+        tmp_data = data_test
+    else:
+        table = task.get_table(split)
+        table_input = get_node_train_table_input(table=table, task=task)
+        tmp_data = data
+
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
-        data,
+        tmp_data,
         num_neighbors=[int(args.num_neighbors / 2**i) for i in range(args.num_layers)],
         time_attr="time",
         input_nodes=table_input.nodes,
@@ -252,6 +305,10 @@ val_pred = test(loader_dict["val"])
 val_metrics = task.evaluate(val_pred, task.get_table("val"))
 print(f"Best Val metrics: {val_metrics}")
 
+# model.data = data_test
+
 test_pred = test(loader_dict["test"])
-test_metrics = task.evaluate(test_pred)
+test_metrics = task_test.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
+
+subprocess.run(["rm", "-f", "torch_geometric.nn.*"])
