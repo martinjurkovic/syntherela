@@ -324,16 +324,19 @@ class F1Dataset(Dataset):
         self.type = type
 
     def make_db(self) -> Database:
-        tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
-        # tables = cut_off_set(tables, metadata, self.test_timestamp)
+        tables_train, metadata = get_tables_and_metadata(
+            self.name, self.method, self.run_id
+        )
+        tables_test = load_tables(os.path.join("data", "original", "f1"), metadata)
+        tables_test, metadata = remove_sdv_columns(tables_test, metadata)
 
-        # TEST TABLES
-        # tables_test = load_tables(os.path.join("data", "original", "f1"), metadata)
-        # tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
+        tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
 
-        # tables = append_test_set(tables, tables_test, metadata)
         if self.type == "test":
-            tables = load_tables(os.path.join("data", "original", "f1"), metadata)
+            tables = tables_test
+        else:
+            tables = tables_train
+
 
         circuits = tables["circuits"]
         drivers = tables["drivers"]

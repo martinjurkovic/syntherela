@@ -27,7 +27,7 @@ from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_g
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task, BaseTask
 from relbench.base.task_column import PredictColumnTask
-from relbench.tasks.f1 import DriverPositionTask, DriverTop3Task
+from relbench.tasks.f1 import DriverPositionTask, DriverTop3Task, DriverDNFTask
 from gnn_datasets import (
     RossmannDataset,
     WalmartDataset,
@@ -48,14 +48,15 @@ DATASETS = {
 TASKS = {
     "driver-position": DriverPositionTask,
     "driver-top3": DriverTop3Task,
+    "driver-dnft": DriverDNFTask,
     "predict-column": PredictColumnTask,
 }
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--task", type=str, default="predict-column")
+parser.add_argument("--task", type=str, default="driver-position")
 parser.add_argument("--run_id", type=str, default="1")
-parser.add_argument("--method", type=str, default="ORIGINAL")
+parser.add_argument("--method", type=str, default="CLAVADDPM")
 
 parser.add_argument(
     "--task_type",
@@ -63,14 +64,14 @@ parser.add_argument(
     default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--dataset", type=str, default="walmart_subsampled")
+parser.add_argument("--dataset", type=str, default="f1_subsampled")
 parser.add_argument("--entity_table", type=str, default="depts")
 parser.add_argument("--entity_col", type=str)
 parser.add_argument("--time_col", type=str, default="Date")
 parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
-parser.add_argument("--lr", type=float, default=0.01)
-parser.add_argument("--epochs", type=int, default=2)
+parser.add_argument("--lr", type=float, default=0.001)
+parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=128)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
