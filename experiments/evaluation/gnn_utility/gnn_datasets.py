@@ -173,42 +173,41 @@ class AirbnbDataset(Dataset):
         predict_column_task_config: dict = {},
         method: str = "ORIGINAL",
         run_id: int = 0,
+        type: str = "train",
     ):
         super().__init__(cache_dir, predict_column_task_config)
         self.method = method
         self.run_id = run_id
+        self.type = type
 
     def make_db(self) -> Database:
-        tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
+        tables_train, metadata = get_tables_and_metadata(
+            self.name, self.method, self.run_id
+        )
 
-        # TEST TABLES
         tables_test = load_tables(
             os.path.join("data", "original", self.name, "test"), metadata
         )
 
-        cols_to_drop = ["date_first_booking"]
-
-        # Remove country_destination and timestamp_first_active from metadata
-        for col in cols_to_drop:
-            del metadata.tables["users"].columns[col]
-
-        tables["users"] = tables["users"].drop(columns=cols_to_drop)
-        tables = cut_off_set(tables, metadata, self.from_timestamp, False)
-        tables = cut_off_set(tables, metadata, self.test_timestamp)
-
-        tables_test["users"] = tables_test["users"].drop(columns=cols_to_drop)
-
+        tables_test, metadata = remove_sdv_columns(tables_test, metadata)
         tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
-        tables_test = cut_off_set(tables_test, metadata, self.upto_timestamp, True)
 
-        tables = append_test_set(tables, tables_test, metadata)
+        tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
+        tables_train = cut_off_set(tables_train, metadata, self.test_timestamp)
+
+        tables_test = append_test_set(tables_train, tables_test, metadata)
+
+        if self.type == "test":
+            tables = tables_test
+        else:
+            tables = tables_train
 
         users_df = tables["users"]
         sessions_df = tables["sessions"]
 
-        tables["users"]["country_destination"] = (
-            tables["users"]["country_destination"] == "NDF"
-        )
+        users_df.pop("date_first_booking")
+
+        users_df["country_destination"] = users_df["country_destination"] == "NDF"
 
         db = Database(
             table_dict={
@@ -226,6 +225,9 @@ class AirbnbDataset(Dataset):
                 ),
             }
         )
+
+        db = db.from_(self.from_timestamp)
+        db = db.upto(self.upto_timestamp)
 
         return db
 
@@ -265,11 +267,6 @@ class WalmartDataset(Dataset):
         else:
             tables = tables_train
 
-        # drop isHoliday column in depts and features table
-        tables["depts"].pop("IsHoliday")
-        tables["features"].pop("IsHoliday")
-        tables["depts"].pop("Dept")
-
         depts_df = tables["depts"]
         stores_df = tables["stores"]
         features_df = tables["features"]
@@ -295,6 +292,7 @@ class WalmartDataset(Dataset):
                     fkey_col_to_pkey_table={
                         "Store": "stores",
                     },
+                    time_col="Date",
                 ),
             }
         )
@@ -336,7 +334,6 @@ class F1Dataset(Dataset):
             tables = tables_test
         else:
             tables = tables_train
-
 
         circuits = tables["circuits"]
         drivers = tables["drivers"]
@@ -575,10 +572,18 @@ class BerkaDataset(Dataset):
         self.type = type
 
     def make_db(self) -> Database:
-        tables, metadata = get_tables_and_metadata(self.name, self.method, self.run_id)
+        tables_train, metadata = get_tables_and_metadata(
+            self.name, self.method, self.run_id
+        )
+        tables_test = load_tables(os.path.join("data", "original", "Berka"), metadata)
+        tables_test, metadata = remove_sdv_columns(tables_test, metadata)
+
+        tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
 
         if self.type == "test":
-            tables = load_tables(os.path.join("data", "original", "Berka"), metadata)
+            tables = tables_test
+        else:
+            tables = tables_train
 
         account = tables["account"]
         card = tables["card"]

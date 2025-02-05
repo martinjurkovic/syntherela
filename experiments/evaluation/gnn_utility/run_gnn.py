@@ -54,23 +54,23 @@ TASKS = {
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--task", type=str, default="driver-position")
+parser.add_argument("--task", type=str, default="predict-column")
 parser.add_argument("--run_id", type=str, default="1")
-parser.add_argument("--method", type=str, default="CLAVADDPM")
+parser.add_argument("--method", type=str, default="ORIGINAL")
 
 parser.add_argument(
     "--task_type",
     type=str,
-    default="REGRESSION",
+    default="BINARY_CLASSIFICATION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--dataset", type=str, default="f1_subsampled")
-parser.add_argument("--entity_table", type=str, default="depts")
-parser.add_argument("--entity_col", type=str)
-parser.add_argument("--time_col", type=str, default="Date")
-parser.add_argument("--target_col", type=str, default="Weekly_Sales")
+parser.add_argument("--dataset", type=str, default="Berka_subsampled")
+parser.add_argument("--entity_table", type=str, default="loan")
+parser.add_argument("--entity_col", type=str, default="loan_id")
+parser.add_argument("--time_col", type=str, default="date")
+parser.add_argument("--target_col", type=str, default="status")
 
-parser.add_argument("--lr", type=float, default=0.001)
+parser.add_argument("--lr", type=float, default=0.1)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=128)
 parser.add_argument("--channels", type=int, default=128)
@@ -277,8 +277,8 @@ def test(loader: NeighborLoader) -> np.ndarray:
 
 
 model = Model(
-    data=data,
-    col_stats_dict=col_stats_dict,
+    data=data_test,
+    col_stats_dict=col_stats_dict_test,
     num_layers=args.num_layers,
     channels=args.channels,
     out_channels=out_channels,

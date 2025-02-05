@@ -67,7 +67,6 @@ UTILITY_TASKS = [
         "target_col": "country_destination",
         "methods": ["ORIGINAL", "CLAVADDPM", "MOSTLYAI", "RCTGAN", "RGCLD", "SDV"],
         "--lr": 0.1,
-        "--batch_size": 64,
         "task": "predict-column",
     },
     {
@@ -173,7 +172,7 @@ for task in UTILITY_TASKS:
 
                 # Clean up temporary torch_geometric files
                 subprocess.run(["rm", "-f", "torch_geometric.*"])
-                
+
                 # print(f"Task: {task['dataset']}, Output: {result.stdout}, Error: {result.stderr}")
                 best_test_metrics = None
                 try:
@@ -183,7 +182,9 @@ for task in UTILITY_TASKS:
                     best_test_metrics = final_line.split("Best test metrics: ")[1]
                     print(f"STRING BEST TEST METRICS: {best_test_metrics}")
                 except Exception as e:
-                    print(f"Task: {task['dataset']}, Output: {result.stdout}, Error: {result.stderr}")
+                    print(
+                        f"Task: {task['dataset']}, Output: {result.stdout}, Error: {result.stderr}"
+                    )
                     raise e
 
                 # convert string to dictionary
