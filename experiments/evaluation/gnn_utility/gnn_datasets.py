@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 
-
+import numpy as np
 import pandas as pd
 from syntherela.typing import Tables
 from syntherela.data import load_tables, remove_sdv_columns
@@ -308,6 +308,9 @@ class F1Dataset(Dataset):
     val_timestamp = pd.Timestamp("2005-01-01")
     test_timestamp = pd.Timestamp("2010-01-01")
 
+    # from_timestamp = pd.Timestamp("1990-01-01")
+    # upto_timestamp = pd.Timestamp("2010-01-01")
+
     def __init__(
         self,
         cache_dir: Optional[str] = None,
@@ -352,97 +355,6 @@ class F1Dataset(Dataset):
 
         races["date"] = pd.to_datetime(races.pop("datetime"))
 
-        # Remove columns that are irrelevant, leak time,
-        # or have too many missing values
-
-        # Drop the Wikipedia URL and some time columns with many missing values
-        # races.drop(
-        #     columns=[
-        #         "url",
-        #         "fp1_date",
-        #         "fp1_time",
-        #         "fp2_date",
-        #         "fp2_time",
-        #         "fp3_date",
-        #         "fp3_time",
-        #         "quali_date",
-        #         "quali_time",
-        #         "sprint_date",
-        #         "sprint_time",
-        #     ],
-        #     inplace=True,
-        # )
-
-        # # Drop the Wikipedia URL as it is unique for each row
-        # circuits.drop(
-        #     columns=["url"],
-        #     inplace=True,
-        # )
-
-        # # Drop the Wikipedia URL (unique) and number (803 / 857 are nulls)
-        # drivers.drop(
-        #     columns=["number", "url"],
-        #     inplace=True,
-        # )
-
-        # # Drop the positionText, time, fastestLapTime and fastestLapSpeed
-        # results.drop(
-        #     columns=[
-        #         "positionText",
-        #         "time",
-        #         "fastestLapTime",
-        #         "fastestLapSpeed",
-        #     ],
-        #     inplace=True,
-        # )
-
-        # # Drop the positionText
-        # standings.drop(
-        #     columns=["positionText"],
-        #     inplace=True,
-        # )
-
-        # # Drop the Wikipedia URL
-        # constructors.drop(
-        #     columns=["url"],
-        #     inplace=True,
-        # )
-
-        # # Drop the positionText
-        # constructor_standings.drop(
-        #     columns=["positionText"],
-        #     inplace=True,
-        # )
-
-        # # Drop the status as it only contains two categories, and
-        # # only 17 rows have value 'D' (0.138%)
-        # constructor_results.drop(
-        #     columns=["status"],
-        #     inplace=True,
-        # )
-
-        # # Drop the time in qualifying 1, 2, and 3
-        # qualifying.drop(
-        #     columns=["q1", "q2", "q3"],
-        #     inplace=True,
-        # )
-
-        # # replase missing data and combine date and time columns
-        # races["time"] = races["time"].replace(r"^\\N$", "00:00:00", regex=True)
-        # races["date"] = races["date"] + " " + races["time"]
-        # # Convert date column to pd.Timestamp
-        # races["date"] = pd.to_datetime(races["date"])
-
-        # # add time column to other tables
-        # results = results.merge(races[["raceId", "date"]], on="raceId", how="left")
-        # standings = standings.merge(races[["raceId", "date"]], on="raceId", how="left")
-        # constructor_results = constructor_results.merge(
-        #     races[["raceId", "date"]], on="raceId", how="left"
-        # )
-        # constructor_standings = constructor_standings.merge(
-        #     races[["raceId", "date"]], on="raceId", how="left"
-        # )
-
         qualifying = qualifying.merge(
             races[["raceId", "date"]], on="raceId", how="left"
         )
@@ -451,29 +363,29 @@ class F1Dataset(Dataset):
         # # that the qualifying time is the day before the main race
         qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
-        # # Replace "\N" with NaN in results tables
-        # results = results.replace(r"^\\N$", np.nan, regex=True)
+        # Replace "\N" with NaN in results tables
+        results = results.replace(r"^\\N$", np.nan, regex=True)
 
-        # # Replace "\N" with NaN in circuits tables, especially
-        # # for the column `alt` which has 3 rows of "\N"
-        # circuits = circuits.replace(r"^\\N$", np.nan, regex=True)
-        # # Convert alt from string to float
-        # circuits["alt"] = circuits["alt"].astype(float)
+        # Replace "\N" with NaN in circuits tables, especially
+        # for the column `alt` which has 3 rows of "\N"
+        circuits = circuits.replace(r"^\\N$", np.nan, regex=True)
+        # Convert alt from string to float
+        circuits["alt"] = circuits["alt"].astype(float)
 
-        # # Convert non-numeric values to NaN in the specified column
-        # results["rank"] = pd.to_numeric(results["rank"], errors="coerce")
-        # results["number"] = pd.to_numeric(results["number"], errors="coerce")
-        # results["grid"] = pd.to_numeric(results["grid"], errors="coerce")
-        # results["position"] = pd.to_numeric(results["position"], errors="coerce")
-        # results["points"] = pd.to_numeric(results["points"], errors="coerce")
-        # results["laps"] = pd.to_numeric(results["laps"], errors="coerce")
-        # results["milliseconds"] = pd.to_numeric(
-        #     results["milliseconds"], errors="coerce"
-        # )
-        # results["fastestLap"] = pd.to_numeric(results["fastestLap"], errors="coerce")
+        # Convert non-numeric values to NaN in the specified column
+        results["rank"] = pd.to_numeric(results["rank"], errors="coerce")
+        results["number"] = pd.to_numeric(results["number"], errors="coerce")
+        results["grid"] = pd.to_numeric(results["grid"], errors="coerce")
+        results["position"] = pd.to_numeric(results["position"], errors="coerce")
+        results["points"] = pd.to_numeric(results["points"], errors="coerce")
+        results["laps"] = pd.to_numeric(results["laps"], errors="coerce")
+        results["milliseconds"] = pd.to_numeric(
+            results["milliseconds"], errors="coerce"
+        )
+        results["fastestLap"] = pd.to_numeric(results["fastestLap"], errors="coerce")
 
-        # # Convert drivers date of birth to datetime
-        # drivers["dob"] = pd.to_datetime(drivers["dob"])
+        # Convert drivers date of birth to datetime
+        drivers["dob"] = pd.to_datetime(drivers["dob"])
 
         tables = {}
 
@@ -550,12 +462,17 @@ class F1Dataset(Dataset):
             time_col="date",
         )
 
-        return Database(tables)
+        db = Database(tables)
+
+        # db = db.from_(self.from_timestamp)
+        # db = db.upto(self.upto_timestamp)
+
+        return db
 
 
 class BerkaDataset(Dataset):
     name = "Berka_subsampled"
-    val_timestamp = pd.Timestamp("1997-12-01")
+    val_timestamp = pd.Timestamp("1997-01-01")
     test_timestamp = pd.Timestamp("1998-01-01")
 
     def __init__(
