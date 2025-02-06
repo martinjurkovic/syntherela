@@ -4,17 +4,13 @@ import json
 import math
 import os
 from pathlib import Path
-import subprocess
 from typing import Dict
-
-# Set CUDA_LAUNCH_BLOCKING=1 to get better error messages
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 import numpy as np
 import torch
 from model import Model
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, L1Loss, MSELoss
+from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
@@ -25,9 +21,9 @@ from relbench.base import Dataset, EntityTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
-from relbench.tasks import get_task, BaseTask
-from relbench.base.task_column import PredictColumnTask
+from relbench.tasks import get_task
 from relbench.tasks.f1 import DriverPositionTask, DriverTop3Task, DriverDNFTask
+
 from gnn_datasets import (
     RossmannDataset,
     WalmartDataset,
@@ -36,52 +32,20 @@ from gnn_datasets import (
     BerkaDataset,
 )
 
-
-DATASETS = {
-    RossmannDataset.name: RossmannDataset,
-    WalmartDataset.name: WalmartDataset,
-    F1Dataset.name: F1Dataset,
-    AirbnbDataset.name: AirbnbDataset,
-    BerkaDataset.name: BerkaDataset,
-}
-
-TASKS = {
-    "driver-position": DriverPositionTask,
-    "driver-top3": DriverTop3Task,
-    "driver-dnft": DriverDNFTask,
-    "predict-column": PredictColumnTask,
-}
-
 parser = argparse.ArgumentParser()
-
-parser.add_argument("--task", type=str, default="predict-column")
-parser.add_argument("--run_id", type=str, default="1")
-parser.add_argument("--method", type=str, default="ORIGINAL")
-
-parser.add_argument(
-    "--task_type",
-    type=str,
-    default="BINARY_CLASSIFICATION",
-    choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
-)
-parser.add_argument("--dataset", type=str, default="airbnb-simplified_subsampled")
-parser.add_argument("--entity_table", type=str, default="users")
-parser.add_argument("--entity_col", type=str, default="id")
-parser.add_argument("--time_col", type=str, default="date_account_created")
-parser.add_argument("--target_col", type=str, default="country_destination")
-
-parser.add_argument("--lr", type=float, default=0.01)
+parser.add_argument("--dataset", type=str, default="rel-f1")
+parser.add_argument("--task", type=str, default="driver-top3")
+parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
-parser.add_argument("--num_layers", type=int, default=1)
+parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument("--torch_device", type=str, default="cuda:9")
 parser.add_argument(
     "--cache_dir",
     type=str,
@@ -90,45 +54,21 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-device = torch.device(args.torch_device if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:9" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
+# dataset: Dataset = get_dataset(args.dataset, download=True)
+method = "MOSTLYAI"
+dataset: Dataset = F1Dataset(method=method, run_id=1)
+dataset_test: Dataset = F1Dataset(method=method, run_id=1, type="test")
 
-predict_column_task_config = {
-    "task_type": TaskType[args.task_type],
-    "entity_table": args.entity_table,
-    "entity_col": args.entity_col if args.entity_col else None,
-    "time_col": args.time_col,
-    "target_col": args.target_col,
-}
+# task: EntityTask = get_task(args.dataset, args.task, download=False)
+task_test: EntityTask = get_task(args.dataset, args.task, download=False)
 
-# dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id)
-dataset_test: Dataset = DATASETS[args.dataset](
-    method=args.method, run_id=args.run_id, type="test"
-)
-
-# task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
-if args.task == "predict-column":
-    dataset.target_col = args.target_col
-    dataset.entity_table = args.entity_table
-    dataset_test.target_col = args.target_col
-    dataset_test.entity_table = args.entity_table
-    task: PredictColumnTask = TASKS[args.task](
-        dataset=dataset, **predict_column_task_config
-    )
-    task_test: PredictColumnTask = TASKS[args.task](
-        dataset=dataset_test, **predict_column_task_config
-    )
-else:
-    task: BaseTask = TASKS[args.task](dataset=dataset)
-    # task_test: BaseTask = TASKS[args.task](dataset=dataset_test)
-    task_test: EntityTask = get_task("rel-f1", args.task, download=False)
-
-# task_test.get_table("test", mask_input_cols=False)
-
+task: EntityTask = DriverTop3Task(dataset=dataset)
+# task_test: EntityTask = DriverTop3Task(dataset=dataset_test)
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
@@ -139,24 +79,12 @@ try:
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
     col_to_stype_dict = get_stype_proposal(dataset.get_db())
-    # Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     # with open(stypes_cache_path, "w") as f:
     #     json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 data, col_stats_dict = make_pkey_fkey_graph(
-    dataset.get_db(
-        upto_test_timestamp=False if args.task == "predict-column" else True,
-    ),
-    col_to_stype_dict=col_to_stype_dict,
-    text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=256
-    ),
-    # cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
-)
-data_test, col_stats_dict_test = make_pkey_fkey_graph(
-    dataset_test.get_db(
-        upto_test_timestamp=False if args.task == "predict-column" else True,
-    ),
+    dataset.get_db(),
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
@@ -188,19 +116,14 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
 else:
     raise ValueError(f"Task type {task.task_type} is unsupported")
 
-g = torch.Generator()
-g.manual_seed(args.seed)
-
 loader_dict: Dict[str, NeighborLoader] = {}
 for split in ["train", "val", "test"]:
     tmp_task = task_test if split == "test" else task
     table = tmp_task.get_table(split)
     table_input = get_node_train_table_input(table=table, task=tmp_task)
     entity_table = table_input.nodes[0]
-    tmp_data = data # if split == "train" else data_test
-    entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
-        tmp_data,
+        data,
         num_neighbors=[int(args.num_neighbors / 2**i) for i in range(args.num_layers)],
         time_attr="time",
         input_nodes=table_input.nodes,
@@ -211,7 +134,6 @@ for split in ["train", "val", "test"]:
         shuffle=split == "train",
         num_workers=args.num_workers,
         persistent_workers=args.num_workers > 0,
-        generator=g,
     )
 
 
@@ -301,8 +223,6 @@ model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])
 val_metrics = task.evaluate(val_pred, task.get_table("val"))
 print(f"Best Val metrics: {val_metrics}")
-
-# model.data = data_test
 
 test_pred = test(loader_dict["test"])
 test_metrics = task_test.evaluate(test_pred)

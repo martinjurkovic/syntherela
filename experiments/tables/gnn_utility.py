@@ -10,11 +10,11 @@ PROJECT_PATH = os.getenv("PROJECT_PATH")
 
 # Define which metric to use for each dataset
 dataset_metrics = {
-    "f1": "mae",
-    "Berka_subsampled": "mae",
     "rossmann_subsampled": "mae",
     "walmart_subsampled": "mae",
-    "airbnb-simplified_subsampled": "roc_auc"
+    "airbnb-simplified_subsampled": "roc_auc",
+    "Berka_subsampled": "roc_auc",
+    "f1_subsampled": "roc_auc",
 }
 
 results_dir = os.path.join(PROJECT_PATH, "results")
@@ -32,7 +32,14 @@ def compute_mean_and_se(values):
 
 
 # Extract datasets, methods, and calculate metrics
-datasets = list(data.keys())
+# datasets = list(data.keys())
+datasets = [
+    "rossmann_subsampled",
+    "walmart_subsampled",
+    "airbnb-simplified_subsampled",
+    "Berka_subsampled",
+    "f1_subsampled",
+]
 methods = set()
 results = {}
 
@@ -56,12 +63,12 @@ for dataset, method_data in data.items():
 method_order = [
     # "BASELINE",
     "ORIGINAL",
-    "SDV",
-    "RCTGAN",
-    "REALTABFORMER",
-    "CLAVADDPM",
     "MOSTLYAI",
     "RGCLD",
+    "CLAVADDPM",
+    "RCTGAN",
+    "REALTABFORMER",
+    "SDV",
 ]
 
 method_rename = {
@@ -71,12 +78,12 @@ method_rename = {
     "RCTGAN": "RCTGAN",
     "REALTABFORMER": "REALTABF.",
     "CLAVADDPM": "CLAVADDPM",
-    "MOSTLYAI": "MOSTLYAI",
+    "MOSTLYAI": "TabularARGN",
     "RGCLD": "RGCLD",
 }
 
 dataset_rename = {
-    "f1": "F1",
+    "f1_subsampled": "F1",
     "Berka_subsampled": "Berka",
     "rossmann_subsampled": "Rossmann",
     "walmart_subsampled": "Walmart",

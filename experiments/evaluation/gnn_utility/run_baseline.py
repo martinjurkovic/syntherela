@@ -8,16 +8,25 @@ from scipy.stats import mode
 from torch_geometric.seed import seed_everything
 
 from relbench.base import Dataset, Table, TaskType, PredictColumnTask
-from gnn_datasets import RossmannDataset, WalmartDataset
+from gnn_datasets import (
+    RossmannDataset,
+    WalmartDataset,
+    F1Dataset,
+    AirbnbDataset,
+    BerkaDataset,
+)
 
 DATASETS = {
     RossmannDataset.name: RossmannDataset,
     WalmartDataset.name: WalmartDataset,
+    F1Dataset.name: F1Dataset,
+    AirbnbDataset.name: AirbnbDataset,
+    BerkaDataset.name: BerkaDataset,
 }
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--dataset", type=str, default="rossmann_subsampled")
+parser.add_argument("--dataset", type=str, default="Berka_subsampled")
 parser.add_argument("--task", type=str, default="predict-column")
 parser.add_argument("--run_id", type=str, default="1")
 parser.add_argument("--method", type=str, default="ORIGINAL")
@@ -25,13 +34,13 @@ parser.add_argument("--method", type=str, default="ORIGINAL")
 parser.add_argument(
     "--task_type",
     type=str,
-    default="REGRESSION",
+    default="BINARY_CLASSIFICATION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--entity_table", type=str, default="historical")
-parser.add_argument("--entity_col", type=str, default="Id")
-parser.add_argument("--time_col", type=str, default="Date")
-parser.add_argument("--target_col", type=str, default="Customers")
+parser.add_argument("--entity_table", type=str, default="loan")
+parser.add_argument("--entity_col", type=str, default="loan_id")
+parser.add_argument("--time_col", type=str, default="date")
+parser.add_argument("--target_col", type=str, default="status")
 
 parser.add_argument("--seed", type=int, default=42)
 
@@ -49,7 +58,7 @@ predict_column_task_config = {
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id)
+dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id, type="test")
 dataset.target_col = args.target_col
 dataset.entity_table = args.entity_table
 

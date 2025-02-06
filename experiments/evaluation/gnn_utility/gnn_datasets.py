@@ -351,8 +351,8 @@ class F1Dataset(Dataset):
         # Add date column to races by extracting date from datetime
         # races["date"] = pd.to_datetime(pd.to_datetime(races["datetime"]).dt.date)
         # races["time"] = pd.to_datetime(races["datetime"]).dt.time
-        # races.pop("datetime")
 
+        races.pop("year")
         races["date"] = pd.to_datetime(races.pop("datetime"))
 
         qualifying = qualifying.merge(

@@ -11,8 +11,8 @@ RUN_DATASETS = [
     # "rossmann_subsampled",
     # "walmart_subsampled",
     # "airbnb-simplified_subsampled",
-    "f1_subsampled",
-    # "Berka_subsampled",
+    # "f1_subsampled",
+    "Berka_subsampled",
 ]
 
 UTILITY_TASKS = [
@@ -53,27 +53,13 @@ UTILITY_TASKS = [
         "--lr": 0.1,
         "task": "predict-column",
     },
-    # {
-    #     "dataset": "f1_subsampled",
-    #     "entity_table": "constructor_standings",
-    #     "entity_col": "constructorStandingsId",
-    #     "time_col": "date",
-    #     "target_col": "position",
-    #     "task_type": "REGRESSION",
-    #     "methods": [
-    #                 "ORIGINAL", 
-    #                 "CLAVADDPM", 
-    #                 "RGCLD", 
-    #                 "MOSTLYAI", 
-    #                 "RCTGAN", 
-    #                 "SDV",
-    #                 ],
-    #     "--lr": 0.005,
-    #     "task": "predict-column",
-    # },
     {
         "dataset": "f1_subsampled",
-        "task_type": "BINARY_CLASSIFICATION",
+        "entity_table": "constructor_standings",
+        "entity_col": "constructorStandingsId",
+        "time_col": "date",
+        "target_col": "position",
+        "task_type": "REGRESSION",
         "methods": [
                     "ORIGINAL", 
                     "CLAVADDPM", 
@@ -83,7 +69,7 @@ UTILITY_TASKS = [
                     "SDV",
                     ],
         "--lr": 0.005,
-        "task": "driver-top3",
+        "task": "predict-column",
     },
     {
         "dataset": "airbnb-simplified_subsampled",
@@ -120,7 +106,7 @@ UTILITY_TASKS = [
 results_dir = os.path.join(PROJECT_PATH, "results")
 os.makedirs(results_dir, exist_ok=True)
 
-results_file = os.path.join(results_dir, "gnn_utility_results.json")
+results_file = os.path.join(results_dir, "gnn_baseline_results.json")
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
@@ -142,6 +128,8 @@ for task in UTILITY_TASKS:
         existing_results[dataset] = {}
 
     for method in task["methods"]:
+        if method != "ORIGINAL":
+            continue
         if method not in existing_results[dataset]:
             existing_results[dataset][method] = {}
         try:
@@ -162,17 +150,13 @@ for task in UTILITY_TASKS:
 
                 command = [
                     "python",
-                    "experiments/evaluation/gnn_utility/run_gnn.py",
+                    "experiments/evaluation/gnn_utility/run_baseline.py",
                     "--dataset",
                     dataset,
-                    "--task_type",
-                    task_type,
                     "--run",
                     str(run_id),
                     "--method",
                     method,
-                    "--torch_device",
-                    "cuda:9",
                     "--task",
                     task["task"],
                 ]
@@ -184,52 +168,52 @@ for task in UTILITY_TASKS:
                     command.extend(["--target_col", task["target_col"]])
                 if "entity_col" in task and task["entity_col"] is not None:
                     command.extend(["--entity_col", task["entity_col"]])
-                if "--lr" in task:
-                    command.extend(["--lr", str(task["--lr"])])
-                if "--batch_size" in task:
-                    command.extend(["--batch_size", str(task["--batch_size"])])
-                if "--num_layers" in task:
-                    command.extend(["--num_layers", str(task["--num_layers"])])
+                # if "--lr" in task:
+                #     command.extend(["--lr", str(task["--lr"])])
+                # if "--batch_size" in task:
+                #     command.extend(["--batch_size", str(task["--batch_size"])])
+                # if "--num_layers" in task:
+                #     command.extend(["--num_layers", str(task["--num_layers"])])
                 
-                result = subprocess.run(command, capture_output=True, text=True)
+                result = subprocess.run(command, capture_output=False, text=True)
 
                 # Clean up temporary torch_geometric files
-                subprocess.run(["rm", "-f", "torch_geometric.*"])
+                # subprocess.run(["rm", "-f", "torch_geometric.*"])
 
                 # print(f"Task: {task['dataset']}, Output: {result.stdout}, Error: {result.stderr}")
-                best_test_metrics = None
-                try:
-                    lines = result.stdout.splitlines()
-                    final_line = lines[-1]
+                # best_test_metrics = None
+                # try:
+                #     lines = result.stdout.splitlines()
+                #     final_line = lines[-1]
 
-                    best_test_metrics = final_line.split("Best test metrics: ")[1]
-                    print(f"BEST TEST METRICS: {best_test_metrics}")
-                except Exception as e:
-                    print(
-                        f"Task: {task['dataset']}, Output: {result.stdout}, Error: {result.stderr}"
-                    )
-                    print(f"Error: {e}")
-                    continue
+                #     best_test_metrics = final_line.split("Best test metrics: ")[1]
+                #     print(f"BEST TEST METRICS: {best_test_metrics}")
+                # except Exception as e:
+                #     print(
+                #         f"Task: {task['dataset']}, Output: {result.stdout}, Error: {result.stderr}"
+                #     )
+                #     print(f"Error: {e}")
+                #     continue
 
-                # convert string to dictionary
-                best_test_metrics = json.loads(best_test_metrics.replace("'", '"'))
-                # print(f"JSON TEST METRICS: {best_test_metrics}")
-                existing_results[dataset][method][run_id] = best_test_metrics
+                # # convert string to dictionary
+                # best_test_metrics = json.loads(best_test_metrics.replace("'", '"'))
+                # # print(f"JSON TEST METRICS: {best_test_metrics}")
+                # existing_results[dataset][method][run_id] = best_test_metrics
 
-                with open(results_file, "w") as f:
-                    json.dump(existing_results, f, indent=4)
+                # with open(results_file, "w") as f:
+                #     json.dump(existing_results, f, indent=4)
 
-                if method == "ORIGINAL":
-                    existing_results[dataset][method][2] = best_test_metrics
-                    existing_results[dataset][method][3] = best_test_metrics
-                    break
+                # if method == "ORIGINAL":
+                #     existing_results[dataset][method][2] = best_test_metrics
+                #     existing_results[dataset][method][3] = best_test_metrics
+                #     break
 
-                with open(results_file, "w") as f:
-                    json.dump(existing_results, f, indent=4)
+                # with open(results_file, "w") as f:
+                #     json.dump(existing_results, f, indent=4)
 
         except ValueError as e:
             print(f"Task: {task['dataset']}, Method: {method}, Error: {e}")
             continue
 
-with open(results_file, "w") as f:
-    json.dump(existing_results, f, indent=4)
+# with open(results_file, "w") as f:
+#     json.dump(existing_results, f, indent=4)
