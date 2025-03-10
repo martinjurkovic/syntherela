@@ -59,7 +59,9 @@ def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
         for column, format in datetime_formats.items():
             # If pandas can't parse the datetime format set it manually,
             # if the format is correct, this will not change the column.
-            table[column] = pd.to_datetime(table[column], format="ISO8601").dt.strftime(format)
+            table[column] = pd.to_datetime(table[column], format="ISO8601").dt.strftime(
+                format
+            )
             table[column] = pd.to_datetime(table[column], format=format)
 
         tables[table_name] = table

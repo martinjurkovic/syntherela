@@ -21,8 +21,8 @@ METHODS_LIST=(
 
 # List of run IDs
 RUN_IDS=(
-    1 
-    2 
+    1
+    2
     3
 )
 
@@ -31,7 +31,7 @@ for i in "${!DATASETS[@]}"
 do
     DATASET=${DATASETS[$i]}
     METHODS=${METHODS_LIST[$i]}
-    
+
     for RUN_ID in "${RUN_IDS[@]}"
     do
         # Build the method arguments

@@ -53,3 +53,5 @@ Issues = "https://github.com/martinjurkovic/syntherela/issues"
 [tool.setuptools.packages.find]
 where = ["."]
 
+[tool.ruff]
+extend-exclude = ["experiments"]

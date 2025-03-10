@@ -113,12 +113,12 @@ for task in UTILITY_TASKS:
                 best_test_metrics = None
                 lines = result.stdout.splitlines()
                 final_line = lines[-1]
-                
+
                 best_test_metrics = final_line.split("Best test metrics: ")[1]
 
                 # convert string to dictionary
                 best_test_metrics = json.loads(best_test_metrics.replace("'", '"'))
-                    
+
                 existing_results[dataset][method][run_id] = best_test_metrics
 
                 with open(results_file, "w") as f:

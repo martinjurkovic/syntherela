@@ -45,6 +45,6 @@ In [6]: real_column = real_data['users']['age'].to_numpy()
 
 In [7]: synthetic_column = synthetic_data['users']['age'].to_numpy()
 
-In [8]: KSComplement.compute(real_column, synthetic_column)
+In [8]: KSComplement.run(real_column, synthetic_column)
 Out[8]: 0.8
 ```
