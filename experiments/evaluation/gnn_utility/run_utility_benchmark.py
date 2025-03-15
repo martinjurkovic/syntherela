@@ -72,20 +72,24 @@ for task in UTILITY_TASKS:
         continue
 
     if dataset not in existing_results:
-            existing_results[dataset] = {}
+        existing_results[dataset] = {}
 
     for method in task["methods"]:
         if method not in existing_results[dataset]:
             existing_results[dataset][method] = {}
         try:
-            for run_id in (1,2,3):
+            for run_id in (1, 2, 3):
                 # check if the result already exists
                 if str(run_id) in existing_results[dataset][method]:
-                    print(f"SKIPPING: {task['dataset']}, Method: {method}, Run ID: {run_id}")
+                    print(
+                        f"SKIPPING: {task['dataset']}, Method: {method}, Run ID: {run_id}"
+                    )
                     continue
                 existing_results[dataset][method][run_id] = {}
 
-                print(f"Running task: {task['dataset']}, Method: {method}, Run ID: {run_id}")
+                print(
+                    f"Running task: {task['dataset']}, Method: {method}, Run ID: {run_id}"
+                )
 
                 command = [
                     "python",
