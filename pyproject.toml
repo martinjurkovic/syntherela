@@ -4,7 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "syntherela"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
     "sdv>=1.9.0,<2",
     "seaborn==0.13.2",
@@ -39,7 +39,7 @@ classifiers = [
 
 [project.optional-dependencies]
 gnn-utility=[
-  "relbench[full,example]@git+https://github.com/martinjurkovic/relbench.git@task_missing_data",
+  "relbench[full,example]@git+https://github.com/martinjurkovic/relbench.git@predict-column-task",
   "torch_geometric",
   "shap",
   "tqdm",
