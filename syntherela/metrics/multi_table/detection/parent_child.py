@@ -1,3 +1,5 @@
+"""Parent-child (denormalization) detection metrics for multi-table data."""
+
 from syntherela.metadata import Metadata
 from syntherela.metrics.multi_table.detection.denormalized_detection import (
     DenormalizedDetection,
@@ -5,11 +7,56 @@ from syntherela.metrics.multi_table.detection.denormalized_detection import (
 
 
 class ParentChildDetection(DenormalizedDetection):
+    """Detection metric for parent-child relationships in multi-table datasets.
+
+    This class implements a denormalization based detection metric that uses a classifier
+    to distinguish between denormalization real and synthetic data across parent-child table pairs.
+
+    Parameters
+    ----------
+    classifier_cls : class
+        The classifier class to be used.
+    classifier_args : dict, default={}
+        Arguments to be passed to the classifier.
+    random_state : int, optional
+        Random state for reproducibility.
+    folds : int, default=5
+        Number of folds for cross-validation.
+    **kwargs
+        Additional keyword arguments to pass to the parent class.
+
+    Attributes
+    ----------
+    name : str
+        Name of the metric.
+    classifiers : list
+        List to store trained classifiers.
+    models : list
+        List to store trained models.
+
+    """
+
     @staticmethod
     def is_applicable(metadata: Metadata, table1: str, table2: str):
-        """
-        Check if the table contains at least one column that is not an id.
-        And if the table has a relationship with another table.
+        """Check if the tables are applicable for this metric.
+
+        This method checks if both tables contain at least one column that is not an ID
+        and if the tables have a relationship with each other.
+
+        Parameters
+        ----------
+        metadata : Metadata
+            Metadata object containing information about the tables.
+        table1 : str
+            Name of the first table.
+        table2 : str
+            Name of the second table.
+
+        Returns
+        -------
+        bool
+            True if the metric is applicable to the tables, False otherwise.
+
         """
         nonid1 = False
         table_metadata = metadata.tables[table1].to_dict()
@@ -34,6 +81,31 @@ class ParentChildDetection(DenormalizedDetection):
         child_table,
         pair_metadata,
     ):
+        """Prepare the data for the classifier by denormalizing the parent-child table pairs.
+
+        Parameters
+        ----------
+        real_data : dict
+            Dictionary mapping table names to real data DataFrames.
+        synthetic_data : dict
+            Dictionary mapping table names to synthetic data DataFrames.
+        metadata : Metadata
+            Metadata object containing information about the tables.
+        parent_table : str
+            Name of the parent table.
+        child_table : str
+            Name of the child table.
+        pair_metadata : Metadata
+            Metadata object for the parent-child table pair.
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            - X: The combined data with transformed features.
+            - y: The labels for the real and synthetic data.
+
+        """
         real_data_pair = {
             parent_table: real_data[parent_table],
             child_table: real_data[child_table],
@@ -45,6 +117,25 @@ class ParentChildDetection(DenormalizedDetection):
         return super().prepare_data(real_data_pair, synthetic_data_pair, pair_metadata)
 
     def run(self, real_data: dict, synthetic_data: dict, metadata: Metadata, **kwargs):
+        """Run the parent-child detection metric on all parent-child relationships.
+
+        Parameters
+        ----------
+        real_data : dict
+            Dictionary mapping table names to real data DataFrames.
+        synthetic_data : dict
+            Dictionary mapping table names to synthetic data DataFrames.
+        metadata : Metadata
+            Metadata object containing information about the tables.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping relationship identifiers to metric results.
+
+        """
         results = {}
         for relationship in metadata.relationships:
             child_table = relationship["child_table_name"]

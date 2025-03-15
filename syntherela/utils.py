@@ -1,3 +1,8 @@
+"""Utility functions for the Syntherela package.
+
+NpEncoder for saving results and CustomHyperTransformer for data preprocessing.
+"""
+
 import json
 
 import numpy as np
@@ -7,7 +12,26 @@ from sklearn.preprocessing import OneHotEncoder
 
 
 class NpEncoder(json.JSONEncoder):
+    """JSON encoder that handles NumPy data types.
+
+    This encoder converts NumPy data types to their Python equivalents
+    for proper JSON serialization.
+    """
+
     def default(self, obj):
+        """Convert NumPy objects to Python types.
+
+        Parameters
+        ----------
+        obj: object
+            The object to encode.
+
+        Returns
+        -------
+        object
+            The encoded object.
+
+        """
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.floating):
@@ -20,17 +44,20 @@ class NpEncoder(json.JSONEncoder):
 
 
 class CustomHyperTransformer(HyperTransformer):
-    """
-    CustomHyperTransformer overrides the transform method of HyperTransformer
+    """CustomHyperTransformer extends HyperTransformer to preserve feature names.
+
+    This class overrides the transform method of HyperTransformer
     so that the feature names are preserved for one-hot-encoded columns.
     """
 
     def fit(self, data):
         """Fit the HyperTransformer to the given data.
 
-        Args:
-            data (pandas.DataFrame):
-                The data to transform.
+        Parameters
+        ----------
+        data: pandas.DataFrame
+            The data to transform.
+
         """
         if not isinstance(data, pd.DataFrame):
             data = pd.DataFrame(data)
@@ -68,15 +95,18 @@ class CustomHyperTransformer(HyperTransformer):
                 }
 
     def transform(self, data):
-        """Transform the given data based on the data type of each column.
+        """Transform the data.
 
-        Args:
-            data (pandas.DataFrame):
-                The data to transform.
+        Parameters
+        ----------
+        data: pandas.DataFrame
+            The data to transform.
 
-        Returns:
-            pandas.DataFrame:
-                The transformed data.
+        Returns
+        -------
+        pandas.DataFrame
+            The transformed data.
+
         """
         if not isinstance(data, pd.DataFrame):
             data = pd.DataFrame(data)

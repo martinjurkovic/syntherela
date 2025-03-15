@@ -1,3 +1,10 @@
+"""Pairwise correlation difference metric for single tables.
+
+This module implements a metric that measures the difference between correlation matrices
+of real and synthetic data, evaluating how well the synthetic data preserves linear relationships
+between variables in the original dataset.
+"""
+
 import numpy as np
 import pandas as pd
 from sdmetrics.goal import Goal
@@ -8,6 +15,8 @@ from syntherela.metrics.base import DistanceBaseMetric, SingleTableMetric
 
 
 class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
+    """Pairwise correlation difference metric."""
+
     def __init__(self, norm_order="fro", correlation_method="pearson", **kwargs):
         super().__init__(**kwargs)
         self.name = "PairwiseCorrelationDifference"
@@ -19,9 +28,7 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
 
     @staticmethod
     def is_applicable(metadata):
-        """
-        Check if the table contains at least one column that is not an id.
-        """
+        """Check if the table contains at least one non-id column."""
         numeric_count = 0
         for column_name in metadata["columns"].keys():
             if (
@@ -32,11 +39,27 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         return numeric_count > 1
 
     def compute(self, original_table, sythetic_table, metadata, **kwargs):
-        """
+        """Compute pairwise correlation difference between original and synthetic data.
+
         Based on:
-        Andre Goncalves, Priyadip Ray, Braden Soper, Jennifer Stevens, Linda Coyle & Ana Paula Sales (2020).
-        Generation and evaluation of synthetic patient data.
-        https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-020-00977-1
+            Andre Goncalves, Priyadip Ray, Braden Soper, Jennifer Stevens, Linda Coyle & Ana Paula Sales (2020).
+            Generation and evaluation of synthetic patient data.
+            https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-020-00977-1
+
+        Parameters
+        ----------
+        original_table : pd.DataFrame
+            The original data table.
+        sythetic_table : pd.DataFrame
+            The synthetic data table.
+        metadata : dict
+            Table metadata.
+
+        Returns
+        -------
+        float
+            The pairwise correlation difference between the original and synthetic data.
+
         """
         orig = original_table.copy()
         synth = sythetic_table.copy()

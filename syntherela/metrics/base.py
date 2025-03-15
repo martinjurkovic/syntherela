@@ -1,3 +1,9 @@
+"""Base classes for synthetic data evaluation metrics.
+
+This module provides abstract base classes that define the common interface
+and functionality for all metrics used in synthetic data evaluation.
+"""
+
 import re
 import warnings
 from typing import Union
@@ -13,16 +19,51 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sdmetrics.goal import Goal
 from sdmetrics.base import BaseMetric
+# FIXME: We should implement our own BaseMetric class or
+# we should be consistent with the sdmetrics API (run vs. compute)
 
 from syntherela.utils import CustomHyperTransformer
 
 
 class SingleColumnMetric(BaseMetric):
+    """Base class for single column metrics.
+
+    This class provides a foundation for metrics that evaluate the quality
+    of synthetic data at the column level.
+
+    Parameters
+    ----------
+    **kwargs
+        Additional keyword arguments to pass to the parent class.
+
+    """
+
     def __init__(self, **kwargs):
+        """Initialize the SingleColumnMetric.
+
+        Parameters
+        ----------
+        **kwargs
+            Additional keyword arguments to pass to the parent class.
+
+        """
         super().__init__(**kwargs)
 
     @staticmethod
     def is_constant(column: pd.Series):
+        """Check if the column is constant.
+
+        Parameters
+        ----------
+        column : pd.Series
+            The column to check.
+
+        Returns
+        -------
+        bool
+            True if the column has only one unique value, False otherwise.
+
+        """
         constant = column.nunique() == 1
         if constant:
             warnings.warn(f"Column {column.name} is constant.")
@@ -30,17 +71,65 @@ class SingleColumnMetric(BaseMetric):
 
     @staticmethod
     def is_applicable(column_type):
+        """Check if the column type is applicable for this metric.
+
+        Parameters
+        ----------
+        column_type : str
+            The type of the column.
+
+        Returns
+        -------
+        bool
+            True if the metric is applicable to the column type, False otherwise.
+
+        Raises
+        ------
+        NotImplementedError
+            This method must be implemented by subclasses.
+
+        """
         raise NotImplementedError()
 
 
 class SingleTableMetric(BaseMetric):
+    """Base class for single table metrics.
+
+    This class provides a foundation for metrics that evaluate the quality
+    of synthetic data at the table level.
+
+    Parameters
+    ----------
+    **kwargs
+        Additional keyword arguments to pass to the parent class.
+
+    """
+
     def __init__(self, **kwargs):
+        """Initialize the SingleTableMetric.
+
+        Parameters
+        ----------
+        **kwargs
+            Additional keyword arguments to pass to the parent class.
+
+        """
         super().__init__(**kwargs)
 
     @staticmethod
     def is_applicable(metadata):
-        """
-        Check if the table contains at least one column that is not an id.
+        """Check if the table contains at least one column that is not an id.
+
+        Parameters
+        ----------
+        metadata : dict
+            Metadata dictionary for the table.
+
+        Returns
+        -------
+        bool
+            True if the table has at least one non-id column, False otherwise.
+
         """
         for column_name in metadata["columns"].keys():
             if metadata["columns"][column_name]["sdtype"] != "id":
@@ -48,33 +137,113 @@ class SingleTableMetric(BaseMetric):
         return False
 
 
-class StatisticalBaseMetric(BaseMetric):
+class MultiTableMetric(BaseMetric):
+    """Base class for multi table metrics.
+
+    This class provides a foundation for metrics that evaluate the quality
+    of synthetic data across multiple tables.
+
+    Parameters
+    ----------
+    **kwargs
+        Additional keyword arguments to pass to the parent class.
+
+    """
+
     def __init__(self, **kwargs):
+        """Initialize the MultiTableMetric.
+
+        Parameters
+        ----------
+        **kwargs
+            Additional keyword arguments to pass to the parent class.
+
+        """
+        super().__init__(**kwargs)
+
+
+class StatisticalBaseMetric(BaseMetric):
+    """Base class for statistical metrics.
+
+    This class provides a foundation for metrics that use statistical tests
+    to evaluate the quality of synthetic data.
+
+    Parameters
+    ----------
+    **kwargs
+        Additional keyword arguments to pass to the parent class.
+
+    """
+
+    def __init__(self, **kwargs):
+        """Initialize the StatisticalBaseMetric.
+
+        Parameters
+        ----------
+        **kwargs
+            Additional keyword arguments to pass to the parent class.
+
+        """
         super().__init__(**kwargs)
 
     @staticmethod
     def validate(data):
+        """Validate the input data.
+
+        Parameters
+        ----------
+        data
+            The data to validate.
+
+        Raises
+        ------
+        NotImplementedError
+            This method must be implemented by subclasses.
+
+        """
         raise NotImplementedError()
 
     @staticmethod
     def compute(real_data, synthetic_data, **kwargs):
-        """
-        This method is used to compute the actual metric value between two samples.
+        """Compute the metric value between two samples.
+
+        Parameters
+        ----------
+        real_data
+            The values from the real dataset.
+        synthetic_data
+            The values from the synthetic dataset.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        Union[float, tuple[float]]
+            Metric output or outputs.
+
+        Raises
+        ------
+        NotImplementedError
+            This method must be implemented by subclasses.
+
         """
         raise NotImplementedError()
 
     def run(self, real_data, synthetic_data, **kwargs):
         """Compute this metric.
 
-        Args:
-            real_data:
-                The values from the real dataset.
-            synthetic_data:
-                The values from the synthetic dataset.
+        Parameters
+        ----------
+        real_data:
+            The values from the real dataset.
+        synthetic_data:
+            The values from the synthetic dataset.
 
-        Returns:
+        Returns
+        -------
             Union[float, tuple[float]]:
                 Metric output or outputs.
+
         """
         self.validate(real_data)
         self.validate(synthetic_data)
@@ -82,20 +251,38 @@ class StatisticalBaseMetric(BaseMetric):
 
 
 class DistanceBaseMetric(BaseMetric):
+    """Base class for distance-based metrics.
+
+    Attributes
+    ----------
+        alpha (float): Significance level for confidence intervals.
+
+    Methods
+    -------
+        compute(real_data, synthetic_data, **kwargs):
+            Compute the metric value between two samples. Must be implemented by subclasses.
+        run(real_data, synthetic_data, **kwargs):
+            Compute the reference and actual metric values.
+        boostrap_metric_values(data1, data2, m=100, random_state=None, **kwargs):
+            Compute the metric values for m bootstrap samples.
+        bootstrap_metric_estimate(real_data, synthetic_data, m=1000, **kwargs):
+            Compute the bootstrap mean and standard error estimates.
+        bootstrap_reference_standard_conf_int(real_data, m=1000, alpha=0.05, **kwargs):
+            Compute the standard CI on the original data using bootstrapping.
+
+    """
+
     def __init__(self, alpha=0.01, **kwargs):
         super().__init__(**kwargs)
         self.alpha = alpha
 
     @staticmethod
     def compute(real_data, synthetic_data, **kwargs):
-        """
-        This method is used to compute the actual metric value between two samples.
-        """
+        """Compute the metric value between two samples."""
         raise NotImplementedError()
 
     def run(self, real_data, synthetic_data, **kwargs):
-        """Compute the reference confidence intervals using bootstrap on the real data
-        and compute the matric value on real vs synthetic data."""
+        """Compute the reference and actual metric values."""
         reference_mean, reference_variance, reference_standard_ci = (
             self.bootstrap_reference_standard_conf_int(
                 real_data, alpha=self.alpha, **kwargs
@@ -115,6 +302,7 @@ class DistanceBaseMetric(BaseMetric):
         }
 
     def boostrap_metric_values(self, data1, data2, m=100, random_state=None, **kwargs):
+        """Compute the metric values for m bootstrap samples."""
         # get random_state from kwargs
         if random_state is None:
             random_state = 0
@@ -137,9 +325,7 @@ class DistanceBaseMetric(BaseMetric):
     def bootstrap_reference_standard_conf_int(
         self, real_data, m=1000, alpha=0.05, **kwargs
     ):
-        """Compute the standard confidence interval of the metric
-        on the original data using the bootstrap method.
-        """
+        """Compute the standard CI on the original data using bootstrapping."""
         values = self.boostrap_metric_values(real_data, real_data, m=m, **kwargs)
         m = len(values)
         mean = np.mean(values)
@@ -165,6 +351,55 @@ class DistanceBaseMetric(BaseMetric):
 
 
 class DetectionBaseMetric(BaseMetric):
+    """C2ST Base class.
+
+    DetectionBaseMetric extends the BaseMetric class to provide methods for evaluating the
+    performance of a classifier in distinguishing between real and synthetic data.
+    It includes methods for preparing data, performing stratified k-fold cross-validation,
+    computing the C2ST metric, generating bootstrap samples, estimating baseline performance,
+    computing p-values using the binomial test, and plotting feature importance and partial dependence.
+
+    Attributes
+    ----------
+    classifier_cls : class
+        The classifier class to be used.
+    classifier_args : dict
+        Arguments to be passed to the classifier.
+    random_state : int, optional
+    folds : int
+        Number of folds for cross-validation.
+    classifiers : list
+        List to store trained classifiers.
+    models : list
+        List to store trained models.
+    name : str
+        Name of the metric.
+
+    Methods
+    -------
+    prepare_data(real_data, synthetic_data, **kwargs)
+        Prepare the data for the classifier.
+    stratified_kfold(X, y, save_models=False)
+        Perform stratified k-fold cross-validation.
+    compute(real_data, synthetic_data, metadata, **kwargs)
+        Compute the C2ST metric.
+    bootstrap_sample(real_data, random_state=None, metadata=None)
+        Generate a bootstrap sample from the real data.
+    baseline(real_data, metadata, m=1000, **kwargs)
+        Estimate the metric using bootstrapping.
+    binomial_test(x, n, p=0.5, alternative="greater")
+        Compute the p-value of the metric using the binomial test.
+    run(real_data, synthetic_data, metadata, **kwargs)
+        Compute the C2ST metric.
+    feature_importance(combine_categorical=False, combine_datetime=False)
+        Return the feature importance scores for trained classifiers.
+    plot_feature_importance(metadata, ax=None, combine_categorical=False, combine_datetime=False, lab_fontsize=30, fontsize=23)
+        Plot the feature importance of the discriminator.
+    plot_partial_dependence(feature, lab_fontsize=30, seed=0)
+        Plot partial dependence for a given feature.
+
+    """
+
     def __init__(
         self,
         classifier_cls,
@@ -188,6 +423,25 @@ class DetectionBaseMetric(BaseMetric):
         synthetic_data: Union[pd.DataFrame, pd.Series],
         **kwargs,
     ):
+        """Prepare the data for the classifier.
+
+        Parameters
+        ----------
+        real_data:
+            The values from the real dataset.
+        synthetic_data:
+            The values from the synthetic dataset.
+        **kwargs:
+            Additional keyword arguments.
+
+        Returns
+        -------
+        X: pd.DataFrame
+            The combined data with transformed features.
+        y: np.ndarray
+            The labels for the real and synthetic data.
+
+        """
         if isinstance(real_data, pd.DataFrame):
             assert real_data.columns.equals(synthetic_data.columns), (
                 "Columns of real and synthetic data do not match"
@@ -220,6 +474,7 @@ class DetectionBaseMetric(BaseMetric):
         return X, y
 
     def stratified_kfold(self, X, y, save_models=False):
+        """Perform stratified k-fold cross-validation."""
         scores = []
         # Shuffle the data
         np.random.seed(self.random_state)
@@ -249,6 +504,23 @@ class DetectionBaseMetric(BaseMetric):
         return scores
 
     def compute(self, real_data, synthetic_data, metadata, **kwargs):
+        """Compute the C2ST metric.
+
+        Parameters
+        ----------
+        real_data:
+            The values from the real dataset.
+        synthetic_data:
+            The values from the synthetic dataset.
+        metadata:
+            Metadata containing information about the tables / table / column.
+
+        Returns
+        -------
+        dict:
+            Metric output.
+
+        """
         X, y = self.prepare_data(real_data, synthetic_data, metadata=metadata, **kwargs)
         # save the data for feature importance methods
         self.X = X
@@ -257,9 +529,30 @@ class DetectionBaseMetric(BaseMetric):
 
     @staticmethod
     def bootstrap_sample(real_data, random_state=None, metadata=None):
+        """Generate a bootstrap sample from the real data."""
         return real_data.sample(frac=1, replace=True, random_state=random_state)
 
     def baseline(self, real_data, metadata, m=1000, **kwargs):
+        """Estimate the metric using bootstrapping.
+
+        Compute the baseline performance using bootstrapping and stratified k-fold cross-validation.
+
+        Parameters
+        ----------
+        real_data: dict[str, pd.DataFrame]
+            The real dataset to be used for bootstrapping.
+        metadata: dict | Metadata
+            Metadata information about the dataset.
+        m: int
+            The number of bootstrap samples to generate. Default is 1000.
+        **kwargs:
+            Additional keyword arguments to be passed to the prepare_data method.
+
+        Returns
+        -------
+        tuple: A tuple containing the mean and standard error of the bootstrap accuracies.
+
+        """
         bootstrap_scores = []
         for i in range(m):
             sample1 = self.bootstrap_sample(
@@ -281,17 +574,22 @@ class DetectionBaseMetric(BaseMetric):
         return test.statistic, test.pvalue
 
     def run(self, real_data, synthetic_data, metadata, **kwargs):
-        """Compute this metric.
+        """Compute the C2ST metric.
 
-        Args:
-            real_data:
-                The values from the real dataset.
-            synthetic_data:
-                The values from the synthetic dataset.
+        Parameters
+        ----------
+        real_data:
+            The values from the real dataset.
+        synthetic_data:
+            The values from the synthetic dataset.
+        metadata:
+            Metadata containing information about the tables / table / column.
 
-        Returns:
-            Union[float, tuple[float]]:
-                Metric output or outputs.
+        Returns
+        -------
+            dict:
+                Metric output.
+
         """
         scores = self.compute(real_data, synthetic_data, metadata=metadata, **kwargs)
         _, bin_test_p_val = self.binomial_test(
@@ -309,6 +607,24 @@ class DetectionBaseMetric(BaseMetric):
         }
 
     def feature_importance(self, combine_categorical=False, combine_datetime=False):
+        """Return the feature importance scores for trained classifiers.
+
+        Parameters
+        ----------
+        combine_categorical: bool
+            If True, combine one-hot encoded categorical features into a single feature.
+        combine_datetime: bool:
+            If True, combine datetime features (Year, Month, Day, Hour, Minute, Second) into a single feature.
+
+        Returns
+        -------
+        dict: A dictionary where keys are feature names and values are arrays of feature importance scores, sorted by the mean importance score in descending order.
+
+        Raises
+        ------
+        ValueError: If no classifiers have been trained or if the classifier does not have a feature_importances_ attribute.
+
+        """
         if not len(self.classifiers):
             raise ValueError("No classifiers have been trained.")
         if not hasattr(self.classifiers[0], "feature_importances_"):
@@ -379,6 +695,29 @@ class DetectionBaseMetric(BaseMetric):
         lab_fontsize=30,
         fontsize=23,
     ):
+        """Plot the feature importance of the discriminator.
+
+        Parameters
+        ----------
+        metadata : dict or object
+            Metadata containing information about the columns and their types.
+        ax : matplotlib.axes.Axes, optional
+            Matplotlib Axes object to plot on. If None, a new figure and axes will be created.
+        combine_categorical : bool, optional
+            If True, combine categorical features. Default is False.
+        combine_datetime : bool, optional
+            If True, combine datetime features. Default is False.
+        lab_fontsize : int, optional
+            Font size for the x-axis label. Default is 30.
+        fontsize : int, optional
+            Font size for the y-axis tick labels. Default is 23.
+
+        Returns
+        -------
+        ax : matplotlib.axes._subplots.AxesSubplot
+            The axes object containing the plot.
+
+        """
         features = self.feature_importance(
             combine_categorical=combine_categorical, combine_datetime=combine_datetime
         )
@@ -479,7 +818,33 @@ class DetectionBaseMetric(BaseMetric):
             markerscale=2,
         )
 
+        return ax
+
     def plot_partial_dependence(self, feature, lab_fontsize=30, seed=0):
+        """Plot partial dependence for a given feature.
+
+        Compute the partial dependence for each model trained during cross-validation
+        and plot the average partial dependence.
+
+        Parameters
+        ----------
+        feature : str
+            The feature for which to plot the partial dependence.
+        lab_fontsize : int, optional, default=30
+            Font size for the labels in the plot.
+        seed : int, optional, default=0
+            Random seed for reproducibility.
+
+        Returns
+        -------
+        ax : matplotlib.axes._subplots.AxesSubplot
+            The axes object containing the plot.
+
+        """
+        from matplotlib import rc
+
+        rc("font", **{"family": "serif", "serif": ["Times"], "size": lab_fontsize})
+        rc("text", usetex=True)
         from sklearn.inspection import PartialDependenceDisplay
 
         # TODO: move these functions to some utility module
@@ -499,36 +864,36 @@ class DetectionBaseMetric(BaseMetric):
             return feature_name[0].upper() + feature_name[1:]
 
         def get_average_pds(feature, seed=0, num_ice=30, subsample_avg=0.5):
-            plt.ioff()
-            ys = []
-            disps_ind = []
-            for i, model in enumerate(self.models):
-                disp_ind = PartialDependenceDisplay.from_estimator(
-                    model,
-                    self.X.sample(num_ice, random_state=seed + i),
-                    [feature],
-                    kind="individual",
-                    response_method="predict_proba",
-                )
-                np.random.seed(seed + i)
-                disp = PartialDependenceDisplay.from_estimator(
-                    model,
-                    self.X,
-                    [feature],
-                    kind="average",
-                    response_method="predict_proba",
-                    subsample=subsample_avg,
-                    percentiles=(0, 1),
-                )
-                disps_ind.append(disp_ind)
-                y = disp.axes_[0][0].lines[0].get_ydata()
-                if i == 0:
-                    ys.append(y)
-                    x = disp.axes_[0][0].lines[0].get_xdata()
+            with plt.ioff():
+                ys = []
+                disps_ind = []
+                for i, model in enumerate(self.models):
+                    disp_ind = PartialDependenceDisplay.from_estimator(
+                        model,
+                        self.X.sample(num_ice, random_state=seed + i),
+                        [feature],
+                        kind="individual",
+                        response_method="predict_proba",
+                    )
+                    np.random.seed(seed + i)
+                    disp = PartialDependenceDisplay.from_estimator(
+                        model,
+                        self.X,
+                        [feature],
+                        kind="average",
+                        response_method="predict_proba",
+                        subsample=subsample_avg,
+                        percentiles=(0, 1),
+                    )
+                    disps_ind.append(disp_ind)
+                    y = disp.axes_[0][0].lines[0].get_ydata()
+                    if i == 0:
+                        ys.append(y)
+                        x = disp.axes_[0][0].lines[0].get_xdata()
 
-                elif i > 0 and y.shape == ys[0].shape:
-                    ys.append(y)
-                plt.clf()
+                    elif i > 0 and y.shape == ys[0].shape:
+                        ys.append(y)
+                    plt.clf()
             plt.close("all")
             return x, np.array(ys), disps_ind
 
@@ -555,3 +920,27 @@ class DetectionBaseMetric(BaseMetric):
         ax.set_xlabel(prettyify_feature_name(feature), fontsize=lab_fontsize)
         ax.set_ylabel("Partial dependence", fontsize=lab_fontsize)
         ax.legend(fontsize="xx-small", loc="lower left")
+
+        return ax
+
+
+def prepare_classifier_data(real_data, synthetic_data, **kwargs):
+    """Prepare the data for the classifier.
+
+    Parameters
+    ----------
+    real_data
+        The values from the real dataset.
+    synthetic_data
+        The values from the synthetic dataset.
+    **kwargs
+        Additional keyword arguments.
+
+    Returns
+    -------
+    X: pd.DataFrame
+        The combined data with transformed features.
+    y: np.ndarray
+        The labels for the real and synthetic data.
+
+    """

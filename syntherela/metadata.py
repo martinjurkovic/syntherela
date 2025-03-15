@@ -1,3 +1,8 @@
+"""Metadata handling for synthetic data evaluation.
+
+This module provides classes and functions for managing metadata abjects describing the database schema: tables and their relationships.
+"""
+
 import json
 import os
 from typing import Union
@@ -9,26 +14,95 @@ from sdv.metadata.visualization import _get_graphviz_extension
 
 
 class Metadata(MultiTableMetadata):
+    """Extended MultiTableMetadata class with additional utility methods.
+
+    This class extends the SDV MultiTableMetadata class with additional methods
+    for working with relational data metadata.
+
+    Parameters
+    ----------
+    dataset_name: str, default=""
+        Name of the dataset.
+
+    """
+
     def __init__(self, dataset_name=""):
+        """Initialize the Metadata object.
+
+        Parameters
+        ----------
+        dataset_name: str, default=""
+            Name of the dataset.
+
+        """
         super().__init__()
         self.dataset_name = dataset_name
 
     def get_tables(self):
+        """Get a list of all table names in the metadata.
+
+        Returns
+        -------
+        list
+            List of table names.
+
+        """
         return list(self.tables.keys())
 
     def get_primary_key(self, table_name: str) -> str:
+        """Get the primary key of a table.
+
+        Parameters
+        ----------
+        table_name: str
+            Name of the table.
+
+        Returns
+        -------
+        str
+            Name of the primary key column.
+
+        """
         table_meta: SingleTableMetadata = self.tables[table_name]
         return table_meta.primary_key
 
     def get_table_meta(
         self, table_name: str, to_dict: bool = True
     ) -> Union[dict, SingleTableMetadata]:
+        """Get metadata for a specific table.
+
+        Parameters
+        ----------
+        table_name: str
+            Name of the table.
+        to_dict: bool, default=True
+            Whether to return the metadata as a dictionary.
+
+        Returns
+        -------
+        Union[dict, SingleTableMetadata]
+            Table metadata as a dictionary or SingleTableMetadata object.
+
+        """
         table_meta: SingleTableMetadata = self.tables[table_name]
         if to_dict:
             return table_meta.to_dict()
         return table_meta
 
     def get_children(self, table_name: str) -> set:
+        """Get all child tables of a given table.
+
+        Parameters
+        ----------
+        table_name: str
+            Name of the parent table.
+
+        Returns
+        -------
+        set
+            Set of child table names.
+
+        """
         children = set()
         for relation in self.relationships:
             if relation["parent_table_name"] == table_name:
@@ -36,6 +110,19 @@ class Metadata(MultiTableMetadata):
         return children
 
     def get_parents(self, table_name: str) -> set:
+        """Get all parent tables of a given table.
+
+        Parameters
+        ----------
+        table_name: str
+            Name of the child table.
+
+        Returns
+        -------
+        set
+            Set of parent table names.
+
+        """
         parents = set()
         for relation in self.relationships:
             if relation["child_table_name"] == table_name:
@@ -43,11 +130,38 @@ class Metadata(MultiTableMetadata):
         return parents
 
     def get_foreign_keys(self, parent_table_name: str, child_table_name: str) -> list:
+        """Get foreign keys between parent and child tables.
+
+        Parameters
+        ----------
+        parent_table_name: str
+            Name of the parent table.
+        child_table_name: str
+            Name of the child table.
+
+        Returns
+        -------
+        list
+            List of foreign key column names.
+
+        """
         return self._get_foreign_keys(parent_table_name, child_table_name)
 
     def rename_column(
         self, table_name: str, old_column_name: str, new_column_name: str
     ):
+        """Rename a column in a table.
+
+        Parameters
+        ----------
+        table_name: str
+            Name of the table.
+        old_column_name: str
+            Current name of the column.
+        new_column_name: str
+            New name for the column.
+
+        """
         self.tables[table_name].columns[new_column_name] = self.tables[
             table_name
         ].columns.pop(old_column_name)
@@ -71,12 +185,30 @@ class Metadata(MultiTableMetadata):
         return self
 
     def get_root_tables(self) -> list:
+        """Get all root tables (tables with no parents).
+
+        Returns
+        -------
+        list
+            List of root table names.
+
+        """
         root_tables = set(self.tables.keys())
         for relation in self.relationships:
             root_tables.discard(relation["child_table_name"])
         return list(root_tables)
 
     def get_table_levels(self) -> dict:
+        """Get the level of each table in the hierarchy.
+
+        The level is determined by the length of the path from any root table.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping table names to their levels.
+
+        """
         # return the length of the path from any root table
         root_tables = self.get_root_tables()
         table_levels = {}
@@ -95,10 +227,18 @@ class Metadata(MultiTableMetadata):
         return table_levels
 
     def visualize(self, output_filename=None) -> graphviz.Digraph:
-        """Generates a Graphviz node with an HTML-like table label.
+        """Visualize the database schema.
 
-        Args:
-            output_filename: The name of the output file.
+        Parameters
+        ----------
+        output_filename: str, default=None
+            Name of the output file. If None, the graph is not saved.
+
+        Returns
+        -------
+        graphviz.Digraph
+            Graph visualization of the metadata.
+
         """
         try:
             filename, graphviz_extension = _get_graphviz_extension(output_filename)
@@ -109,6 +249,23 @@ class Metadata(MultiTableMetadata):
             )
 
         def create_table_node(table_name: str, metadata: Metadata, font: str = "Arial"):
+            """Create a node for a table in the graph.
+
+            Parameters
+            ----------
+            table_name: str
+                Name of the table.
+            metadata: Metadata
+                Metadata object.
+            font: str, default="Arial"
+                Font to use for the node.
+
+            Returns
+            -------
+            str
+                HTML-like label for the node.
+
+            """
             table_meta = metadata.get_table_meta(table_name)
             table_label = (
                 '< <table cellpadding="0" cellborder="0" cellspacing="0" border="0">'
@@ -168,6 +325,21 @@ class Metadata(MultiTableMetadata):
 
 
 def drop_ids(table: pd.DataFrame, metadata: dict) -> pd.DataFrame:
+    """Drop ID columns from a table.
+
+    Parameters
+    ----------
+    table: pd.DataFrame
+        DataFrame to process.
+    metadata: dict
+        Metadata dictionary for the table.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with ID columns removed.
+
+    """
     for column, column_info in metadata["columns"].items():
         if column_info["sdtype"] == "id" and column in table.columns:
             table = table.drop(columns=column, axis=1)
@@ -175,6 +347,19 @@ def drop_ids(table: pd.DataFrame, metadata: dict) -> pd.DataFrame:
 
 
 def convert_metadata_to_v0(metadata: Metadata) -> dict:
+    """Convert Metadata object to v0 format.
+
+    Parameters
+    ----------
+    metadata: Metadata
+        Metadata object to convert.
+
+    Returns
+    -------
+    dict
+        Metadata in v0 format.
+
+    """
     metadata_v1 = metadata.to_dict()
     metadata_v0 = {"tables": {}}
     for table_name, table_info in metadata_v1["tables"].items():
@@ -216,6 +401,16 @@ def convert_metadata_to_v0(metadata: Metadata) -> dict:
 
 
 def convert_and_save_metadata_v0(metadata: Metadata, path: Union[str, os.PathLike]):
+    """Convert Metadata object to v0 format and save it to a file.
+
+    Parameters
+    ----------
+    metadata: Metadata
+        Metadata object to convert and save.
+    path: Union[str, os.PathLike]
+        Path to save the metadata to.
+
+    """
     metadata_v0 = convert_metadata_to_v0(metadata)
     with open(os.path.join(path, "metadata_v0.json"), "w") as f:
         json.dump(metadata_v0, f, indent=4)

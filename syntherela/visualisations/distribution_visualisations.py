@@ -1,3 +1,5 @@
+"""Visualization tools for data distributions."""
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -11,6 +13,20 @@ sns.set_palette("colorblind")
 
 
 def visualize_marginals(real_data, synthetic_data, metadata):
+    """Visualize marginal distributions of real and synthetic data.
+
+    Creates plots comparing the distributions of each column in real and synthetic data.
+
+    Parameters
+    ----------
+    real_data : dict
+        Dictionary mapping table names to pandas DataFrames for real data.
+    synthetic_data : dict
+        Dictionary mapping table names to pandas DataFrames for synthetic data.
+    metadata : Metadata
+        Metadata object containing information about the tables.
+
+    """
     for table in metadata.get_tables():
         table_meta = metadata.get_table_meta(table)
         num_non_id_columns = len(
@@ -98,6 +114,21 @@ def visualize_marginals(real_data, synthetic_data, metadata):
 
 
 def visualize_bivariate_distributions(real_data, synthetic_data, metadata):
+    """Visualize bivariate distributions of real and synthetic data.
+
+    Creates scatter plots comparing the joint distributions of pairs of columns
+    in real and synthetic data.
+
+    Parameters
+    ----------
+    real_data : dict
+        Dictionary mapping table names to pandas DataFrames for real data.
+    synthetic_data : dict
+        Dictionary mapping table names to pandas DataFrames for synthetic data.
+    metadata : Metadata
+        Metadata object containing information about the tables.
+
+    """
     for table in metadata.get_tables():
         table_meta = metadata.get_table_meta(table)
         non_id_columns = [
@@ -157,6 +188,21 @@ def visualize_bivariate_distributions(real_data, synthetic_data, metadata):
 
 
 def visualize_parent_child_bivariates(real_data, synthetic_data, metadata):
+    """Visualize bivariate distributions between parent and child tables.
+
+    Creates scatter plots comparing the joint distributions of foreign key relationships
+    between parent and child tables in real and synthetic data.
+
+    Parameters
+    ----------
+    real_data : dict
+        Dictionary mapping table names to pandas DataFrames for real data.
+    synthetic_data : dict
+        Dictionary mapping table names to pandas DataFrames for synthetic data.
+    metadata : Metadata
+        Metadata object containing information about the tables.
+
+    """
     for table in metadata.get_tables():
         pairs = []
         table_meta = metadata.get_table_meta(table)

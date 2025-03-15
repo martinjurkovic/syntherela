@@ -1,3 +1,5 @@
+"""Visualization tools for single column metrics."""
+
 import os
 
 import numpy as np
@@ -13,6 +15,31 @@ rc("text", usetex=True)
 def visualize_single_column_distance_metrics(
     granularity_level, metric_type, all_results, datasets, methods, **kwargs
 ):
+    """Visualize distance metrics for single columns across datasets and methods.
+
+    This function creates bar charts comparing distance metrics for single columns
+    across different synthetic data generation methods.
+
+    Parameters
+    ----------
+    granularity_level : str
+        The granularity level of the metrics ('single_column').
+    metric_type : str
+        The type of metrics ('distance').
+    all_results : dict
+        Dictionary containing all evaluation results.
+    datasets : list
+        List of dataset names to visualize.
+    methods : list
+        List of synthetic data generation methods to compare.
+    **kwargs : dict
+        Additional keyword arguments including:
+        - save_figs : bool
+            Whether to save the figures.
+        - save_figs_path : str
+            Path where to save the figures.
+
+    """
     for dataset in datasets:
         base_metrics, base_metric_names, save_figs, save_figs_path, methods = (
             get_dataset_info(
@@ -144,6 +171,31 @@ def visualize_single_column_distance_metrics(
 def visualize_single_column_detection_metrics(
     granularity_level, metric_type, all_results, datasets, methods, **kwargs
 ):
+    """Visualize detection metrics for single columns across datasets and methods.
+
+    This function creates bar charts comparing detection metrics for single columns
+    across different synthetic data generation methods.
+
+    Parameters
+    ----------
+    granularity_level : str
+        The granularity level of the metrics ('single_column').
+    metric_type : str
+        The type of metrics ('detection').
+    all_results : dict
+        Dictionary containing all evaluation results.
+    datasets : list
+        List of dataset names to visualize.
+    methods : list
+        List of synthetic data generation methods to compare.
+    **kwargs : dict
+        Additional keyword arguments including:
+        - save_figs : bool
+            Whether to save the figures.
+        - save_figs_path : str
+            Path where to save the figures.
+
+    """
     for dataset in datasets:
         base_metrics, base_metric_names, save_figs, save_figs_path, methods = (
             get_dataset_info(
