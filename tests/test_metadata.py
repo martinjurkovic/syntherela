@@ -70,3 +70,13 @@ def test_metadata_conversion():
             assert column in metadata_v0["tables"][table]["fields"]
         pk = metadata.get_primary_key(table)
         assert pk == metadata_v0["tables"][table]["primary_key"]
+
+
+def test_visualize_basic():
+    """Test that the visualize method returns a graphviz.Digraph object."""
+    _, metadata = generate_real_data()
+
+    # Test visualization
+    graph = metadata.visualize()
+    assert graph is not None
+    assert hasattr(graph, "render")  # Check it's a graphviz.Digraph object
