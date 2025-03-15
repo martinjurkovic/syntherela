@@ -17,9 +17,6 @@ def test_dataset_download():
     rmtree("tests/tmp")
 
 
-test_dataset_download()
-
-
 def test_loading_and_saving():
     tables, metadata = generate_real_data()
     save_tables(tables, path="tests/tmp/test_data")
