@@ -25,7 +25,7 @@
 
 SyntheRela is a comprehensive benchmark designed to evaluate and compare synthetic relational database generation methods. It provides a standardized framework for assessing both the fidelity and utility of synthetic data across multiple real-world databases. The benchmark includes novel evaluation metrics, particularly for relational data, and supports various open-source and commercial synthetic data generation methods.
 
-SyntheRela is highly extensible, allowing users to benchmark on their own custom datasets and implement new evaluation metrics to suit specific use cases. 
+SyntheRela is highly extensible, allowing users to benchmark on their own custom datasets and implement new evaluation metrics to suit specific use cases.
 
 Our research on SyntheRela is presented in the paper **"SyntheRela: A Benchmark For Synthetic Relational Database Generation"** at the ICLR 2025 Workshop "Will Synthetic Data Finally Solve the Data Access Problem?", available on [OpenReview](https://openreview.net/forum?id=ZfQofWYn6n).
 

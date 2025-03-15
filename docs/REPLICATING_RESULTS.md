@@ -70,4 +70,4 @@ To reproduce the tables you can run the below script. The tables will be saved a
 ```bash
 conda activate reproduce_benchmark
 ./experiments/reproducibility/generate_tables.sh
-``` 
+```
