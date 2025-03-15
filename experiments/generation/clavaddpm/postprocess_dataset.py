@@ -14,8 +14,8 @@ from ClavaDDPM.preprocess_utils import table_label_decode, reconstruct_dates
 def revert_ids(df, metadata, table_name):
     primary_key = metadata.get_primary_key(table_name)
     if primary_key is not None:
-        df[primary_key] = df[f"{table_name}_id"]
-        df.drop(columns=[f"{table_name}_id"], inplace=True)
+        pk = df.pop(f"{table_name}_id")
+        df[primary_key] = pk
     else:
         df.drop(columns=[f"{table_name}_id"], inplace=True)
 
@@ -23,8 +23,8 @@ def revert_ids(df, metadata, table_name):
         foreign_keys = metadata.get_foreign_keys(parent, table_name)
         assert len(foreign_keys) == 1
         foreign_key = foreign_keys[0]
-        df[foreign_key] = df[f"{parent}_id"]
-        df.drop(columns=[f"{parent}_id"], inplace=True)
+        fk = df.pop(f"{parent}_id")
+        df[foreign_key] = fk
 
     return df
 

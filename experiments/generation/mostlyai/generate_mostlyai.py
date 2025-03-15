@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from time import sleep
 
 import pandas as pd
 from mostlyai.sdk import MostlyAI
@@ -83,13 +84,15 @@ def postprocess_data(synthetic_data, metadata):
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
     args.add_argument(
-        "--dataset-name", type=str, default="walmart_subsampled"
+        "--dataset-name", type=str, default="airbnb-simplified_subsampled"
     )
     args.add_argument("--real-data-path", type=str, default="data/original")
     args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
     args.add_argument("--api-key", type=str, required=True)
     args.add_argument("--run-id", type=str, default="1")
     args.add_argument("--generator-id", type=str)
+    args.add_argument("--num-samples", type=int, default=3)
+    args.add_argument("--sleep-for", type=int, default=3)
     args = args.parse_args()
 
     dataset_name = args.dataset_name
@@ -98,6 +101,8 @@ if __name__ == "__main__":
     api_key = args.api_key
     run_id = args.run_id
     generator_id = args.generator_id
+    sleep_for = args.sleep_for
+    num_samples = args.num_samples
 
     # load the data
     metadata = Metadata().load_from_json(
@@ -121,9 +126,12 @@ if __name__ == "__main__":
         g = mostly.train(config=config)
 
     # Sample the model three times
-    for sample in range(3):
+    for sample in range(num_samples):
         sample_id = str(sample + 1)
-        sd = mostly.generate(g, config = config, name=f"{dataset_name} - {run_id} - {sample_id}")
+        sd = mostly.generate(
+            g, config=config, name=f"{dataset_name} - {run_id} - {sample_id}"
+        )
+        sleep(sleep_for)
         synthetic_data = sd.data()
         synthetic_data = postprocess_data(synthetic_data, metadata)
         # Ensure the data follows the metadata

@@ -1,3 +1,5 @@
+"""Utility functions for distance metrics in single columns."""
+
 from typing import Union
 
 import numpy as np
@@ -12,12 +14,29 @@ def get_histograms(
     bins: Union[str, np.array] = "doane",
     return_keys: bool = False,
 ) -> tuple:
-    """Get percentual frequencies or counts for each possible real categorical value.
+    """Compute histograms for the given data.
 
-    Returns:
-        The observed and expected frequencies.
+    Discretize numerical data into bins and compute the frequencies of each bin or
+    compute the frequencies of each category in categorical data.
+
+    Parameters
+    ----------
+    original: pd.Series
+        The original column.
+    synthetic: pd.Series
+        The synthetic column.
+    normalize: bool
+        Whether to normalize the frequencies.
+    bins: Union[str, np.array]
+        The number of bins or the bin edges.
+    return_keys: bool
+        Whether to return the keys.
+
+    Returns
+    -------
+        The observed and expected frequencies and the keys if return_keys is True.
+
     """
-
     if is_datetime(original):
         original = pd.to_numeric(original, errors="coerce", downcast="integer")
         synthetic = pd.to_numeric(synthetic, errors="coerce", downcast="integer")

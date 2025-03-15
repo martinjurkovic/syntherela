@@ -6,11 +6,13 @@ DATASETS=(
     imdb_MovieLens_v1
     rossmann_subsampled
     walmart_subsampled
+    f1_subsampled
+    Berka_subsampled
 )
 
 RUN_IDS=(
-    1 
-    2 
+    1
+    2
     3
 )
 

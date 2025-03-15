@@ -4,11 +4,12 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "syntherela"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
     "sdv>=1.9.0,<2",
-    "seaborn>=0.13.2",
-    "xgboost>=1.7.6",
+    "seaborn==0.13.2",
+    "xgboost==1.7.6",
+    "scikit-learn==1.3.1"
 ]
 authors = [
   { name="Martin Jurkovic", email="martin.jurkovic19@gmail.com" },
@@ -36,6 +37,15 @@ classifiers = [
     "Intended Audience :: Healthcare Industry"
     ]
 
+[project.optional-dependencies]
+gnn-utility=[
+  "relbench[full,example]@git+https://github.com/martinjurkovic/relbench.git@predict-column-task",
+  "torch_geometric",
+  "shap",
+  "tqdm",
+  "lightgbm"
+]
+
 [project.urls]
 Homepage = "https://github.com/martinjurkovic/syntherela"
 Issues = "https://github.com/martinjurkovic/syntherela/issues"
@@ -43,3 +53,5 @@ Issues = "https://github.com/martinjurkovic/syntherela/issues"
 [tool.setuptools.packages.find]
 where = ["."]
 
+[tool.ruff]
+extend-exclude = ["experiments"]

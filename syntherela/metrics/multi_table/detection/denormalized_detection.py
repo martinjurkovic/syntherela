@@ -1,3 +1,8 @@
+"""Detection metrics for denormalized multi-table data.
+
+These metric are only intended as a base class for other metrics (Parent-Child detection) and should not be called on its own (see https://arxiv.org/abs/2410.03411)
+"""
+
 from typing import Union
 from copy import deepcopy
 
@@ -7,13 +12,20 @@ from syntherela.metrics.base import DetectionBaseMetric
 
 
 class DenormalizedDetection(DetectionBaseMetric):
+    """Detection on denormalized tables.
+
+    This metric is only intended as a base class for other metrics
+    and should not be called on its own (see https://arxiv.org/abs/2410.03411)
+    """
+
     @staticmethod
     def bootstrap_sample(
         real_data: dict, metadata: Metadata, random_state: Union[int, None] = None
     ) -> dict:
+        """Create a bootstrapped sample of the real data."""
         bootstrapped_tables = dict()
         root_tables = metadata.get_root_tables()
-
+        # TODO: Check if this foreign keys are handled correctly.
         for table in root_tables:
             primary_key = metadata.get_primary_key(table)
             bootstrapped_tables[table] = real_data[table].sample(
@@ -51,6 +63,7 @@ class DenormalizedDetection(DetectionBaseMetric):
         return bootstrapped_tables
 
     def prepare_data(self, real_data, synthetic_data, metadata):
+        """Denormalize the tables and prepare the data for detection."""
         real_data_unique, synthetic_data_unique, metadata_unique = (
             make_column_names_unique(
                 real_data.copy(),

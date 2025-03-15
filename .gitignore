@@ -1,6 +1,6 @@
 # Directories
 /data
-/results
+/results*
 /checkpoints
 
 # Byte-compiled / optimized / DLL files

@@ -1,3 +1,5 @@
+"""Hellinger distance metric for single columns."""
+
 import numpy as np
 import pandas as pd
 from sdmetrics.goal import Goal
@@ -11,6 +13,8 @@ _SQRT2 = np.sqrt(2)
 
 
 class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
+    """Hellinger distance metric."""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "HellingerDistance"
@@ -20,27 +24,35 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
+        """Check if the metric is applicable to the given column type."""
         return column_type in ["categorical", "numerical", "datetime", "boolean"]
 
     @staticmethod
     def hellinger(p, q):
+        """Hellinger distance between two histograms."""
         return np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2)) / _SQRT2
 
     @classmethod
     def compute(cls, orig_col, synth_col, bins, normalize_histograms=True, **kwargs):
-        """Compute this metric.
+        """Compute Hellinger distance between two histograms.
 
-        Args:
-            real_data:
-                The values from the real dataset.
-            synthetic_data:
-                The values from the synthetic dataset.
-            bins:
-                The bins to use for the histogram.
+        Parameters
+        ----------
+        orig_col:
+            The values from the real dataset.
+        synth_col:
+            The values from the synthetic dataset.
+        bins:
+            The bins to use for the histogram.
+        normalize_histograms:
+            Whether to normalize the histograms.
 
-        Returns:
+
+        Returns
+        -------
             Union[float, tuple[float]]:
                 Metric output or outputs.
+
         """
         gt_freq, synth_freq = get_histograms(
             orig_col, synth_col, normalize=normalize_histograms, bins=bins
@@ -48,6 +60,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
         return cls.hellinger(gt_freq, synth_freq)
 
     def run(self, real_data, synthetic_data, **kwargs):
+        """Run the Hellinger distance metric."""
         if self.is_constant(real_data):
             return {
                 "value": 0,

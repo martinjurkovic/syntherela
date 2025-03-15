@@ -18,7 +18,7 @@ pip install -r experiments/generation/tabular/requirements.txt
 conda create -n rctgan python=3.7 -y
 conda activate rctgan
 git clone https://github.com/ValterH/RCTGAN.git experiments/generation/rctgan/RCTGAN
-pip install experiments/generation/rctgan/RCTGAN 
+pip install experiments/generation/rctgan/RCTGAN
 ```
 
 ## Install realtabformer
@@ -49,5 +49,6 @@ pip install -r experiments/generation/mostlyai/requirements.txt
 ```bash
 conda create -n clavaddpm python=3.9 -y
 conda activate clavaddpm
+git clone https://github.com/weipang142857/ClavaDDPM.git experiments/generation/clavaddpm/ClavaDDPM
 pip install -r experiments/generation/clavaddpm/requirements.txt
 ```

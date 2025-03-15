@@ -1,60 +1,101 @@
+"""Aggregation detection (C2ST-Agg) metrics for multi-table data.
+
+This module provides metrics for detecting synthetic data in aggregated relationships
+between tables by training classifiers to distinguish between real and synthetic tables with aggregations.
+"""
+
 from copy import deepcopy
+from typing import Optional
 
 import pandas as pd
 
-from syntherela.metadata import drop_ids
+from sklearn.base import ClassifierMixin
+from syntherela.typing import Tables
+from syntherela.metadata import drop_ids, Metadata
 from syntherela.metrics.base import DetectionBaseMetric, SingleTableMetric
-from .denormalized_detection import DenormalizedDetection
 from .parent_child import ParentChildDetection
 
 
 class BaseAggregationDetection(DetectionBaseMetric):
+    """Base class for C2ST-Agg metrics."""
+
     @staticmethod
-    def add_aggregations(data, metadata, update_metadata=True):
+    def add_aggregations(
+        data: Tables, metadata: Metadata, update_metadata: bool = True, level=0
+    ):
+        """Add aggregations from connected tables to the data.
+
+        Parameters
+        ----------
+        data : dict[str, pd.DataFrame]
+            Dictionary of database tables.
+        metadata : Metadata
+            The metadata describing the database schema.
+        update_metadata : bool, optional
+            Whether to update the metadata with the new columns, by default True.
+        level : int, optional
+            The level of aggregation to add, by default 0.
+
+        Returns
+        -------
+        dict[str, pd.DataFrame]
+            The data with the added aggregations.
+
+        """
         aggregated_data = deepcopy(data)
-        for relationship in metadata.relationships:
+        table_levels = metadata.get_table_levels()
+
+        # order relationships
+        ordered_relationships = sorted(
+            metadata.relationships, key=lambda x: table_levels[x["parent_table_name"]]
+        )
+
+        for relationship in ordered_relationships:
             parent_table_name = relationship["parent_table_name"]
             child_table_name = relationship["child_table_name"]
             parent_column = relationship["parent_primary_key"]
             child_fk = relationship["child_foreign_key"]
 
-            # add child counts
-            child_df = pd.DataFrame(
-                {
-                    f"{child_table_name}_{child_fk}_counts": data[child_table_name][
-                        child_fk
-                    ].value_counts()
-                }
-            )
-            cardinality_df = (
-                pd.DataFrame({"parent": data[parent_table_name][parent_column]})
-                .join(child_df, on="parent")
-                .fillna(0)
-            )
-            aggregated_data[parent_table_name] = (
-                aggregated_data[parent_table_name]
-                .merge(
-                    cardinality_df, how="left", left_on=parent_column, right_on="parent"
+            # only add counts for the first level
+            if level == 0:  # TODO: would level == 1 be more descriptive?
+                # add child counts
+                child_df = pd.DataFrame(
+                    {
+                        f"{child_table_name}_{child_fk}_counts": data[child_table_name][
+                            child_fk
+                        ].value_counts()
+                    }
                 )
-                .drop(columns="parent")
-            )
+                cardinality_df = (
+                    pd.DataFrame({"parent": data[parent_table_name][parent_column]})
+                    .join(child_df, on="parent")
+                    .fillna(0)
+                )
+                aggregated_data[parent_table_name] = (
+                    aggregated_data[parent_table_name]
+                    .merge(
+                        cardinality_df,
+                        how="left",
+                        left_on=parent_column,
+                        right_on="parent",
+                    )
+                    .drop(columns="parent")
+                )
 
-            if update_metadata:
-                metadata.add_column(
-                    parent_table_name,
-                    f"{child_table_name}_{child_fk}_counts",
-                    sdtype="numerical",
-                )
+                if update_metadata:
+                    metadata.add_column(
+                        parent_table_name,
+                        f"{child_table_name}_{child_fk}_counts",
+                        sdtype="numerical",
+                    )
 
             # add categorical counts
-            categorical_columns = []
-            for column_name, column_info in (
-                metadata.tables[child_table_name].to_dict()["columns"].items()
-            ):
-                if column_info["sdtype"] == "categorical":
-                    categorical_columns.append(column_name)
-
-            if len(categorical_columns) > 0:
+            categorical_columns = metadata.get_column_names(
+                child_table_name, sdtype="categorical"
+            )
+            # aggregation columns are always numerical, so we need to add them
+            # only when we are at the first level
+            if len(categorical_columns) > 0 and level == 0:
                 categorical_df = data[child_table_name][
                     categorical_columns + [child_fk]
                 ]
@@ -74,9 +115,9 @@ class BaseAggregationDetection(DetectionBaseMetric):
                     suffixes=("", "_nunique"),
                 )
                 aggregated_data[parent_table_name][categorical_column_names] = (
-                    aggregated_data[
-                        parent_table_name
-                    ][categorical_column_names].fillna(0)
+                    aggregated_data[parent_table_name][categorical_column_names].fillna(
+                        0
+                    )
                 )
 
                 if update_metadata:
@@ -87,11 +128,13 @@ class BaseAggregationDetection(DetectionBaseMetric):
 
             # add numerical means
             numerical_columns = []
-            for column_name, column_info in (
-                metadata.tables[child_table_name].to_dict()["columns"].items()
+            for column_name in metadata.get_column_names(
+                child_table_name, sdtype="numerical"
             ):
-                if column_info["sdtype"] == "numerical":
-                    numerical_columns.append(column_name)
+                # When level is greater than 0, skip columns that have already been aggregated
+                if level > 0 and column_name in aggregated_data[parent_table_name]:
+                    continue
+                numerical_columns.append(column_name)
 
             if len(numerical_columns) > 0:
                 numerical_df = data[child_table_name][numerical_columns + [child_fk]]
@@ -123,11 +166,30 @@ class BaseAggregationDetection(DetectionBaseMetric):
 class AggregationDetection(
     BaseAggregationDetection, DetectionBaseMetric, SingleTableMetric
 ):
+    """C2ST-Agg metric."""
+
+    def __init__(
+        self,
+        classifier_cls: ClassifierMixin,
+        classifier_args: dict = {},
+        random_state: Optional[int] = None,
+        folds: int = 5,
+        levels: int = 1,
+    ):
+        super().__init__(
+            classifier_cls,
+            classifier_args=classifier_args,
+            random_state=random_state,
+            folds=folds,
+        )
+        self.levels = levels
+
     @staticmethod
-    def is_applicable(metadata, table):
-        """
-        Check if the table contains at least one column that is not an id.
-        And if the table has a relationship with another table.
+    def is_applicable(metadata: Metadata, table: str) -> bool:
+        """Check metric applicability.
+
+        Check if the table contains at least one column that is not an id
+        and if the table has a relationship with another table.
         """
         nonid = False
         table_metadata = metadata.tables[table].to_dict()
@@ -138,13 +200,56 @@ class AggregationDetection(
         has_children = len(metadata.get_children(table)) > 0
         return nonid and has_children
 
-    def run(self, real_data, synthetic_data, metadata, target_table=None, **kwargs):
-        real_data_with_aggregations, updated_metadata = self.add_aggregations(
-            real_data, deepcopy(metadata)
-        )
-        synthetic_data_with_aggregations, _ = self.add_aggregations(
-            synthetic_data, metadata, update_metadata=False
-        )
+    def run(
+        self,
+        real_data: Tables,
+        synthetic_data: Tables,
+        metadata: Metadata,
+        target_table: Optional[str] = None,
+        **kwargs,
+    ):
+        """Run the C2ST-Agg metric.
+
+        Parameters
+        ----------
+        real_data : dict
+            The real database tables.
+        synthetic_data : dict
+            The synthetic database tables.
+        metadata : Metadata
+            The metadata.
+        target_table : str, optional
+            The target table to evaluate, by default None (evaluate all tables).
+        kwargs : dict
+            Additional keyword arguments.
+
+        Returns
+        -------
+        dict
+            The C2ST-Agg metric results.
+
+        """
+        updated_metadata = deepcopy(metadata)
+        for level in range(self.levels):
+            # Add one level of aggregation
+            if level == 0:
+                real_data_with_aggregations, updated_metadata = self.add_aggregations(
+                    real_data, updated_metadata, level=level
+                )
+                synthetic_data_with_aggregations, _ = self.add_aggregations(
+                    synthetic_data, metadata, update_metadata=False, level=level
+                )
+            else:
+                real_data_with_aggregations, metadata_level = self.add_aggregations(
+                    real_data_with_aggregations, updated_metadata, level=level
+                )
+                synthetic_data_with_aggregations, _ = self.add_aggregations(
+                    synthetic_data_with_aggregations,
+                    updated_metadata,
+                    update_metadata=False,
+                    level=level,
+                )
+                updated_metadata = metadata_level
         results = {}
         if target_table is not None:
             table_metadata = metadata.tables[target_table].to_dict()
@@ -181,29 +286,43 @@ class AggregationDetection(
         return results
 
 
-class DenormalizedAggregationDetection(DenormalizedDetection, BaseAggregationDetection):
-    def prepare_data(self, real_data, synthetic_data, metadata):
-        aggregated_real_data, updated_metadata = self.add_aggregations(
-            real_data, deepcopy(metadata)
-        )
-        aggregated_synthetic_data, _ = self.add_aggregations(
-            synthetic_data, metadata, update_metadata=False
-        )
-        return super().prepare_data(
-            aggregated_real_data, aggregated_synthetic_data, updated_metadata
-        )
-
-
 class ParentChildAggregationDetection(ParentChildDetection, BaseAggregationDetection):
+    """Parent-child C2ST-Agg metric."""
+
     def prepare_data(
         self,
-        real_data,
-        synthetic_data,
-        metadata,
-        parent_table,
-        child_table,
-        pair_metadata,
+        real_data: Tables,
+        synthetic_data: Tables,
+        metadata: Metadata,
+        parent_table: str,
+        child_table: str,
+        pair_metadata: Metadata,
     ):
+        """Prepare data for the C2ST.
+
+        Parameters
+        ----------
+        real_data : dict
+            The real data.
+        synthetic_data : dict
+            The synthetic data.
+        metadata : Metadata
+            The metadata.
+        parent_table : str
+            The parent table name.
+        child_table : str
+            The child table name.
+        pair_metadata : Metadata
+            The metadata for the parent-child pair.
+
+        Returns
+        -------
+        X: pd.DataFrame
+            The joined synthetic and real data matrix.
+        y: pd.Series
+            The target variable with synthetic and real labels.
+
+        """
         aggregated_real_data, updated_metadata = self.add_aggregations(
             real_data, deepcopy(metadata)
         )

@@ -1,3 +1,5 @@
+"""Single-table machine learning efficacy (utility) metric."""
+
 from typing import Tuple
 
 import numpy as np
@@ -12,6 +14,8 @@ from syntherela.utils import CustomHyperTransformer
 
 
 class MachineLearningEfficacyMetric(BaseMetric):
+    """Machine Learning Efficacy metric."""
+
     def __init__(
         self,
         target: Tuple[str, str],
@@ -30,6 +34,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         self.feature_engineering_function = feature_engineering_function
 
     def prepare_data(self, X, ht=None, **kwargs):
+        """Prepare the data for training."""
         if ht is None:
             ht = CustomHyperTransformer()
             ht.fit(X.copy())
@@ -39,6 +44,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         return transformed_data, ht
 
     def score(self, model, X, y):
+        """Compute the score of the model."""
         # if classifier is a regressor, compute RMSE, else AUCROC
         if hasattr(model, "predict_proba"):
             probs = model.predict_proba(X)
@@ -53,6 +59,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
             return -np.sqrt(mean_squared_error(y, y_pred))
 
     def compute(self, X_train, y_train, X_test, y_test, m=100, **kwargs):
+        """Compute the ML-E metric."""
         np.random.seed(self.random_state)
         model_full_train_set = Pipeline(
             [
@@ -95,6 +102,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         )
 
     def get_target_table(self, data, target, metadata):
+        """Extract the target table and column from the data."""
         target_table, target_column, _ = target
         X, y = (
             data[target_table].drop(columns=target_column),
@@ -116,6 +124,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         feature_importance_real=None,
         **kwargs,
     ):
+        """Compute the ML-E using train-on-sythetic test-on-real approach."""
         if self.feature_engineering_function:
             X_real, y_real = self.feature_engineering_function(real_data, metadata)
             X_synthetic, y_synthetic = self.feature_engineering_function(
@@ -189,6 +198,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         }
 
     def feature_importance(self, model):
+        """Extract feature importance from the trained model."""
         if hasattr(model["clf"], "feature_importances_"):
             importance = model["clf"].feature_importances_
         elif hasattr(model["clf"], "coef_"):
