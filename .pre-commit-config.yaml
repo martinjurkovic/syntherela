@@ -14,3 +14,10 @@ repos:
     - id: ruff
       args: [--fix]
     - id: ruff-format
+
+-   repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+    -   id: pydocstyle
+        args: ["--ignore=D107,D203,D213"]
+        files: ^syntherela/

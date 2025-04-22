@@ -1,3 +1,9 @@
+"""Benchmarking framework for synthetic data evaluation.
+
+This module provides tools for benchmarking synthetic data generation methods
+across multiple datasets and metrics.
+"""
+
 import os
 import warnings
 from pathlib import Path
@@ -23,6 +29,44 @@ from syntherela.visualisations.single_table_visualisations import (
 
 
 class Benchmark:
+    """Benchmark class for evaluating synthetic data quality.
+
+    This class provides functionality to benchmark synthetic data against real data
+    using various metrics at different levels (single column, single table, multi table).
+
+    Parameters
+    ----------
+    real_data_dir : str or Path
+        Directory containing the real data.
+    synthetic_data_dir : str or Path
+        Directory containing the synthetic data.
+    results_dir : str or Path
+        Directory where results will be saved.
+    benchmark_name : str
+        Name of the benchmark.
+    single_column_metrics : list, default=[ChiSquareTest()]
+        List of single column metrics to compute.
+    single_table_metrics : list, default=[MaximumMeanDiscrepancy()]
+        List of single table metrics to compute.
+    multi_table_metrics : list, default=[]
+        List of multi table metrics to compute.
+    methods : list, default=None
+        List of synthetic data generation methods to evaluate.
+        If None, all methods in synthetic_data_dir will be evaluated.
+    datasets : list, default=None
+        List of datasets to evaluate.
+        If None, all datasets in real_data_dir will be evaluated.
+    run_id : str, default=None
+        Identifier for the benchmark run.
+    sample_id : str, default=None
+        Identifier for the data sample.
+    validate_metadata : bool, default=True
+        Whether to validate metadata against data.
+    compute_trends : bool, default=True
+        Whether to compute trends over time.
+
+    """
+
     def __init__(
         self,
         real_data_dir,
@@ -43,6 +87,40 @@ class Benchmark:
         validate_metadata=True,
         compute_trends=True,
     ):
+        """Initialize the Benchmark object.
+
+        Parameters
+        ----------
+        real_data_dir : str or Path
+            Directory containing the real data.
+        synthetic_data_dir : str or Path
+            Directory containing the synthetic data.
+        results_dir : str or Path
+            Directory where results will be saved.
+        benchmark_name : str
+            Name of the benchmark.
+        single_column_metrics : list, default=[ChiSquareTest()]
+            List of single column metrics to compute.
+        single_table_metrics : list, default=[MaximumMeanDiscrepancy()]
+            List of single table metrics to compute.
+        multi_table_metrics : list, default=[]
+            List of multi table metrics to compute.
+        methods : list, default=None
+            List of synthetic data generation methods to evaluate.
+            If None, all methods in synthetic_data_dir will be evaluated.
+        datasets : list, default=None
+            List of datasets to evaluate.
+            If None, all datasets in real_data_dir will be evaluated.
+        run_id : str, default=None
+            Identifier for the benchmark run.
+        sample_id : str, default=None
+            Identifier for the data sample.
+        validate_metadata : bool, default=True
+            Whether to validate metadata against data.
+        compute_trends : bool, default=True
+            Whether to compute trends over time.
+
+        """
         self.datasets = datasets
         self.run_id = str(run_id)
         self.sample_id = str(sample_id)
@@ -101,6 +179,24 @@ class Benchmark:
             )
 
     def load_data(self, dataset_name, method_name):
+        """Load real and synthetic data for a specific dataset and method.
+
+        Parameters
+        ----------
+        dataset_name : str
+            Name of the dataset to load.
+        method_name : str
+            Name of the synthetic data generation method.
+
+        Returns
+        -------
+        tuple
+            Tuple containing:
+            - real_data: Dictionary mapping table names to pandas DataFrames for real data.
+            - synthetic_data: Dictionary mapping table names to pandas DataFrames for synthetic data.
+            - metadata: Metadata object for the dataset.
+
+        """
         real_data_path = self.real_data_dir / dataset_name
         synthetic_data_path = self.synthetic_data_dir / dataset_name / method_name
 
@@ -127,15 +223,22 @@ class Benchmark:
         return real_data, synthetic_data, metadata
 
     def merge_results(self, dataset_name, method_name, new_results):
-        """Merge new results with existing results for a given dataset and method.
+        """Merge new results with existing results.
 
-        Args:
-            dataset_name (str): Name of the dataset
-            method_name (str): Name of the method
-            new_results (dict): New results to merge
+        Parameters
+        ----------
+        dataset_name : str
+            Name of the dataset.
+        method_name : str
+            Name of the synthetic data generation method.
+        new_results : dict
+            New results to merge.
 
-        Returns:
-            dict: Merged results
+        Returns
+        -------
+        dict
+            Merged results.
+
         """
         existing_results = None
         if (
@@ -163,6 +266,17 @@ class Benchmark:
             return new_results
 
     def run(self):
+        """Run the benchmark evaluation.
+
+        This method evaluates all specified datasets and methods using the configured metrics.
+        Results are saved to the results directory.
+
+        Returns
+        -------
+        dict
+            Dictionary containing all benchmark results.
+
+        """
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
                 try:
@@ -213,6 +327,14 @@ class Benchmark:
                     print(e)
 
     def read_results(self):
+        """Read benchmark results from the results directory.
+
+        Returns
+        -------
+        dict
+            Dictionary containing all benchmark results.
+
+        """
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
                 file_name = self.build_file_name(dataset_name, method_name)
@@ -244,6 +366,21 @@ class Benchmark:
             warnings.warn("No results found.")
 
     def build_file_name(self, dataset_name, method_name):
+        """Build a file name for saving results.
+
+        Parameters
+        ----------
+        dataset_name : str
+            Name of the dataset.
+        method_name : str
+            Name of the synthetic data generation method.
+
+        Returns
+        -------
+        str
+            File name for saving results.
+
+        """
         file_name = f"{dataset_name}_{method_name}"
         if self.run_id is not None:
             file_name += f"_{self.run_id}"
@@ -253,6 +390,18 @@ class Benchmark:
         return file_name
 
     def visualize_single_table_metrics(self, distance=True, detection=True, **kwargs):
+        """Visualize single table metrics.
+
+        Parameters
+        ----------
+        distance : bool, default=True
+            Whether to visualize distance metrics.
+        detection : bool, default=True
+            Whether to visualize detection metrics.
+        **kwargs
+            Additional keyword arguments to pass to the visualization functions.
+
+        """
         datasets = kwargs.pop("datasets", self.datasets)
         methods = kwargs.pop("methods", self.methods[datasets[0]])
         if distance:
@@ -277,6 +426,18 @@ class Benchmark:
             )
 
     def visualize_single_column_metrics(self, distance=True, detection=True, **kwargs):
+        """Visualize single column metrics.
+
+        Parameters
+        ----------
+        distance : bool, default=True
+            Whether to visualize distance metrics.
+        detection : bool, default=True
+            Whether to visualize detection metrics.
+        **kwargs
+            Additional keyword arguments to pass to the visualization functions.
+
+        """
         datasets = kwargs.get("datasets", self.datasets)
         methods = kwargs.get("methods", self.methods[datasets[0]])
         if distance:
@@ -300,6 +461,14 @@ class Benchmark:
             )
 
     def visualize_multi_table_metrics(self, **kwargs):
+        """Visualize multi table metrics.
+
+        Parameters
+        ----------
+        **kwargs
+            Additional keyword arguments to pass to the visualization functions.
+
+        """
         datasets = kwargs.get("datasets", self.datasets)
         methods = kwargs.get("methods", self.methods[datasets[0]])
         visualize_multi_table(self.all_results, datasets, methods, **kwargs)

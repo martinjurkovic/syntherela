@@ -1,3 +1,5 @@
+"""Wasserstein distance metric for single columns."""
+
 import pandas as pd
 from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
@@ -8,6 +10,8 @@ from syntherela.metrics.base import SingleColumnMetric, DistanceBaseMetric
 
 
 class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
+    """Wasserstein distance metric."""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "WassersteinDistance"
@@ -17,10 +21,12 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
+        """Check if the metric is applicable to the given column type."""
         return column_type in ["numerical", "datetime"]
 
     @staticmethod
     def compute(real_data, synthetic_data, **kwargs):
+        """Compute the Wasserstein distance between two columns."""
         combined_data = pd.concat([real_data, synthetic_data], ignore_index=True)
         orig_col = pd.Series(real_data).dropna()
         synth_col = pd.Series(synthetic_data).dropna()
@@ -37,6 +43,7 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
         return wasserstein_distance(x_orig, x_synth)
 
     def run(self, real_data, synthetic_data, **kwargs):
+        """Execute the Wasserstein distance metric."""
         if is_datetime(real_data):
             real_data = pd.to_numeric(real_data, errors="coerce", downcast="integer")
             synthetic_data = pd.to_numeric(

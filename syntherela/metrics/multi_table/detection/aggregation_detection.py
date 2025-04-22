@@ -1,3 +1,9 @@
+"""Aggregation detection (C2ST-Agg) metrics for multi-table data.
+
+This module provides metrics for detecting synthetic data in aggregated relationships
+between tables by training classifiers to distinguish between real and synthetic tables with aggregations.
+"""
+
 from copy import deepcopy
 from typing import Optional
 
@@ -7,15 +13,35 @@ from sklearn.base import ClassifierMixin
 from syntherela.typing import Tables
 from syntherela.metadata import drop_ids, Metadata
 from syntherela.metrics.base import DetectionBaseMetric, SingleTableMetric
-from .denormalized_detection import DenormalizedDetection
 from .parent_child import ParentChildDetection
 
 
 class BaseAggregationDetection(DetectionBaseMetric):
+    """Base class for C2ST-Agg metrics."""
+
     @staticmethod
     def add_aggregations(
         data: Tables, metadata: Metadata, update_metadata: bool = True, level=0
     ):
+        """Add aggregations from connected tables to the data.
+
+        Parameters
+        ----------
+        data : dict[str, pd.DataFrame]
+            Dictionary of database tables.
+        metadata : Metadata
+            The metadata describing the database schema.
+        update_metadata : bool, optional
+            Whether to update the metadata with the new columns, by default True.
+        level : int, optional
+            The level of aggregation to add, by default 0.
+
+        Returns
+        -------
+        dict[str, pd.DataFrame]
+            The data with the added aggregations.
+
+        """
         aggregated_data = deepcopy(data)
         table_levels = metadata.get_table_levels()
 
@@ -31,7 +57,7 @@ class BaseAggregationDetection(DetectionBaseMetric):
             child_fk = relationship["child_foreign_key"]
 
             # only add counts for the first level
-            if level == 0:
+            if level == 0:  # TODO: would level == 1 be more descriptive?
                 # add child counts
                 child_df = pd.DataFrame(
                     {
@@ -140,6 +166,8 @@ class BaseAggregationDetection(DetectionBaseMetric):
 class AggregationDetection(
     BaseAggregationDetection, DetectionBaseMetric, SingleTableMetric
 ):
+    """C2ST-Agg metric."""
+
     def __init__(
         self,
         classifier_cls: ClassifierMixin,
@@ -158,9 +186,10 @@ class AggregationDetection(
 
     @staticmethod
     def is_applicable(metadata: Metadata, table: str) -> bool:
-        """
-        Check if the table contains at least one column that is not an id.
-        And if the table has a relationship with another table.
+        """Check metric applicability.
+
+        Check if the table contains at least one column that is not an id
+        and if the table has a relationship with another table.
         """
         nonid = False
         table_metadata = metadata.tables[table].to_dict()
@@ -179,6 +208,27 @@ class AggregationDetection(
         target_table: Optional[str] = None,
         **kwargs,
     ):
+        """Run the C2ST-Agg metric.
+
+        Parameters
+        ----------
+        real_data : dict
+            The real database tables.
+        synthetic_data : dict
+            The synthetic database tables.
+        metadata : Metadata
+            The metadata.
+        target_table : str, optional
+            The target table to evaluate, by default None (evaluate all tables).
+        kwargs : dict
+            Additional keyword arguments.
+
+        Returns
+        -------
+        dict
+            The C2ST-Agg metric results.
+
+        """
         updated_metadata = deepcopy(metadata)
         for level in range(self.levels):
             # Add one level of aggregation
@@ -236,22 +286,9 @@ class AggregationDetection(
         return results
 
 
-class DenormalizedAggregationDetection(DenormalizedDetection, BaseAggregationDetection):
-    def prepare_data(
-        self, real_data: Tables, synthetic_data: Tables, metadata: Metadata
-    ):
-        aggregated_real_data, updated_metadata = self.add_aggregations(
-            real_data, deepcopy(metadata)
-        )
-        aggregated_synthetic_data, _ = self.add_aggregations(
-            synthetic_data, metadata, update_metadata=False
-        )
-        return super().prepare_data(
-            aggregated_real_data, aggregated_synthetic_data, updated_metadata
-        )
-
-
 class ParentChildAggregationDetection(ParentChildDetection, BaseAggregationDetection):
+    """Parent-child C2ST-Agg metric."""
+
     def prepare_data(
         self,
         real_data: Tables,
@@ -261,6 +298,31 @@ class ParentChildAggregationDetection(ParentChildDetection, BaseAggregationDetec
         child_table: str,
         pair_metadata: Metadata,
     ):
+        """Prepare data for the C2ST.
+
+        Parameters
+        ----------
+        real_data : dict
+            The real data.
+        synthetic_data : dict
+            The synthetic data.
+        metadata : Metadata
+            The metadata.
+        parent_table : str
+            The parent table name.
+        child_table : str
+            The child table name.
+        pair_metadata : Metadata
+            The metadata for the parent-child pair.
+
+        Returns
+        -------
+        X: pd.DataFrame
+            The joined synthetic and real data matrix.
+        y: pd.Series
+            The target variable with synthetic and real labels.
+
+        """
         aggregated_real_data, updated_metadata = self.add_aggregations(
             real_data, deepcopy(metadata)
         )
