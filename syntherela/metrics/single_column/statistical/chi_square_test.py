@@ -30,9 +30,9 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         if freq_synth.sum() == 0:
             return {"statistic": -1, "p_value": 0}
         freq_synth = freq_synth / freq_synth.sum() * freq_orig.sum()
-        assert (
-            freq_orig.index == freq_synth.index
-        ).all(), "Indexes do not match for column"
+        assert (freq_orig.index == freq_synth.index).all(), (
+            "Indexes do not match for column"
+        )
         # calculate the chi-square test
         statistic, pval, _, _ = chi2_contingency([freq_orig, freq_synth])
 

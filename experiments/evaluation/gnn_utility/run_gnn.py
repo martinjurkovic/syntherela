@@ -4,7 +4,6 @@ import json
 import math
 import os
 from pathlib import Path
-import subprocess
 from typing import Dict
 
 # Set CUDA_LAUNCH_BLOCKING=1 to get better error messages
@@ -14,7 +13,7 @@ import numpy as np
 import torch
 from model import Model
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, L1Loss, MSELoss
+from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
@@ -22,7 +21,6 @@ from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
 from relbench.base import Dataset, EntityTask, TaskType
-from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task, BaseTask
@@ -197,7 +195,7 @@ for split in ["train", "val", "test"]:
     table = tmp_task.get_table(split)
     table_input = get_node_train_table_input(table=table, task=tmp_task)
     entity_table = table_input.nodes[0]
-    tmp_data = data # if split == "train" else data_test
+    tmp_data = data  # if split == "train" else data_test
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         tmp_data,

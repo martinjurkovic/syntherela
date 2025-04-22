@@ -81,7 +81,7 @@ conda activate mostlyai
 ./experiments/reproducibility/generation/generate_mostlyai.sh <api-key>
 
 cd experiments/generation/clavaddpm
-./generate_clavaddpm.sh <dataset-name> <real-data-path> <synthetic-data-path>  
+./generate_clavaddpm.sh <dataset-name> <real-data-path> <synthetic-data-path>
 ```
 
 To generate data with MOSTLYAI, insructions are provided in [experiments/generation/mostlyai/README.md](experiments/generation/mostlyai/README.md). <br>
@@ -127,12 +127,12 @@ The authors declare no conflict of interest and are not associated with any of t
 If you use SyntheRela in your work, please cite our paper:
 ```
 @misc{hudovernik2024benchmarkingsyntheticrelationaldata,
-      title={Benchmarking the Fidelity and Utility of Synthetic Relational Data}, 
+      title={Benchmarking the Fidelity and Utility of Synthetic Relational Data},
       author={Valter Hudovernik and Martin Jurkovič and Erik Štrumbelj},
       year={2024},
       eprint={2410.03411},
       archivePrefix={arXiv},
       primaryClass={cs.DB},
-      url={https://arxiv.org/abs/2410.03411}, 
+      url={https://arxiv.org/abs/2410.03411},
 }
 ```

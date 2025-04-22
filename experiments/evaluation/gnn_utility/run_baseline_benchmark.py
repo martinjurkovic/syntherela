@@ -61,13 +61,13 @@ UTILITY_TASKS = [
         "target_col": "position",
         "task_type": "REGRESSION",
         "methods": [
-                    "ORIGINAL", 
-                    "CLAVADDPM", 
-                    "RGCLD", 
-                    "MOSTLYAI", 
-                    "RCTGAN", 
-                    "SDV",
-                    ],
+            "ORIGINAL",
+            "CLAVADDPM",
+            "RGCLD",
+            "MOSTLYAI",
+            "RCTGAN",
+            "SDV",
+        ],
         "--lr": 0.005,
         "task": "predict-column",
     },
@@ -174,7 +174,7 @@ for task in UTILITY_TASKS:
                 #     command.extend(["--batch_size", str(task["--batch_size"])])
                 # if "--num_layers" in task:
                 #     command.extend(["--num_layers", str(task["--num_layers"])])
-                
+
                 result = subprocess.run(command, capture_output=False, text=True)
 
                 # Clean up temporary torch_geometric files

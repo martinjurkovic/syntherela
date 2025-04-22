@@ -55,7 +55,9 @@ for dataset, method_data in data.items():
             elif "roc_auc" in run:
                 metric_values.append(run["roc_auc"])
             else:
-                raise ValueError(f"No valid metric found for method {method} in dataset {dataset}")
+                raise ValueError(
+                    f"No valid metric found for method {method} in dataset {dataset}"
+                )
         mean_value, se_value = compute_mean_and_se(metric_values)
         results[dataset][method] = (mean_value, se_value)
 
@@ -122,15 +124,14 @@ for dataset in datasets:
     if metric_type == "roc_auc":
         # For ROC AUC, higher is better
         sorted_scores = sorted(
-            (s for s in scores if s[0] != float("inf")), 
-            key=lambda x: x[0], 
-            reverse=True
+            (s for s in scores if s[0] != float("inf")),
+            key=lambda x: x[0],
+            reverse=True,
         )
     else:
         # For MAE, lower is better
         sorted_scores = sorted(
-            (s for s in scores if s[0] != float("inf")), 
-            key=lambda x: x[0]
+            (s for s in scores if s[0] != float("inf")), key=lambda x: x[0]
         )
     best_method = sorted_scores[0][2] if sorted_scores else None
     second_best_method = sorted_scores[1][2] if len(sorted_scores) > 1 else None

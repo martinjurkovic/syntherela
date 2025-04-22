@@ -12,7 +12,6 @@ from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalE
 
 
 class Model(torch.nn.Module):
-
     def __init__(
         self,
         data: HeteroData,
