@@ -1,247 +1,423 @@
 import json
+import os
 
 import numpy as np
-import pandas as pd
-from tqdm import tqdm
-from scipy.stats import pearsonr
+from dotenv import load_dotenv
+from scipy.stats import spearmanr, kendalltau
 
+load_dotenv()
 
-def read_utility_results(dataset, model="xgboost", run="1"):
-    utility_model = []
-    utility_feature = []
-    utility_score = []
+PROJECT_PATH = os.getenv("PROJECT_PATH")
 
-    dataset_name = dataset.split("-")[0].split("_")[0]
-    with open(f"results/mle_{dataset_name}_{run}_0.json", "r") as f:
-        results = json.load(f)[dataset_name]
-    for method in [
-        "SDV",
+datasets_methods = {
+    "rossmann_subsampled": [
+        "CLAVADDPM",
+        "MOSTLYAI",
         "RCTGAN",
         "REALTABFORMER",
-        "MOSTLYAI",
-        "GRETEL_ACTGAN",
-        "GRETEL_LSTM",
-        "CLAVADDPM",
-    ]:
-        utility_model.append(results[method]["spearman_mean"])
-        utility_feature.append(results[method]["feature_importance_spearman_mean"])
-        utility_score.append(results[method][model]["synthetic_score"])
-    utility_scores = np.array(utility_score)
-    # Normalize the utility scores so they are comparable between datasets
-    utility_scores = (utility_scores - np.min(utility_scores)) / (
-        np.max(utility_scores) - np.min(utility_scores)
-    )
-    return utility_model, utility_feature, utility_scores.tolist()
-
-
-def read_fidelity_results(
-    dataset, model, metric, target_table=None, target_column=None, run="1"
-):
-    results = []
-    for method in [
+        "RGCLD",
         "SDV",
+    ],
+    "walmart_subsampled": [
+        "CLAVADDPM",
+        "MOSTLYAI",
         "RCTGAN",
         "REALTABFORMER",
-        "MOSTLYAI",
-        "GRETEL_ACTGAN",
-        "GRETEL_LSTM",
+        "RGCLD",
+        "SDV",
+    ],
+    "airbnb-simplified_subsampled": [
         "CLAVADDPM",
-    ]:
-        with open(f"results/{run}/{dataset}_{method}_{run}_sample1.json", "r") as f:
-            method_results = json.load(f)
-        if "Aggregation" in metric:
-            if dataset == "rossmann_subsampled":
-                root_table = "store"
-            elif dataset == "airbnb-simplified_subsampled":
-                root_table = "users"
-            elif dataset == "walmart_subsampled":
-                root_table = "stores"
-            results.append(
-                method_results["multi_table_metrics"][f"{metric}-{model}"][root_table][
-                    "accuracy"
-                ]
-            )
-        elif "SingleColumn" in metric:
-            results.append(
-                method_results["single_column_metrics"][f"{metric}-{model}"][
-                    target_table
-                ][target_column]["accuracy"]
-            )
-        elif "SingleTable" in metric:
-            results.append(
-                method_results["single_table_metrics"][f"{metric}-{model}"][
-                    target_table
-                ]["accuracy"]
-            )
-    return results
-
-
-fidelities_xgb = []
-fidelities_lin = []
-utilities = []
-dataset_list = []
-method_list = []
-run_list = []
-for dataset in [
-    "rossmann_subsampled",
-    "walmart_subsampled",
-    "airbnb-simplified_subsampled",
-]:
-    if dataset == "rossmann_subsampled":
-        target_table = "historical"
-        target_column = "Customers"
-    elif dataset == "airbnb-simplified_subsampled":
-        target_table = "users"
-        target_column = "country_destination"
-    elif dataset == "walmart_subsampled":
-        target_table = "depts"
-        target_column = "Weekly_Sales"
-
-    for run in range(3):
-        run_id = str(run + 1)
-
-        # Fidelity
-        fidelity_xgb = read_fidelity_results(
-            dataset, "XGBClassifier", "AggregationDetection", run=run_id
-        )
-        fidelity_lin = read_fidelity_results(
-            dataset,
-            "LogisticRegression",
-            "AggregationDetection",
-            target_table,
-            run=run_id,
-        )
-
-        utility_scores = []
-        for model in [
-            "xgboost",
-            "linear",
-            "random_forest",
-            "decision_tree",
-            "knn",
-            "svr",
-            "mlp",
-            "svc",
-            "gaussian_nb",
-        ]:
-            if dataset == "airbnb-simplified_subsampled":
-                if model == "svr":
-                    continue
-            else:
-                if model == "svc" or model == "gaussian_nb":
-                    continue
-
-            # Utility
-            try:
-                utility_model, utility_feature, utility_score = read_utility_results(
-                    dataset, model, run=run_id
-                )
-            except FileNotFoundError:
-                print(f"Run {run_id} not found for {dataset}")
-                utility_model, utility_feature, utility_score = read_utility_results(
-                    dataset, model
-                )
-
-            utility_scores.append(utility_score)
-
-        utility_score = np.array(utility_scores).mean(axis=0).tolist()
-        fidelities_xgb.extend(fidelity_xgb)
-        fidelities_lin.extend(fidelity_lin)
-        utilities.extend(utility_score)
-        dataset_list += [dataset] * len(fidelity_xgb)
-        run_list += [run_id] * len(fidelity_xgb)
-
-utilities = np.array(utilities)
-fidelities_xgb = np.array(fidelities_xgb)
-fidelities_lin = np.array(fidelities_lin)
-dataset_list = np.array(dataset_list)
-run_list = np.array(run_list)
-
-
-def bootstrap_correlations(
-    utilities, fidelities_xgb, fidelities_lin, dataset_list, datasets, m=10000
-):
-    xgb_corr = []
-    lin_corr = []
-    xgb_lin_diff = []
-    for i in tqdm(range(m)):
-        indices = np.where(np.isin(dataset_list, datasets))[0]
-        np.random.seed(i)
-        indices = np.random.choice(indices, len(indices), replace=True)
-        utility_score = utilities[indices]
-        fidelity_xgb = fidelities_xgb[indices]
-        fidelity_lin = fidelities_lin[indices]
-
-        corr_xgb = pearsonr(utility_score, fidelity_xgb)[0]
-        corr_lin = pearsonr(utility_score, fidelity_lin)[0]
-
-        xgb_corr.append(corr_xgb)
-        lin_corr.append(corr_lin)
-        xgb_lin_diff.append(corr_xgb - corr_lin)
-    return xgb_corr, lin_corr, xgb_lin_diff
-
-
-datasets = ["rossmann_subsampled", "walmart_subsampled", "airbnb-simplified_subsampled"]
-results = {}
-for dataset in datasets:
-    xgb_corr, lin_corr, xgb_lin_diff = bootstrap_correlations(
-        utilities, fidelities_xgb, fidelities_lin, dataset_list, [dataset]
-    )
-    results[dataset] = {
-        "xgb_corr": xgb_corr,
-        "lin_corr": lin_corr,
-        "xgb_lin_diff": xgb_lin_diff,
-    }
-xgb_corr, lin_corr, xgb_lin_diff = bootstrap_correlations(
-    utilities,
-    fidelities_xgb,
-    fidelities_lin,
-    dataset_list,
-    ["rossmann_subsampled", "walmart_subsampled", "airbnb-simplified_subsampled"],
-)
-results["all"] = {
-    "xgb_corr": xgb_corr,
-    "lin_corr": lin_corr,
-    "xgb_lin_diff": xgb_lin_diff,
+        "MOSTLYAI",
+        "RCTGAN",
+        "RGCLD",
+        "SDV",
+    ],
+    "Berka_subsampled": [
+        "CLAVADDPM",
+        "MOSTLYAI",
+        "RGCLD",
+    ],
+    "f1_subsampled": [
+        "CLAVADDPM",
+        "MOSTLYAI",
+        "RCTGAN",
+        "RGCLD",
+        "SDV",
+    ],
 }
 
+dataset_rdl_utility_target_table = {
+    "rossmann_subsampled": "store",
+    "walmart_subsampled": "stores",
+    "f1_subsampled": "drivers",
+    "airbnb-simplified_subsampled": "users",
+    "Berka_subsampled": "account",
+}
 
-dataset_names = {
+datasets_evaluation_type = {
+    "rossmann_subsampled": "mae",
+    "walmart_subsampled": "mae",
+    "f1_subsampled": "roc_auc",
+    "airbnb-simplified_subsampled": "roc_auc",
+    "Berka_subsampled": "roc_auc",
+}
+
+dataset_rename = {
+    "f1_subsampled": "F1",
+    "Berka_subsampled": "Berka",
     "rossmann_subsampled": "Rossmann",
     "walmart_subsampled": "Walmart",
     "airbnb-simplified_subsampled": "Airbnb",
-    "all": "Total",
 }
 
+rdl_utility_results = json.load(
+    open(os.path.join(PROJECT_PATH, "results/gnn_utility_results.json"))
+)
 
-def format_result(result, ci=False):
-    import math
-
-    se = np.std(result) / np.sqrt(len(result))
-    mean = np.mean(result)
-    se_digit = abs(int(math.log10(abs(se + 1e-8))))
-    if ci:
-        q = np.quantile(result, [0.05, 0.95])
-        return (
-            f"${mean.round(se_digit)} ({q[0].round(se_digit)}, {q[1].round(se_digit)})$"
+average_rdl_utility_results = {}
+for dataset, methods in datasets_methods.items():
+    evaluation_type = datasets_evaluation_type[dataset]
+    for method in methods + ["ORIGINAL"]:
+        tmp_scores = []
+        for run in range(1, 4):
+            tmp_scores.append(
+                rdl_utility_results[dataset][method][str(run)][evaluation_type]
+            )
+        average_rdl_utility_results.setdefault(dataset, {})[method] = np.mean(
+            tmp_scores
         )
 
-    return f"${mean.round(se_digit)}$".replace("-0.0 ", "0 ")
+c2st_results = {}
+one_hop_results = {}
+cardinality_results = {}
+for dataset, methods in datasets_methods.items():
+    for method in methods:
+        run_tmp_results = []
+        run_one_hop_results = []
+        run_cardinality_results = []
+        for run in range(1, 4):
+            tmp_results_file = json.load(
+                open(
+                    os.path.join(
+                        PROJECT_PATH,
+                        f"results/{run}/{dataset}_{method}_{run}_sample1.json",
+                    )
+                )
+            )
+            # tmp_results = []
+            # table_names = list(
+            #     tmp_results_file["multi_table_metrics"][
+            #         "AggregationDetection-XGBClassifier"
+            #     ].keys()
+            # )
+            # for table_name in table_names:
+            #     tmp_results.append(
+            #         tmp_results_file["multi_table_metrics"][
+            #             "AggregationDetection-XGBClassifier"
+            #         ][table_name]["accuracy"]
+            #     )
+            # run_tmp_results.append(np.mean(tmp_results))
+            run_tmp_results.append(
+                tmp_results_file["multi_table_metrics"][
+                    "AggregationDetection-XGBClassifier"
+                ][dataset_rdl_utility_target_table[dataset]]["accuracy"]
+            )
+            run_one_hop_results.append(
+                tmp_results_file["multi_table_metrics"]["Trends"]["k_hop_similarity"][
+                    "1"
+                ]["mean"]
+            )
+            tables = list(tmp_results_file["multi_table_metrics"]["CardinalityShapeSimilarity"].keys())
+            run_cardinality_results.append(
+                tmp_results_file["multi_table_metrics"]["CardinalityShapeSimilarity"][tables[0]]["pval"]
+            )
+        c2st_results.setdefault(dataset, {})[method] = np.mean(run_tmp_results)
+        one_hop_results.setdefault(dataset, {})[method] = np.mean(run_one_hop_results)
+        cardinality_results.setdefault(dataset, {})[method] = np.mean(run_cardinality_results)
 
+print(average_rdl_utility_results)
+print("\n----------------------------------\n")
+print(c2st_results)
+print("\n----------------------------------\n")
+print(one_hop_results)
 
-results_df = pd.DataFrame(
-    columns=[
-        "Dataset",
-        "$\\rho(DDA_{XGB}, U)$",
-        "$\\rho(LD, U)$",
-        "$\\rho_{DDA} - \\rho_{LD}$",
+# Calculate correlations
+correlations_final = {}
+
+# Iterate over datasets defined in datasets_methods
+for dataset in datasets_methods.keys():
+    # Initialize results for this dataset
+    dataset_corr_results = {
+        "spearman_c2st_rdl": np.nan,
+        "p_value_spearman_c2st_rdl": np.nan,
+        "kendall_c2st_rdl": np.nan,
+        "p_value_kendall_c2st_rdl": np.nan,
+        "spearman_onehop_rdl": np.nan,
+        "p_value_spearman_onehop_rdl": np.nan,
+        "kendall_onehop_rdl": np.nan,
+        "p_value_kendall_onehop_rdl": np.nan,
+        "spearman_cardinality_rdl": np.nan,
+        "p_value_spearman_cardinality_rdl": np.nan,
+        "kendall_cardinality_rdl": np.nan,
+        "p_value_kendall_cardinality_rdl": np.nan,
+        "message": None,
+    }
+
+    # Basic checks for data presence
+    if dataset not in average_rdl_utility_results:
+        dataset_corr_results["message"] = "Dataset not in average_rdl_utility_results"
+        correlations_final[dataset] = dataset_corr_results
+        continue
+    if dataset not in c2st_results:  # Needed for common_methods basis
+        dataset_corr_results["message"] = (
+            "Dataset not in c2st_results (needed for common methods)"
+        )
+        correlations_final[dataset] = dataset_corr_results
+        continue
+    # one_hop_results check will be done before its specific correlation
+
+    # Identify common methods (synthesizers present in both C2ST and RDL)
+    c2st_dataset_methods = c2st_results[dataset].keys()
+    rdl_dataset_methods = average_rdl_utility_results[dataset].keys()
+    common_methods = sorted(
+        [
+            m
+            for m in c2st_dataset_methods
+            if m in rdl_dataset_methods and m != "ORIGINAL"
+        ]
+    )
+
+    if len(common_methods) < 2:
+        dataset_corr_results["message"] = (
+            f"Only {len(common_methods)} common method(s) between C2ST & RDL, need at least 2 for correlation"
+        )
+        correlations_final[dataset] = dataset_corr_results
+        continue
+
+    # Prepare RDL Utility scores for ranking (higher value = better performance)
+    rdl_scores_for_ranking = []
+    evaluation_type = datasets_evaluation_type[dataset]
+    for method in common_methods:
+        method_rdl_score = average_rdl_utility_results[dataset][method]
+        if evaluation_type == "mae":
+            rdl_scores_for_ranking.append(-method_rdl_score)
+        elif evaluation_type == "roc_auc":
+            rdl_scores_for_ranking.append(method_rdl_score)
+        else:  # Should not happen if datasets_evaluation_type is comprehensive
+            rdl_scores_for_ranking.append(
+                np.nan
+            )  # Fallback, will likely cause NaN in correlation
+
+    # --- C2ST vs RDL Correlations ---
+    c2st_scores_for_ranking = [
+        -c2st_results[dataset][method] for method in common_methods
     ]
-)
-for dataset, result in results.items():
-    diff = np.array(result["xgb_corr"]) - np.array(result["lin_corr"])
-    ddxgb = format_result(result["xgb_corr"])
-    ld = format_result(result["lin_corr"])
-    diff = format_result(diff, ci=True)
-    results_df.loc[len(results_df)] = [dataset_names[dataset], ddxgb, ld, diff]
+    try:
+        s_corr, s_p = spearmanr(c2st_scores_for_ranking, rdl_scores_for_ranking)
+        k_corr, k_p = kendalltau(c2st_scores_for_ranking, rdl_scores_for_ranking)
+        dataset_corr_results["spearman_c2st_rdl"] = s_corr
+        dataset_corr_results["p_value_spearman_c2st_rdl"] = s_p
+        dataset_corr_results["kendall_c2st_rdl"] = k_corr
+        dataset_corr_results["p_value_kendall_c2st_rdl"] = k_p
+    except Exception as e:
+        error_msg = f" C2ST-RDL corr error: {str(e)};"
+        dataset_corr_results["message"] = (
+            (dataset_corr_results["message"] + error_msg)
+            if dataset_corr_results["message"]
+            else error_msg
+        )
 
-results_df.to_latex("results/tables/table6.tex", index=False, column_format="lccc")
+    # --- Cardinality vs RDL Correlations ---
+    if dataset not in cardinality_results:
+        error_msg = " Cardinality data missing for dataset;"
+        dataset_corr_results["message"] = (
+            (dataset_corr_results["message"] + error_msg)
+            if dataset_corr_results["message"]
+            else error_msg
+        )
+    else:
+        missing_methods_in_cardinality = [
+            m for m in common_methods if m not in cardinality_results[dataset]
+        ]
+        if missing_methods_in_cardinality:
+            error_msg = f" Methods {missing_methods_in_cardinality} from common_methods not in cardinality_results[{dataset}];"
+            dataset_corr_results["message"] = (
+                (dataset_corr_results["message"] + error_msg)
+                if dataset_corr_results["message"]
+                else error_msg
+            )
+        else:
+            cardinality_scores_for_ranking = [
+                cardinality_results[dataset][method] for method in common_methods
+            ] # Higher p-value is better for similarity
+            try:
+                s_corr, s_p = spearmanr(cardinality_scores_for_ranking, rdl_scores_for_ranking)
+                k_corr, k_p = kendalltau(cardinality_scores_for_ranking, rdl_scores_for_ranking)
+                dataset_corr_results["spearman_cardinality_rdl"] = s_corr
+                dataset_corr_results["p_value_spearman_cardinality_rdl"] = s_p
+                dataset_corr_results["kendall_cardinality_rdl"] = k_corr
+                dataset_corr_results["p_value_kendall_cardinality_rdl"] = k_p
+            except Exception as e:
+                error_msg = f" Cardinality-RDL corr error: {str(e)};"
+                dataset_corr_results["message"] = (
+                    (dataset_corr_results["message"] + error_msg)
+                    if dataset_corr_results["message"]
+                    else error_msg
+                )
+
+    # --- OneHop vs RDL Correlations ---
+    if dataset not in one_hop_results:
+        error_msg = " OneHop data missing for dataset;"
+        dataset_corr_results["message"] = (
+            (dataset_corr_results["message"] + error_msg)
+            if dataset_corr_results["message"]
+            else error_msg
+        )
+    else:
+        # Ensure all common_methods are in this dataset's one_hop_results
+        missing_methods_in_onehop = [
+            m for m in common_methods if m not in one_hop_results[dataset]
+        ]
+        if missing_methods_in_onehop:
+            error_msg = f" Methods {missing_methods_in_onehop} from common_methods not in one_hop_results[{dataset}];"
+            dataset_corr_results["message"] = (
+                (dataset_corr_results["message"] + error_msg)
+                if dataset_corr_results["message"]
+                else error_msg
+            )
+        else:
+            one_hop_scores_for_ranking = [
+                one_hop_results[dataset][method] for method in common_methods
+            ]  # Higher is better
+            try:
+                s_corr, s_p = spearmanr(
+                    one_hop_scores_for_ranking, rdl_scores_for_ranking
+                )
+                k_corr, k_p = kendalltau(
+                    one_hop_scores_for_ranking, rdl_scores_for_ranking
+                )
+                dataset_corr_results["spearman_onehop_rdl"] = s_corr
+                dataset_corr_results["p_value_spearman_onehop_rdl"] = s_p
+                dataset_corr_results["kendall_onehop_rdl"] = k_corr
+                dataset_corr_results["p_value_kendall_onehop_rdl"] = k_p
+            except Exception as e:
+                error_msg = f" OneHop-RDL corr error: {str(e)};"
+                dataset_corr_results["message"] = (
+                    (dataset_corr_results["message"] + error_msg)
+                    if dataset_corr_results["message"]
+                    else error_msg
+                )
+
+    correlations_final[dataset] = dataset_corr_results
+
+print("\n\n--- Rank Correlations with RDL Utility (Console Output) ---")
+print(
+    "Metrics vs RDL Utility. For C2ST, lower is better (scores are negated for ranking)."
+)
+print("For OneHop similarity, higher is better (raw scores used for ranking).")
+print(
+    "For RDL Utility, MAE is negated (lower is better), AUC used directly (higher is better)."
+)
+print(
+    "----------------------------------------------------------------------------------------------------"
+)
+
+for dataset, data in correlations_final.items():
+    eval_type = datasets_evaluation_type.get(dataset, "N/A")
+    print(f"\nDataset: {dataset} (RDL eval type: {eval_type})")
+
+    if data.get("message"):
+        print(f"  Note: {data['message']}")
+
+    print(f"  C2ST vs RDL:")
+    print(
+        f"    Spearman Correlation: {data['spearman_c2st_rdl']:.4f}, P-value: {data['p_value_spearman_c2st_rdl']:.4f}"
+    )
+    print(
+        f"    Kendall Tau Correlation: {data['kendall_c2st_rdl']:.4f}, P-value: {data['p_value_kendall_c2st_rdl']:.4f}"
+    )
+
+    print(f"  Cardinality vs RDL:")
+    print(
+        f"    Spearman Correlation: {data['spearman_cardinality_rdl']:.4f}, P-value: {data['p_value_spearman_cardinality_rdl']:.4f}"
+    )
+    print(
+        f"    Kendall Tau Correlation: {data['kendall_cardinality_rdl']:.4f}, P-value: {data['p_value_kendall_cardinality_rdl']:.4f}"
+    )
+
+    print(f"  OneHop vs RDL:")
+    print(
+        f"    Spearman Correlation: {data['spearman_onehop_rdl']:.4f}, P-value: {data['p_value_spearman_onehop_rdl']:.4f}"
+    )
+    print(
+        f"    Kendall Tau Correlation: {data['kendall_onehop_rdl']:.4f}, P-value: {data['p_value_kendall_onehop_rdl']:.4f}"
+    )
+
+# --- LaTeX Table Generation (Combined Table) ---
+print("\n\n--- LaTeX Table Output (Combined) ---")
+
+print("\n\n% Kendall Tau Rank Correlations with RDL Utility")
+print("\\begin{table}[h!]")
+print("\\centering")
+print("\\caption{Kendall Tau Rank Correlations of Fidelity Metrics with RDL Utility}")
+print("\\begin{tabular}{cccc}")
+print("\\toprule")
+print("Dataset & C2ST-Agg vs RDL & Cardinality vs RDL & 1-HOP vs RDL \\\\")
+print("\\midrule")
+
+for dataset_name in datasets_methods.keys():  # Use defined order
+    data = correlations_final.get(dataset_name, {})
+
+    k_c2st = (
+        f"{data.get('kendall_c2st_rdl', np.nan):.3f}"
+        if not np.isnan(data.get("kendall_c2st_rdl", np.nan))
+        else "NaN"
+    )
+    k_cardinality = (
+        f"{data.get('kendall_cardinality_rdl', np.nan):.3f}"
+        if not np.isnan(data.get("kendall_cardinality_rdl", np.nan))
+        else "NaN"
+    )
+    k_onehop = (
+        f"{data.get('kendall_onehop_rdl', np.nan):.3f}"
+        if not np.isnan(data.get("kendall_onehop_rdl", np.nan))
+        else "NaN"
+    )
+
+    display_name = dataset_rename.get(dataset_name, dataset_name)
+    dataset_display_name = display_name.replace("_", "\\_")
+
+    note = ""
+    if data.get("message"):
+        if (k_c2st == "NaN") and (
+            "C2ST" in data["message"] or "common method" in data["message"]
+        ):
+            note += " (C2ST Issue)"
+        if (k_cardinality == "NaN") and (
+            "Cardinality" in data["message"] or "common method" in data["message"]
+        ):
+            if not (note and "common method" in data["message"]): # Avoid duplicate (Low N) notes if common
+                 note += " (Card. Issue)"
+        if (k_onehop == "NaN") and (
+            "OneHop" in data["message"] or "common method" in data["message"]
+        ):
+            if not (note and "common method" in data["message"]):
+                 note += " (1Hop Issue)"
+
+        # General low N note if all are NaN due to common method count
+        if (k_c2st == "NaN" and k_cardinality == "NaN" and k_onehop == "NaN" and
+            "common method" in data.get("message", "")):
+            note = " (Low N)"
+        elif not note and data["message"]:  # Generic message if no specific parsing and note is empty
+            note = " (Issue)"
+
+    # Print values in the new order: C2ST, Cardinality, OneHop
+    print(
+        f"{dataset_display_name}{note} & {k_c2st} & {k_cardinality} & {k_onehop} \\\\"
+    )
+
+print("\\bottomrule")
+print("\\end{tabular}")
+print("\\label{tab:kendall_correlations_rdl}")
+print("\\end{table}")
