@@ -28,8 +28,8 @@ def download_and_extract(url, filename):
 
 
 # URL of the file to download
-orig_url = "https://drive.google.com/uc?id=11-vhJejKLCA-PAvj9o3MMItvy6RBL8dm"
-synth_url = "https://drive.google.com/uc?id=1b6qebgzniF3Zro52WpoIKS9W6C-8O4d-"
+orig_url = "https://drive.google.com/uc?id=1FIBnmdQSVUK4xi5uFpzb_vFseK_KLQUG"
+synth_url = "https://drive.google.com/uc?id=1VRoU57Z-J2QV9J4QTNWo-XTWdD8hqkAl"
 
 download_and_extract(orig_url, "original.zip")
 download_and_extract(synth_url, "synthetic.zip")
