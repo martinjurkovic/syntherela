@@ -388,6 +388,8 @@ def format_latex_value(mean, stderr, n, num_total_runs):
 
     if n < num_total_runs and n > 0 :
         val_str += f" (N={n})"
+    elif n == 1 and num_total_runs > 1:
+         val_str += f" (N=1)"
     return val_str
 
 for dataset_name in datasets_methods.keys():
