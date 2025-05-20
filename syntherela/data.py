@@ -5,6 +5,7 @@ real and synthetic data for evaluation purposes.
 """
 
 import os
+import warnings
 from typing import Optional, Union
 from syntherela.typing import Tables
 
@@ -125,6 +126,10 @@ def remove_sdv_columns(
     "_v1" Versions of the relational demo datasets in SDV have some columns that are not present in the original datasets.
     We created this function to remove these columns from the tables and the metadata.
     """
+    warnings.warn(
+        "This function is deprecated and will be removed in the future.",
+        category=DeprecationWarning,
+    )
     for table_name, table in tables.items():
         for column in table.columns:
             if any(
