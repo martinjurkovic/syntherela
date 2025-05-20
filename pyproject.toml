@@ -38,16 +38,12 @@ classifiers = [
 
 [project.optional-dependencies]
 gnn-utility=[
-  "relbench[full,example]@git+https://github.com/martinjurkovic/relbench.git@predict-column-task",
+  "relbench[full,example]",
   "torch_geometric",
   "shap",
   "tqdm",
   "lightgbm"
 ]
-
-[project.urls]
-Homepage = "https://github.com/martinjurkovic/syntherela"
-Issues = "https://github.com/martinjurkovic/syntherela/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
