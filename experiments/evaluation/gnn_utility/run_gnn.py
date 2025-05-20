@@ -4,7 +4,6 @@ import json
 import math
 import os
 from pathlib import Path
-import subprocess
 from typing import Dict
 
 import faulthandler
@@ -18,7 +17,7 @@ import numpy as np
 import torch
 from model import Model
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, L1Loss, MSELoss
+from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
@@ -26,7 +25,6 @@ from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
 from relbench.base import Dataset, EntityTask, TaskType
-from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task, BaseTask

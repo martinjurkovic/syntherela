@@ -1,3 +1,5 @@
+"""Visualization tools for multi-table metrics."""
+
 import os
 from pathlib import Path
 
@@ -13,6 +15,31 @@ rc("text", usetex=True)
 
 
 def visualize_parent_child_multi_table(all_results, datasets, methods, **kwargs):
+    """Visualize parent-child detection metrics for multi-table datasets.
+
+    This function creates bar charts comparing parent-child detection metrics
+    across different synthetic data generation methods for multi-table datasets.
+
+    Parameters
+    ----------
+    all_results : dict
+        Dictionary containing all evaluation results.
+    datasets : list
+        List of dataset names to visualize.
+    methods : list
+        List of synthetic data generation methods to compare.
+    **kwargs : dict
+        Additional keyword arguments including:
+        - save_figs : bool
+            Whether to save the figures.
+        - save_figs_path : str
+            Path where to save the figures.
+        - detection_metrics : list
+            List of detection metrics to visualize.
+        - method_order : list
+            Custom order for methods in the visualization.
+
+    """
     for dataset in datasets:
         metrics = kwargs.get(
             "detection_metrics",
@@ -205,6 +232,31 @@ def visualize_parent_child_multi_table(all_results, datasets, methods, **kwargs)
 
 
 def visualize_multi_table(all_results, datasets, methods, **kwargs):
+    """Visualize detection metrics for multi-table datasets.
+
+    This function creates bar charts comparing detection metrics
+    across different synthetic data generation methods for multi-table datasets.
+
+    Parameters
+    ----------
+    all_results : dict
+        Dictionary containing all evaluation results.
+    datasets : list
+        List of dataset names to visualize.
+    methods : list
+        List of synthetic data generation methods to compare.
+    **kwargs : dict
+        Additional keyword arguments including:
+        - save_figs : bool
+            Whether to save the figures.
+        - save_figs_path : str
+            Path where to save the figures.
+        - detection_metrics : list
+            List of detection metrics to visualize.
+        - method_order : list
+            Custom order for methods in the visualization.
+
+    """
     save_figs = kwargs.get("save_figs", False)
     save_figs_path = kwargs.get("save_figs_path", "./figs/")
     save_figs_path = Path(save_figs_path) / "multi_table" / "detection"

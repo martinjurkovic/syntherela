@@ -41,7 +41,7 @@ def load_rossmann(method, run="1"):
     )
 
     tables_test = load_tables(
-        f'{PROJECT_PATH}/data/original/{dataset_name.split("_")[0]}/', metadata
+        f"{PROJECT_PATH}/data/original/{dataset_name.split('_')[0]}/", metadata
     )
     tables_test, _ = remove_sdv_columns(tables_test, metadata, update_metadata=False)
     # split the test data
@@ -76,7 +76,7 @@ def load_airbnb(method, run="1"):
     )
 
     tables_test = load_tables(
-        f'{PROJECT_PATH}/data/original/{dataset_name.split("_")[0]}/', metadata
+        f"{PROJECT_PATH}/data/original/{dataset_name.split('_')[0]}/", metadata
     )
     tables_test, _ = remove_sdv_columns(tables_test, metadata, update_metadata=False)
 
@@ -122,7 +122,7 @@ def load_walmart(method, run="1"):
 
     # split the test data
     tables_test = load_tables(
-        f'{PROJECT_PATH}/data/original/{dataset_name.split("_")[0]}/', metadata
+        f"{PROJECT_PATH}/data/original/{dataset_name.split('_')[0]}/", metadata
     )
     tables_test, _ = remove_sdv_columns(tables_test, metadata, update_metadata=False)
 
@@ -449,7 +449,7 @@ if __name__ == "__main__":
                 "full_feature_importance_real"
             ]
             print(
-                f"Classifier: {classifier} real_score: {result['real_score'] :.3f} ± {result['real_score_se']:.3f}, synthetic_score: {result['synthetic_score']:.3f} ± {result['synthetic_score_se']:.3f}"
+                f"Classifier: {classifier} real_score: {result['real_score']:.3f} ± {result['real_score_se']:.3f}, synthetic_score: {result['synthetic_score']:.3f} ± {result['synthetic_score_se']:.3f}"
             )
             importances_syn = result.pop("importance_synthetic", None)
             results[dataset_name][method][classifier] = result
@@ -657,20 +657,20 @@ if __name__ == "__main__":
             f"Boot spearman: {np.mean(classifier_rank_array_spearman):.3f}±{np.std(classifier_rank_array_spearman) / np.sqrt(m):.4f}"
         )
         print(
-            f"Boot kendall: {np.mean(classifier_rank_array_kendall) :.3f}±{np.std(classifier_rank_array_kendall) / np.sqrt(m):.4f}"
+            f"Boot kendall: {np.mean(classifier_rank_array_kendall):.3f}±{np.std(classifier_rank_array_kendall) / np.sqrt(m):.4f}"
         )
         print(
-            f"Boot weighted: {np.mean(classifier_rank_array_weighted) :.3f}±{np.std(classifier_rank_array_weighted) / np.sqrt(m):.4f}"
+            f"Boot weighted: {np.mean(classifier_rank_array_weighted):.3f}±{np.std(classifier_rank_array_weighted) / np.sqrt(m):.4f}"
         )
 
         print(
-            f"Feature importance spearman: {np.mean(feature_importances_spearman) :.3f}±{np.std(feature_importances_spearman) / np.sqrt(m):.4f}"
+            f"Feature importance spearman: {np.mean(feature_importances_spearman):.3f}±{np.std(feature_importances_spearman) / np.sqrt(m):.4f}"
         )
         print(
-            f"Feature importance tau: {np.mean(feature_importances_tau) :.3f}±{np.std(feature_importances_tau) / np.sqrt(m):.4f}"
+            f"Feature importance tau: {np.mean(feature_importances_tau):.3f}±{np.std(feature_importances_tau) / np.sqrt(m):.4f}"
         )
         print(
-            f"Feature importance weighted: {np.mean(feature_importances_weighted) :.3f}±{np.std(feature_importances_weighted) / np.sqrt(m):.4f}"
+            f"Feature importance weighted: {np.mean(feature_importances_weighted):.3f}±{np.std(feature_importances_weighted) / np.sqrt(m):.4f}"
         )
         print()
 

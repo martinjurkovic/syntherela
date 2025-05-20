@@ -12,8 +12,8 @@ DATASETS=(
 
 # List of run IDs
 RUN_IDS=(
-    1 
-    2 
+    1
+    2
     3
 )
 
@@ -23,7 +23,7 @@ do
     DATASET=${DATASETS[$i]}
     for RUN_ID in "${RUN_IDS[@]}"
     do
-        echo Evaluating dataset $DATASET, run-id $RUN_ID 
+        echo Evaluating dataset $DATASET, run-id $RUN_ID
         # Run the Python script with the dataset, run ID, and methods
         python experiments/evaluation/utility.py --dataset-name $DATASET --run-id $RUN_ID $METHOD_ARGS
     done

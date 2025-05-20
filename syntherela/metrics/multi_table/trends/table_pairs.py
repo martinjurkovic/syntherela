@@ -1,4 +1,5 @@
-"""
+"""Multi table trends (cardinality and intertable correlations) report.
+
 Based on https://github.com/sdv-dev/SDMetrics/blob/main/sdmetrics/reports/multi_table_report/quality_report.py
 """
 

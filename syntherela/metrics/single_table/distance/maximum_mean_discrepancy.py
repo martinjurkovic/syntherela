@@ -1,3 +1,5 @@
+"""Maximum Mean Discrepancy (MMD) metric for single tables."""
+
 import pandas as pd
 from sklearn import metrics
 from sklearn.pipeline import Pipeline
@@ -10,6 +12,36 @@ from syntherela.metrics.base import DistanceBaseMetric, SingleTableMetric
 
 
 class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
+    """Maximum Mean Discrepancy metric for comparing single tables.
+
+    This metric computes the Maximum Mean Discrepancy (MMD) between the distributions
+    of real and synthetic data tables. It is applicable to tables containing numerical columns.
+
+    The implementation is based on the work by Qian et al. (2023) in the Synthcity library.
+
+    Parameters
+    ----------
+    **kwargs
+        Additional keyword arguments to pass to the parent class.
+
+    Attributes
+    ----------
+    name : str
+        Name of the metric.
+    goal : Goal
+        Goal of the metric (minimize).
+    min_value : float
+        Minimum value of the metric (0.0).
+    max_value : float
+        Maximum value of the metric (infinity).
+
+    References
+    ----------
+    .. [1] Gretton, A., Borgwardt, K. M., Rasch, M. J., Schölkopf, B., & Smola, A. (2012).
+           A kernel two-sample test. Journal of Machine Learning Research, 13(1), 723-773.
+
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "MaximumMeanDiscrepancy"
@@ -19,9 +51,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
 
     @staticmethod
     def is_applicable(metadata):
-        """
-        Check if the table contains at least one column that is not an id.
-        """
+        """Check if the table contains numerical column."""
         for column_name in metadata["columns"].keys():
             if metadata["columns"][column_name]["sdtype"] == "numerical":
                 return True
@@ -29,7 +59,8 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
 
     @staticmethod
     def compute(original_table, sythetic_table, metadata, kernel="linear", **kwargs):
-        """
+        """Compute the Maximum Mean Discrepancy (MMD) between two tables.
+
         Code for MaximumMeanDiscrepancy metric modified from:
         Qian, Z., Cebere, B.-C., & van der Schaar, M. (2023).
         Synthcity: Facilitating innovative use cases of synthetic data in different data modalities.

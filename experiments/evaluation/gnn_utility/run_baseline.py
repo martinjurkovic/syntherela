@@ -58,7 +58,9 @@ predict_column_task_config = {
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id, type="test")
+dataset: Dataset = DATASETS[args.dataset](
+    method=args.method, run_id=args.run_id, type="test"
+)
 dataset.target_col = args.target_col
 dataset.entity_table = args.entity_table
 

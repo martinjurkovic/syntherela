@@ -31,8 +31,6 @@ UTILITY_TASKS = [
             "REALTABFORMER",
             "RGCLD",
             "SDV",
-            # "RelDiff",
-            "RelDiff_gen",
         ],
         "task": "predict-column",
     },
@@ -51,8 +49,6 @@ UTILITY_TASKS = [
             "REALTABFORMER",
             "RGCLD",
             "SDV",
-            # "RelDiff",
-            "RelDiff_gen",
         ],
         "--lr": 0.1,
         "task": "predict-column",
@@ -85,8 +81,6 @@ UTILITY_TASKS = [
             "MOSTLYAI",
             "RCTGAN",
             "SDV",
-            # "RelDiff",
-            "RelDiff_gen",
         ],
         "--lr": 0.005,
         "task": "driver-top3",
@@ -105,8 +99,6 @@ UTILITY_TASKS = [
             "RCTGAN",
             "RGCLD",
             "SDV",
-            # "RelDiff",
-            "RelDiff_gen",
         ],
         "--lr": 0.01,
         "task": "predict-column",
@@ -119,12 +111,10 @@ UTILITY_TASKS = [
         "time_col": "date",
         "target_col": "status",
         "methods": [
-            # "ORIGINAL",
-            # "CLAVADDPM",
-            # "MOSTLYAI",
-            # "RGCLD",
-            # "RelDiff",
-            "RelDiff_gen",
+            "ORIGINAL",
+            "CLAVADDPM",
+            "MOSTLYAI",
+            "RGCLD",
         ],
         "--lr": 0.1,
         "--num_layers": 3,
@@ -135,7 +125,7 @@ UTILITY_TASKS = [
 results_dir = os.path.join(PROJECT_PATH, "results")
 os.makedirs(results_dir, exist_ok=True)
 
-results_file = os.path.join(results_dir, "gnn_utility_results_predict_col_reldiff_berka2.json")
+results_file = os.path.join(results_dir, "gnn_utility_results.json")
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
