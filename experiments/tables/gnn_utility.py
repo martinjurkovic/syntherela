@@ -18,7 +18,7 @@ dataset_metrics = {
 }
 
 results_dir = os.path.join(PROJECT_PATH, "results")
-results_file = os.path.join(results_dir, "gnn_utility_results_predict_col_reldiff_all.json")
+results_file = os.path.join(results_dir, "gnn_utility_results.json")
 
 with open(results_file, "r") as f:
     data = json.load(f)
@@ -66,12 +66,11 @@ method_order = [
     # "BASELINE",
     "ORIGINAL",
     "MOSTLYAI",
-    # "RGCLD",
+    "RGCLD",
     "CLAVADDPM",
     "RCTGAN",
     "REALTABFORMER",
     "SDV",
-    "RelDiff_gen",
 ]
 
 method_rename = {
@@ -83,7 +82,6 @@ method_rename = {
     "CLAVADDPM": "CLAVADDPM",
     "MOSTLYAI": "TabularARGN",
     "RGCLD": "RGCLD",
-    "RelDiff_gen": "RelDiff",
 }
 
 dataset_rename = {
