@@ -22,7 +22,7 @@ from sdmetrics.base import BaseMetric
 # FIXME: We should implement our own BaseMetric class or
 # we should be consistent with the sdmetrics API (run vs. compute)
 
-from syntherela.visualisations.utils import prettify_feature_name
+from syntherela.visualisations.utils import prettyify_feature_name
 from syntherela.utils import CustomHyperTransformer
 
 
