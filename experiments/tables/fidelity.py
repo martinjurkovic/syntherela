@@ -43,8 +43,6 @@ methods = [
 model_names = {
     'CLAVADDPM': "ClavaDDPM",
     'RGCLD': "RGCLD",
-    'GRETEL_ACTGAN': "GRE-ACTGAN",
-    'GRETEL_LSTM': "GRE-LSTM",
     'MOSTLYAI': "TabularARGN",
     'RCTGAN': "RCTGAN",
     'REALTABFORMER': "REALTABF.",
