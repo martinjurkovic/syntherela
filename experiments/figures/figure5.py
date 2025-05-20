@@ -1,69 +1,41 @@
-import warnings
-
-import xgboost as xgb
-import seaborn as sns
-from matplotlib import rc
+import os
+import torch
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
+import seaborn as sns
+
+sns.set(style="whitegrid")
+
 from syntherela.metadata import Metadata
-from syntherela.metrics.multi_table.detection import AggregationDetection
-from syntherela.data import load_tables, remove_sdv_columns
+metadata = Metadata().load_from_json("data/original/airbnb-simplified_subsampled/metadata.json")
 
-warnings.filterwarnings("ignore")
-sns.set_theme()
-rc("font", **{"family": "serif", "serif": ["Times"], "size": 30})
-rc("text", usetex=True)
+methods = [
+        'MOSTLYAI',
+        'RGCLD',
+        'CLAVADDPM',
+        'RCTGAN',
+        'REALTABFORMER',
+        'SDV',
+    ]
 
+os.makedirs("results/figures/dcr", exist_ok=True)
+table = "users"
+bins = 100
+for i, method in enumerate(methods):
+    dcrs_real = torch.load(f"results/dcr/{table}_{method}_dcrs_real.pt", weights_only=True).numpy()
+    dcrs_test = torch.load(f"results/dcr/{table}_{method}_dcrs_test.pt", weights_only=True).numpy()
+    bins = np.histogram_bin_edges(np.concatenate((dcrs_real, dcrs_test)), bins=bins)
 
-def reproduce_figure(
-    tables, tables_synthetic, metadata, target_table, feature, figure_name
-):
-    # Compute the metric
-    xgb_cls = xgb.XGBClassifier
-    xgb_args = {
-        "seed": 0,
-    }
+    plt.hist(dcrs_real, bins=bins, label='Train', density=True, color='blue')
+    plt.hist(dcrs_test, bins=bins, alpha=.5, label='Holdout', density=True, color='orange')
 
-    metric = AggregationDetection(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
-    )
-
-    for table in tables.keys():
-        tables_synthetic[table] = tables_synthetic[table][tables[table].columns]
-
-    metric.run(
-        tables,
-        tables_synthetic,
-        metadata=metadata,
-        target_table=target_table,
-    )
-
-    # Plot the feature importance
-
-    metric.plot_partial_dependence(feature, seed=0)
-    plt.savefig(
-        f"results/figures/figure5{figure_name}.png", bbox_inches="tight", dpi=600
-    )
-
-
-dataset_name = "imdb_MovieLens_v1"
-method = "CLAVADDPM"
-
-metadata = Metadata().load_from_json(f"data/original/{dataset_name}/metadata.json")
-
-tables = load_tables(f"data/original/{dataset_name}/", metadata)
-tables_synthetic = load_tables(
-    f"data/synthetic/{dataset_name}/{method}/1/sample1", metadata
-)
-
-tables, metadata = remove_sdv_columns(tables, metadata)
-tables_synthetic, metadata = remove_sdv_columns(
-    tables_synthetic, metadata, update_metadata=False
-)
-
-## FIGURE 5 (a)
-feature = "movies2actors_movieid_cast_num_nunique"
-reproduce_figure(tables, tables_synthetic, metadata, "movies", feature, "a")
-## FIGURE 5 (b)
-feature = "u2base_movieid_rating_mean"
-reproduce_figure(tables, tables_synthetic, metadata, "movies", feature, "b")
+    plt.yscale('log')
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.xlabel('DCR', fontsize=20)
+    plt.ylabel('Frequency(log)', fontsize=20)
+    plt.legend(loc='upper right', fontsize=18)
+    plt.savefig(f"results/figures/dcr/figure5{chr(ord('`')+(i+1))}.png", dpi=300, bbox_inches='tight')
+    plt.clf()

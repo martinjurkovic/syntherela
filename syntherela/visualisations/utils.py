@@ -89,6 +89,23 @@ def get_bins(data):
     return np.histogram_bin_edges(data.dropna())
 
 
+def prettyify_feature_name(feature_name):
+    """Convert feature names into a more readable format."""
+    split_name = feature_name.split("_")
+    if len(split_name) > 1:
+        return " ".join(
+            [
+                (
+                    word.capitalize().replace("Nunique", "\#Unique")
+                    if "id" not in word
+                    else ""
+                )
+                for word in split_name
+            ]
+        )
+    return feature_name[0].upper() + feature_name[1:]
+
+
 def prettify_metric_name(metric_name):
     """Convert metric names into a more readable format.
 
