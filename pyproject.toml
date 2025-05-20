@@ -12,8 +12,7 @@ dependencies = [
     "scikit-learn>1.3.1,<1.5"
 ]
 authors = [
-  { name="Martin Jurkovic", email="martin.jurkovic19@gmail.com" },
-  { name="Valter Hudovernik", email="valter.hudovernik@gmail.com" },
+  { name="Anonymized", email="anon@syntherela.com" },
 ]
 description = "SyntheRela - Synthetic Relational Data Generation Benchmark"
 readme = "README.md"
