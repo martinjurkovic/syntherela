@@ -11,8 +11,8 @@ RUN_DATASETS = [
     # "rossmann_subsampled",
     # "walmart_subsampled",
     # "airbnb-simplified_subsampled",
-    "f1_subsampled",
-    # "Berka_subsampled",
+    # "f1_subsampled",
+    "Berka_subsampled",
 ]
 
 UTILITY_TASKS = [
@@ -31,6 +31,8 @@ UTILITY_TASKS = [
             "REALTABFORMER",
             "RGCLD",
             "SDV",
+            # "RelDiff",
+            "RelDiff_gen",
         ],
         "task": "predict-column",
     },
@@ -49,6 +51,8 @@ UTILITY_TASKS = [
             "REALTABFORMER",
             "RGCLD",
             "SDV",
+            # "RelDiff",
+            "RelDiff_gen",
         ],
         "--lr": 0.1,
         "task": "predict-column",
@@ -61,11 +65,11 @@ UTILITY_TASKS = [
     #     "target_col": "position",
     #     "task_type": "REGRESSION",
     #     "methods": [
-    #                 "ORIGINAL", 
-    #                 "CLAVADDPM", 
-    #                 "RGCLD", 
-    #                 "MOSTLYAI", 
-    #                 "RCTGAN", 
+    #                 "ORIGINAL",
+    #                 "CLAVADDPM",
+    #                 "RGCLD",
+    #                 "MOSTLYAI",
+    #                 "RCTGAN",
     #                 "SDV",
     #                 ],
     #     "--lr": 0.005,
@@ -75,24 +79,35 @@ UTILITY_TASKS = [
         "dataset": "f1_subsampled",
         "task_type": "BINARY_CLASSIFICATION",
         "methods": [
-                    "ORIGINAL", 
-                    "CLAVADDPM", 
-                    "RGCLD", 
-                    "MOSTLYAI", 
-                    "RCTGAN", 
-                    "SDV",
-                    ],
+            "ORIGINAL",
+            "CLAVADDPM",
+            "RGCLD",
+            "MOSTLYAI",
+            "RCTGAN",
+            "SDV",
+            # "RelDiff",
+            "RelDiff_gen",
+        ],
         "--lr": 0.005,
         "task": "driver-top3",
     },
     {
         "dataset": "airbnb-simplified_subsampled",
-        "task_type": "REGRESSION",
+        "task_type": "BINARY_CLASSIFICATION",
         "entity_table": "users",
         "entity_col": "id",
         "time_col": "date_account_created",
         "target_col": "country_destination",
-        "methods": ["ORIGINAL", "CLAVADDPM", "MOSTLYAI", "RCTGAN", "RGCLD", "SDV"],
+        "methods": [
+            "ORIGINAL", 
+            "CLAVADDPM",
+            "MOSTLYAI",
+            "RCTGAN",
+            "RGCLD",
+            "SDV",
+            # "RelDiff",
+            "RelDiff_gen",
+        ],
         "--lr": 0.01,
         "task": "predict-column",
     },
@@ -104,12 +119,12 @@ UTILITY_TASKS = [
         "time_col": "date",
         "target_col": "status",
         "methods": [
-            # "RCTGAN",
-            # "SDV",
             # "ORIGINAL",
             # "CLAVADDPM",
             # "MOSTLYAI",
-            "RGCLD",
+            # "RGCLD",
+            # "RelDiff",
+            "RelDiff_gen",
         ],
         "--lr": 0.1,
         "--num_layers": 3,
@@ -120,7 +135,7 @@ UTILITY_TASKS = [
 results_dir = os.path.join(PROJECT_PATH, "results")
 os.makedirs(results_dir, exist_ok=True)
 
-results_file = os.path.join(results_dir, "gnn_utility_results.json")
+results_file = os.path.join(results_dir, "gnn_utility_results_predict_col_reldiff_berka2.json")
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
@@ -190,7 +205,7 @@ for task in UTILITY_TASKS:
                     command.extend(["--batch_size", str(task["--batch_size"])])
                 if "--num_layers" in task:
                     command.extend(["--num_layers", str(task["--num_layers"])])
-                
+
                 result = subprocess.run(command, capture_output=True, text=True)
 
                 # Clean up temporary torch_geometric files

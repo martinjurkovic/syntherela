@@ -1,5 +1,6 @@
 import os
 from typing import Optional
+from copy import deepcopy
 
 import numpy as np
 import pandas as pd
@@ -262,6 +263,7 @@ class WalmartDataset(Dataset):
 
         tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
 
+        tables = None
         if self.type == "test":
             tables = tables_test
         else:
@@ -272,6 +274,10 @@ class WalmartDataset(Dataset):
         features_df = tables["features"]
 
         depts_df["Date"] = pd.to_datetime(depts_df["Date"], format="%Y-%m-%d")
+
+        # depts_df = depts_df.drop(columns=["IsHoliday"])
+        # features_df = features_df.drop(columns=["IsHoliday"])
+        # features_df = features_df[["Date", "Store", "Temperature"]]
 
         db = Database(
             table_dict={

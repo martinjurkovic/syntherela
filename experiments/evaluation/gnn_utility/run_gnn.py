@@ -7,6 +7,10 @@ from pathlib import Path
 import subprocess
 from typing import Dict
 
+import faulthandler
+
+faulthandler.enable()
+
 # Set CUDA_LAUNCH_BLOCKING=1 to get better error messages
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
@@ -61,21 +65,21 @@ parser.add_argument("--method", type=str, default="ORIGINAL")
 parser.add_argument(
     "--task_type",
     type=str,
-    default="BINARY_CLASSIFICATION",
+    default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--dataset", type=str, default="airbnb-simplified_subsampled")
-parser.add_argument("--entity_table", type=str, default="users")
-parser.add_argument("--entity_col", type=str, default="id")
-parser.add_argument("--time_col", type=str, default="date_account_created")
-parser.add_argument("--target_col", type=str, default="country_destination")
+parser.add_argument("--dataset", type=str, default="walmart_subsampled")
+parser.add_argument("--entity_table", type=str, default="depts")
+parser.add_argument("--entity_col", type=str)
+parser.add_argument("--time_col", type=str, default="Date")
+parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
 parser.add_argument("--lr", type=float, default=0.01)
-parser.add_argument("--epochs", type=int, default=10)
+parser.add_argument("--epochs", type=int, default=30)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
-parser.add_argument("--num_layers", type=int, default=1)
+parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
@@ -197,11 +201,12 @@ for split in ["train", "val", "test"]:
     table = tmp_task.get_table(split)
     table_input = get_node_train_table_input(table=table, task=tmp_task)
     entity_table = table_input.nodes[0]
-    tmp_data = data # if split == "train" else data_test
+    tmp_data = data if split in ("train", "val") else data_test
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         tmp_data,
         num_neighbors=[int(args.num_neighbors / 2**i) for i in range(args.num_layers)],
+        # num_neighbors=[-1 for i in range(args.num_layers)],
         time_attr="time",
         input_nodes=table_input.nodes,
         input_time=table_input.time,
