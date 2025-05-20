@@ -22,6 +22,7 @@ from sdmetrics.base import BaseMetric
 # FIXME: We should implement our own BaseMetric class or
 # we should be consistent with the sdmetrics API (run vs. compute)
 
+from syntherela.visualisations.utils import prettyify_feature_name
 from syntherela.utils import CustomHyperTransformer
 
 
@@ -722,21 +723,6 @@ class DetectionBaseMetric(BaseMetric):
             combine_categorical=combine_categorical, combine_datetime=combine_datetime
         )
 
-        def prettyify_feature_name(feature_name):
-            split_name = feature_name.split("_")
-            if len(split_name) > 1:
-                return " ".join(
-                    [
-                        (
-                            word.capitalize().replace("Nunique", "\#Unique")
-                            if "id" not in word
-                            else ""
-                        )
-                        for word in split_name
-                    ]
-                )
-            return feature_name[0].upper() + feature_name[1:]
-
         def find_column_type(feature_name, column_info):
             for column, values in column_info.items():
                 if values["sdtype"] == "id":
@@ -757,6 +743,7 @@ class DetectionBaseMetric(BaseMetric):
                 return "aggregate"
 
             feature_type = None
+            # FIXME: check if the object is SingleTableMetadata or MultiTableMetadata
             if isinstance(metadata, dict):
                 return find_column_type(feature_name, metadata["columns"])
             else:
@@ -846,22 +833,6 @@ class DetectionBaseMetric(BaseMetric):
         rc("font", **{"family": "serif", "serif": ["Times"], "size": lab_fontsize})
         rc("text", usetex=True)
         from sklearn.inspection import PartialDependenceDisplay
-
-        # TODO: move these functions to some utility module
-        def prettyify_feature_name(feature_name):
-            split_name = feature_name.split("_")
-            if len(split_name) > 1:
-                return " ".join(
-                    [
-                        (
-                            word.capitalize().replace("Nunique", "\#Unique")
-                            if "id" not in word
-                            else ""
-                        )
-                        for word in split_name
-                    ]
-                )
-            return feature_name[0].upper() + feature_name[1:]
 
         def get_average_pds(feature, seed=0, num_ice=30, subsample_avg=0.5):
             with plt.ioff():
