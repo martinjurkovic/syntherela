@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Callable
+from typing import Any, Dict, List
 
 import torch
 from torch import Tensor
@@ -9,7 +9,6 @@ from torch_geometric.nn import MLP
 from torch_geometric.typing import NodeType
 
 from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
-from gnn_architectures import HeteroGNN, gin_conv_factory, graphconv_factory, gat_conv_factory, gatv2_conv_factory
 
 
 class Model(torch.nn.Module):
@@ -26,26 +25,7 @@ class Model(torch.nn.Module):
         shallow_list: List[NodeType] = [],
         # ID awareness
         id_awareness: bool = False,
-        # GNN factory function - defaults to HeteroGraphSAGE for backward compatibility
-        gnn_factory: Callable = None,
-        mlp_layers: int = 1,
-        **gnn_kwargs,
     ):
-        """
-        Args:
-            data: HeteroData object
-            col_stats_dict: Column statistics dictionary
-            num_layers: Number of GNN layers
-            channels: Number of channels
-            out_channels: Output channels for the head
-            aggr: Aggregation method
-            norm: Normalization method
-            shallow_list: List of node types to add shallow embeddings to input
-            id_awareness: Whether to use ID awareness
-            gnn_factory: Factory function to create GNN. Should accept (node_types, edge_types, channels, aggr, num_layers)
-                        and return a GNN module. Defaults to HeteroGraphSAGE if None.
-            **gnn_kwargs: Additional keyword arguments passed to gnn_factory
-        """
         super().__init__()
 
         self.encoder = HeteroEncoder(
@@ -62,32 +42,18 @@ class Model(torch.nn.Module):
             ],
             channels=channels,
         )
-
-        # Use provided gnn_factory or default to HeteroGraphSAGE
-        if gnn_factory is None:
-            self.gnn = HeteroGraphSAGE(
-                node_types=data.node_types,
-                edge_types=data.edge_types,
-                channels=channels,
-                aggr=aggr,
-                num_layers=num_layers,
-            )
-        else:
-            self.gnn = gnn_factory(
-                node_types=data.node_types,
-                edge_types=data.edge_types,
-                channels=channels,
-                aggr=aggr,
-                num_layers=num_layers,
-                **gnn_kwargs,
-            )
-
+        self.gnn = HeteroGraphSAGE(
+            node_types=data.node_types,
+            edge_types=data.edge_types,
+            channels=channels,
+            aggr=aggr,
+            num_layers=num_layers,
+        )
         self.head = MLP(
             channels,
-            hidden_channels=channels,
             out_channels=out_channels,
             norm=norm,
-            num_layers=mlp_layers,
+            num_layers=1,
         )
         self.embedding_dict = ModuleDict(
             {
@@ -169,139 +135,3 @@ class Model(torch.nn.Module):
         )
 
         return self.head(x_dict[dst_table])
-
-
-# Factory functions for different GNN architectures
-def create_hetero_gin(node_types, edge_types, channels, aggr, num_layers, **kwargs):
-    """Factory function to create HeteroGNN with GIN convolution."""
-    return HeteroGNN(
-        node_types=node_types,
-        edge_types=edge_types,
-        channels=channels,
-        conv_factory=gin_conv_factory,
-        aggr=aggr,
-        num_layers=num_layers,
-        **kwargs
-    )
-
-
-def create_hetero_graphconv(node_types, edge_types, channels, aggr, num_layers, **kwargs):
-    """Factory function to create HeteroGNN with GraphConv convolution."""
-    return HeteroGNN(
-        node_types=node_types,
-        edge_types=edge_types,
-        channels=channels,
-        conv_factory=graphconv_factory,
-        aggr=aggr,
-        num_layers=num_layers,
-        **kwargs
-    )
-
-
-def create_hetero_gat(node_types, edge_types, channels, aggr, num_layers, **kwargs):
-    """Factory function to create HeteroGNN with GAT convolution."""
-    return HeteroGNN(
-        node_types=node_types,
-        edge_types=edge_types,
-        channels=channels,
-        conv_factory=gat_conv_factory,
-        aggr=aggr,
-        num_layers=num_layers,
-        **kwargs
-    )
-
-
-def create_hetero_gatv2(node_types, edge_types, channels, aggr, num_layers, **kwargs):
-    """Factory function to create HeteroGNN with GAT v2 convolution."""
-    return HeteroGNN(
-        node_types=node_types,
-        edge_types=edge_types,
-        channels=channels,
-        conv_factory=gatv2_conv_factory,
-        aggr=aggr,
-        num_layers=num_layers,
-        **kwargs
-    )
-
-
-# Usage examples:
-"""
-# Using default HeteroGraphSAGE (backward compatible)
-model = Model(
-    data=data,
-    col_stats_dict=col_stats_dict,
-    num_layers=3,
-    channels=64,
-    out_channels=1,
-    aggr="mean",
-    norm="batch_norm"
-)
-
-# Using HeteroGNN with GIN convolution
-model_gin = Model(
-    data=data,
-    col_stats_dict=col_stats_dict,
-    num_layers=3,
-    channels=64,
-    out_channels=1,
-    aggr="mean",
-    norm="batch_norm",
-    gnn_factory=create_hetero_gin
-)
-
-# Using HeteroGNN with GraphConv convolution
-model_graphconv = Model(
-    data=data,
-    col_stats_dict=col_stats_dict,
-    num_layers=3,
-    channels=64,
-    out_channels=1,
-    aggr="mean",
-    norm="batch_norm",
-    gnn_factory=create_hetero_graphconv
-)
-
-# Using HeteroGNN with GAT convolution (4 attention heads)
-model_gat = Model(
-    data=data,
-    col_stats_dict=col_stats_dict,
-    num_layers=3,
-    channels=64,
-    out_channels=1,
-    aggr="mean",
-    norm="batch_norm",
-    gnn_factory=create_hetero_gat,
-    heads=4,
-    concat=True
-)
-
-# Using HeteroGNN with GAT v2 convolution (4 attention heads)
-model_gatv2 = Model(
-    data=data,
-    col_stats_dict=col_stats_dict,
-    num_layers=3,
-    channels=64,
-    out_channels=1,
-    aggr="mean",
-    norm="batch_norm",
-    gnn_factory=create_hetero_gatv2,
-    heads=4,
-    concat=True
-)
-
-# Using a custom lambda function for more control
-# Note: you would need to import GCNConv from torch_geometric.nn
-model_custom = Model(
-    data=data,
-    col_stats_dict=col_stats_dict,
-    num_layers=3,
-    channels=64,
-    out_channels=1,
-    aggr="mean",
-    norm="batch_norm",
-    gnn_factory=lambda **kwargs: HeteroGNN(
-        conv_factory=lambda in_ch, out_ch: GCNConv(in_ch, out_ch, improved=True),
-        **kwargs
-    )
-)
-"""

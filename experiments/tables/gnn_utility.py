@@ -108,7 +108,7 @@ score_types = {
     "airbnb-simplified_subsampled": "AUC",
 }
 
-score_types_with_arrow = {
+score_trypes_with_arrow = {
     "f1_subsampled": "AUC ($\\uparrow$)",
     "Berka_subsampled": "AUC ($\\uparrow$)",
     "rossmann_subsampled": "MAE ($\\downarrow$)",
@@ -129,7 +129,7 @@ latex_table += "\\midrule\n"
 for dataset in datasets:
     # Use renamed dataset if available, otherwise use original name
     dataset_name = dataset_rename.get(dataset, dataset)
-    row = [dataset_name, score_types_with_arrow[dataset]]
+    row = [dataset_name, score_trypes_with_arrow[dataset]]
 
     # Collect all scores for this dataset to determine best and second best
     scores = []
@@ -188,9 +188,9 @@ for dataset in datasets:
         original_method = next(k for k, v in method_rename.items() if v == method)
         if original_method in results[dataset]:
             mean, se = results[dataset][original_method]
-
+            
             mean_val_str = f"{mean:.2f}" if mean < 1 else f"{mean:.0f}"
-
+            
             # Prepare the \pm SE part, without any $ or \tiny yet
             pm_se_str_core = ""
             if not np.isclose(se, 0, atol=1e-10):
