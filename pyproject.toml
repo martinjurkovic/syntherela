@@ -37,22 +37,15 @@ classifiers = [
     ]
 
 [project.optional-dependencies]
-dev=[
-	"pre-commit",
-]
-
-rdl-utility=[
-  "relbench[full,example]@git+https://github.com/snap-stanford/relbench.git@main",
-  "torch_geometric==2.6.1",
+gnn-utility=[
+  "relbench[full,example]",
+  "torch_geometric",
+  "shap",
   "tqdm",
   "lightgbm==4.6.0",
   "featuretools==1.31.0",
   "python-dotenv==1.0.1"
 ]
-
-[project.urls]
-Homepage = "https://github.com/martinjurkovic/syntherela"
-Issues = "https://github.com/martinjurkovic/syntherela/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
