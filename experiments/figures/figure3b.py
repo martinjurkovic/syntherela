@@ -50,7 +50,7 @@ pair = ["trans_account_id_bank_nunique", "trans_account_id_counts"]
 cmap = sns.color_palette("coolwarm", as_cmap=True)
 
 
-def prettify_feature_name(feature_name):
+def prettyify_feature_name(feature_name):
     feature_name = feature_name.replace("trans", "transaction -")
     feature_name = feature_name.replace("TRANS", "TRANSACTION -")
     feature_name = feature_name.replace("Trans", "Transaction -")
@@ -109,8 +109,8 @@ ax.scatter(
 # ax.legend(loc='upper right')
 
 
-ax.set_xlabel(prettify_feature_name(pair[0]), fontsize=30)
-ax.set_ylabel(prettify_feature_name(pair[1]), fontsize=30)
+ax.set_xlabel(prettyify_feature_name(pair[0]), fontsize=30)
+ax.set_ylabel(prettyify_feature_name(pair[1]), fontsize=30)
 ax.tick_params(axis="both", labelsize=23)  # Set font size for x and y ticks
 
 
