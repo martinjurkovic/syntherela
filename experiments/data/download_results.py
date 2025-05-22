@@ -11,7 +11,7 @@ PROJECT_PATH = os.getenv("PROJECT_PATH")
 
 def download_and_extract(url, filename):
     # Path to the directory where the file will be extracted
-    extract_dir = os.path.join(PROJECT_PATH)
+    extract_dir = os.path.join(PROJECT_PATH, "results")
 
     # Create the download directory if it doesn't exist
     os.makedirs(extract_dir, exist_ok=True)
