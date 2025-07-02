@@ -42,6 +42,13 @@ dev=[
 	"pre-commit",
 ]
 
+docs=[
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-autodoc-typehints",
+    "myst-parser",
+]
+
 gnn-utility=[
   "relbench[full,example]@git+https://github.com/martinjurkovic/relbench.git@predict-column-task",
   "torch_geometric",
