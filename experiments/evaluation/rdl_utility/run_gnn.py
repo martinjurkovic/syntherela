@@ -38,6 +38,11 @@ from gnn_datasets import (
     BerkaDataset,
 )
 
+# TODO: The code we use here has been integrated into RelBench, we can move the
+# RDL utility to the main syntherela package and add relbench as a dependency.
+# TODO: Some of the functions have been refactored in the relbench merge:
+# PredictColumnTask -> AutoCompleteTask so we should also update the code here.
+
 
 DATASETS = {
     RossmannDataset.name: RossmannDataset,
