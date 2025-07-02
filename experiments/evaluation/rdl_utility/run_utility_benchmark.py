@@ -93,7 +93,7 @@ UTILITY_TASKS = [
         "time_col": "date_account_created",
         "target_col": "country_destination",
         "methods": [
-            "ORIGINAL", 
+            "ORIGINAL",
             "CLAVADDPM",
             "MOSTLYAI",
             "RCTGAN",
