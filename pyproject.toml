@@ -37,11 +37,11 @@ classifiers = [
     "Intended Audience :: Healthcare Industry"
     ]
 
+[project.optional-dependencies]
 dev=[
 	"pre-commit",
 ]
 
-[project.optional-dependencies]
 gnn-utility=[
   "relbench[full,example]@git+https://github.com/martinjurkovic/relbench.git@predict-column-task",
   "torch_geometric",
