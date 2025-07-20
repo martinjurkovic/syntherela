@@ -42,8 +42,8 @@ dev=[
 	"pre-commit",
 ]
 
-gnn-utility=[
-  "relbench[full,example]@git+https://github.com/martinjurkovic/relbench.git@predict-column-task",
+rdl-utility=[
+  "relbench[full,example]@git+https://github.com/snap-stanford/relbench.git@main",
   "torch_geometric",
   "tqdm",
   "lightgbm"
