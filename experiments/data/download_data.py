@@ -9,17 +9,20 @@ load_dotenv()
 PROJECT_PATH = os.getenv("PROJECT_PATH")
 
 
-def download_and_extract(url, filename):
+def download_and_extract(url, filename, subdirectory):
     # Path to the directory where the file will be extracted
-    extract_dir = os.path.join(PROJECT_PATH, "data")
+    extract_dir = os.path.join(PROJECT_PATH, "data", subdirectory)
 
     # Create the download directory if it doesn't exist
     os.makedirs(extract_dir, exist_ok=True)
 
-    file_path = os.path.join(extract_dir, filename)
+    # Download to a temporary location first
+    temp_dir = os.path.join(PROJECT_PATH, "data")
+    os.makedirs(temp_dir, exist_ok=True)
+    file_path = os.path.join(temp_dir, filename)
     gdown.download(url, file_path, quiet=False)
 
-    # Extract the file
+    # Extract the file to the specific subdirectory
     with zipfile.ZipFile(file_path, "r") as zip_ref:
         zip_ref.extractall(extract_dir)
 
@@ -31,7 +34,7 @@ def download_and_extract(url, filename):
 orig_url = "https://drive.google.com/uc?id=1FIBnmdQSVUK4xi5uFpzb_vFseK_KLQUG"
 synth_url = "https://drive.google.com/uc?id=1VRoU57Z-J2QV9J4QTNWo-XTWdD8hqkAl"
 
-download_and_extract(orig_url, "original.zip")
-download_and_extract(synth_url, "synthetic.zip")
+download_and_extract(orig_url, "original.zip", "original")
+download_and_extract(synth_url, "synthetic.zip", "synthetic")
 
 print("Files downloaded and extracted successfully!")
