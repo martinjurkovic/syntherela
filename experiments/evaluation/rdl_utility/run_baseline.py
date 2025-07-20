@@ -7,7 +7,7 @@ import torch
 from scipy.stats import mode
 from torch_geometric.seed import seed_everything
 
-from relbench.base import Dataset, Table, TaskType, PredictColumnTask
+from relbench.base import Dataset, Table, TaskType, AutoCompleteTask
 from gnn_datasets import (
     RossmannDataset,
     WalmartDataset,
@@ -38,8 +38,6 @@ parser.add_argument(
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
 parser.add_argument("--entity_table", type=str, default="loan")
-parser.add_argument("--entity_col", type=str, default="loan_id")
-parser.add_argument("--time_col", type=str, default="date")
 parser.add_argument("--target_col", type=str, default="status")
 
 parser.add_argument("--seed", type=int, default=42)
@@ -52,8 +50,6 @@ seed_everything(args.seed)
 predict_column_task_config = {
     "task_type": TaskType[args.task_type],
     "entity_table": args.entity_table,
-    "entity_col": args.entity_col if args.entity_col else None,
-    "time_col": args.time_col,
     "target_col": args.target_col,
 }
 
@@ -64,7 +60,7 @@ dataset: Dataset = DATASETS[args.dataset](
 dataset.target_col = args.target_col
 dataset.entity_table = args.entity_table
 
-task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
+task = AutoCompleteTask(dataset=dataset, **predict_column_task_config)
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")
