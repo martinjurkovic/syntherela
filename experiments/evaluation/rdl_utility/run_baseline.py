@@ -24,6 +24,7 @@ from gnn_datasets import (
     AirbnbDataset,
     BerkaDataset,
 )
+from relbench.datasets import get_dataset
 
 DATASETS = {
     RossmannDataset.name: RossmannDataset,
@@ -91,6 +92,7 @@ else:
     task: BaseTask = TASKS[args.task](dataset=dataset)
     # task_test: BaseTask = TASKS[args.task](dataset=dataset_test)
     task_test: EntityTask = get_task("rel-f1", args.task, download=False)
+    dataset_test = task_test.dataset
 
 
 train_table = task.get_table("train")
@@ -98,7 +100,7 @@ val_table = task.get_table("val")
 test_table = task_test.get_table("test")
 
 
-def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, float]:
+def evaluate(task: BaseTask, train_table: Table, pred_table: Table, name: str) -> Dict[str, float]:
     is_test = task.target_col not in pred_table.df
     if name == "global_zero":
         pred = np.zeros(len(pred_table))
@@ -156,9 +158,9 @@ if task.task_type == TaskType.REGRESSION:
     ]
 
     for name in eval_name_list:
-        train_metrics = evaluate(train_table, train_table, name=name)
-        val_metrics = evaluate(train_table, val_table, name=name)
-        test_metrics = evaluate(trainval_table, test_table, name=name)
+        train_metrics = evaluate(task, train_table, train_table, name=name)
+        val_metrics = evaluate(task, train_table, val_table, name=name)
+        test_metrics = evaluate(task_test, trainval_table, test_table, name=name)
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
@@ -168,9 +170,9 @@ if task.task_type == TaskType.REGRESSION:
 elif task.task_type == TaskType.BINARY_CLASSIFICATION:
     eval_name_list = ["random", "majority"]
     for name in eval_name_list:
-        train_metrics = evaluate(train_table, train_table, name=name)
-        val_metrics = evaluate(train_table, val_table, name=name)
-        test_metrics = evaluate(trainval_table, test_table, name=name)
+        train_metrics = evaluate(task, train_table, train_table, name=name)
+        val_metrics = evaluate(task, train_table, val_table, name=name)
+        test_metrics = evaluate(task_test, trainval_table, test_table, name=name)
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
@@ -180,9 +182,9 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     eval_name_list = ["random_multilabel", "majority_multilabel"]
     for name in eval_name_list:
-        train_metrics = evaluate(train_table, train_table, name=name)
-        val_metrics = evaluate(train_table, val_table, name=name)
-        test_metrics = evaluate(trainval_table, test_table, name=name)
+        train_metrics = evaluate(task, train_table, train_table, name=name)
+        val_metrics = evaluate(task, train_table, val_table, name=name)
+        test_metrics = evaluate(task_test, trainval_table, test_table, name=name)
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
