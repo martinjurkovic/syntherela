@@ -110,7 +110,7 @@ class RossmannDataset(Dataset):
         run_id: int = 0,
         type: str = "train",
     ):
-        super().__init__(cache_dir, predict_column_task_config)
+        super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
         self.type = type
@@ -176,7 +176,7 @@ class AirbnbDataset(Dataset):
         run_id: int = 0,
         type: str = "train",
     ):
-        super().__init__(cache_dir, predict_column_task_config)
+        super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
         self.type = type
@@ -249,7 +249,7 @@ class WalmartDataset(Dataset):
         run_id: int = 0,
         type: str = "train",
     ):
-        super().__init__(cache_dir, predict_column_task_config)
+        super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
         self.type = type
@@ -325,7 +325,7 @@ class F1Dataset(Dataset):
         run_id: int = 0,
         type: str = "train",
     ):
-        super().__init__(cache_dir, predict_column_task_config)
+        super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
         self.type = type
@@ -489,7 +489,7 @@ class BerkaDataset(Dataset):
         run_id: int = 0,
         type: str = "train",
     ):
-        super().__init__(cache_dir, predict_column_task_config)
+        super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
         self.type = type
