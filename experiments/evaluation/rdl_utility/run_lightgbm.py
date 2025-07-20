@@ -52,13 +52,13 @@ parser.add_argument("--run_id", type=str, default="1")
 parser.add_argument(
     "--task_type",
     type=str,
-    default="REGRESSION",
+    default="BINARY_CLASSIFICATION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
 
-parser.add_argument("--dataset", type=str, default="rossmann_subsampled")
-parser.add_argument("--entity_table", type=str, default="historical")
-parser.add_argument("--target_col", type=str, default="Customers")
+parser.add_argument("--dataset", type=str, default="airbnb-simplified_subsampled")
+parser.add_argument("--entity_table", type=str, default="users")
+parser.add_argument("--target_col", type=str, default="country_destination")
 
 
 parser.add_argument("--num_trials", type=int, default=10)
@@ -81,8 +81,6 @@ parser.add_argument(
     default=False,
     help="Download the dataset if not already present.",
 )
-args = parser.parse_args()
-
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -128,6 +126,9 @@ dfs: Dict[str, pd.DataFrame] = {}
 entity_table = dataset.get_db().table_dict[task.entity_table]
 entity_df = entity_table.df
 
+entity_table_test = dataset_test.get_db(upto_test_timestamp=False if args.task == "predict-column" else True).table_dict[task.entity_table]
+entity_df_test = entity_table_test.df
+
 stypes_cache_path = Path(
     f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/stypes.json"
 )
@@ -135,16 +136,27 @@ try:
     with open(stypes_cache_path, "r") as f:
         col_to_stype_dict = json.load(f)
     for table, col_to_stype in col_to_stype_dict.items():
+        orig_columns = dataset.get_db().table_dict[table].df.columns
+        # Collect keys to delete first to avoid modifying dict during iteration
+        keys_to_delete = []
         for col, stype_str in col_to_stype.items():
+            if col not in orig_columns:
+                keys_to_delete.append(col)
+                continue
             col_to_stype[col] = stype(stype_str)
+        # Delete the keys after iteration
+        for col in keys_to_delete:
+            del col_to_stype[col]
 except FileNotFoundError:
+    raise ValueError(f"Stypes cache file not found for {args.dataset}. Please run the metadata_sdv_to_relbench.py script to generate the cache file.")
     col_to_stype_dict = get_stype_proposal(dataset.get_db())
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
-    # with open(stypes_cache_path, "w") as f:
-    #     json.dump(col_to_stype_dict, f, indent=2, default=str)
+    with open(stypes_cache_path, "w") as f:
+        json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 col_to_stype = col_to_stype_dict[task.entity_table]
 remove_pkey_fkey(col_to_stype, entity_table)
+remove_pkey_fkey(col_to_stype, entity_table_test)
 for col in dataset.remove_columns:
     if col in col_to_stype:
         del col_to_stype[col]
@@ -173,6 +185,10 @@ for split, table in [
     ("val", val_table),
     ("test", test_table),
 ]:
+    if split == "test":
+        entity_df = entity_df_test
+        entity_table = entity_table_test
+
     left_entity = list(table.fkey_col_to_pkey_table.keys())[0]
     entity_df = entity_df.astype({entity_table.pkey_col: table.df[left_entity].dtype})
     # Remove duplicated columns from entity_df that are already in the table df
@@ -225,13 +241,13 @@ train_dataset = torch_frame.data.Dataset(
     df=dfs["train"],
     col_to_stype=col_to_stype,
     target_col=task.target_col,
-    col_to_text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device),
-        batch_size=256,
-    ),
+    # col_to_text_embedder_cfg=TextEmbedderConfig(
+    #     text_embedder=GloveTextEmbedding(device=device),
+    #     batch_size=256,
+    # ),
 )
 path = Path(
-    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/node_train{'_join' if args.left_join_fkey else ''}.pt"
+    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/{args.method}/{args.run_id}/node_train{'_join' if args.left_join_fkey else ''}.pt"
 )
 path.parent.mkdir(parents=True, exist_ok=True)
 train_dataset = train_dataset.materialize(path=path)
