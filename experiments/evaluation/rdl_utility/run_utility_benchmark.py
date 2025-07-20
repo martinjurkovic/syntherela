@@ -1,6 +1,7 @@
 import os
 import subprocess
 import json
+import ast
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,11 +9,11 @@ load_dotenv()
 PROJECT_PATH = os.getenv("PROJECT_PATH")
 
 RUN_DATASETS = [
-    # "rossmann_subsampled",
+    "rossmann_subsampled",
     "walmart_subsampled",
-    # "airbnb-simplified_subsampled",
-    # "f1_subsampled",
-    # "Berka_subsampled",
+    "airbnb-simplified_subsampled",
+    "f1_subsampled",
+    "Berka_subsampled",
 ]
 
 UTILITY_TASKS = [
@@ -43,12 +44,12 @@ UTILITY_TASKS = [
         "target_col": "Weekly_Sales",
         "methods": [
             "ORIGINAL",
-            # "CLAVADDPM",
-            # "MOSTLYAI",
-            # "RCTGAN",
-            # "REALTABFORMER",
-            # "RGCLD",
-            # "SDV",
+            "CLAVADDPM",
+            "MOSTLYAI",
+            "RCTGAN",
+            "REALTABFORMER",
+            "RGCLD",
+            "SDV",
         ],
         "--lr": 0.1,
         "task": "predict-column",
@@ -159,7 +160,7 @@ for task in UTILITY_TASKS:
                         )
                         continue
 
-                existing_results[dataset][method][run_id] = {}
+                existing_results[dataset][method][str(run_id)] = {}
 
                 print(
                     f"Running task: {task['dataset']}, Method: {method}, Run ID: {run_id}"
@@ -217,16 +218,16 @@ for task in UTILITY_TASKS:
                     continue
 
                 # convert string to dictionary
-                best_test_metrics = json.loads(best_test_metrics.replace("'", '"'))
+                best_test_metrics = ast.literal_eval(best_test_metrics)
                 # print(f"JSON TEST METRICS: {best_test_metrics}")
-                existing_results[dataset][method][run_id] = best_test_metrics
+                existing_results[dataset][method][str(run_id)] = best_test_metrics
 
                 with open(results_file, "w") as f:
                     json.dump(existing_results, f, indent=4)
 
                 if method == "ORIGINAL":
-                    existing_results[dataset][method][2] = best_test_metrics
-                    existing_results[dataset][method][3] = best_test_metrics
+                    existing_results[dataset][method]["2"] = best_test_metrics
+                    existing_results[dataset][method]["3"] = best_test_metrics
                     break
 
                 with open(results_file, "w") as f:
