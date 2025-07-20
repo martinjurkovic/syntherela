@@ -9,10 +9,10 @@ PROJECT_PATH = os.getenv("PROJECT_PATH")
 
 RUN_DATASETS = [
     # "rossmann_subsampled",
-    # "walmart_subsampled",
+    "walmart_subsampled",
     # "airbnb-simplified_subsampled",
     # "f1_subsampled",
-    "Berka_subsampled",
+    # "Berka_subsampled",
 ]
 
 UTILITY_TASKS = [
@@ -43,12 +43,12 @@ UTILITY_TASKS = [
         "target_col": "Weekly_Sales",
         "methods": [
             "ORIGINAL",
-            "CLAVADDPM",
-            "MOSTLYAI",
-            "RCTGAN",
-            "REALTABFORMER",
-            "RGCLD",
-            "SDV",
+            # "CLAVADDPM",
+            # "MOSTLYAI",
+            # "RCTGAN",
+            # "REALTABFORMER",
+            # "RGCLD",
+            # "SDV",
         ],
         "--lr": 0.1,
         "task": "predict-column",
@@ -125,7 +125,7 @@ UTILITY_TASKS = [
 results_dir = os.path.join(PROJECT_PATH, "results")
 os.makedirs(results_dir, exist_ok=True)
 
-results_file = os.path.join(results_dir, "gnn_utility_results.json")
+results_file = os.path.join(results_dir, "gnn_utility_results_testing_new.json")
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
@@ -167,7 +167,7 @@ for task in UTILITY_TASKS:
 
                 command = [
                     "python",
-                    "experiments/evaluation/gnn_utility/run_gnn.py",
+                    "experiments/evaluation/rdl_utility/run_gnn.py",
                     "--dataset",
                     dataset,
                     "--task_type",
@@ -183,12 +183,12 @@ for task in UTILITY_TASKS:
                 ]
                 if "entity_table" in task:
                     command.extend(["--entity_table", task["entity_table"]])
-                if "time_col" in task:
-                    command.extend(["--time_col", task["time_col"]])
+                # if "time_col" in task:
+                #     command.extend(["--time_col", task["time_col"]])
                 if "target_col" in task:
                     command.extend(["--target_col", task["target_col"]])
-                if "entity_col" in task and task["entity_col"] is not None:
-                    command.extend(["--entity_col", task["entity_col"]])
+                # if "entity_col" in task and task["entity_col"] is not None:
+                #     command.extend(["--entity_col", task["entity_col"]])
                 if "--lr" in task:
                     command.extend(["--lr", str(task["--lr"])])
                 if "--batch_size" in task:

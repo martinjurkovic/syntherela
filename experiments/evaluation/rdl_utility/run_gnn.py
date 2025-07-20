@@ -28,7 +28,7 @@ from relbench.base import Dataset, EntityTask, TaskType
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task, BaseTask
-from relbench.base.task_column import PredictColumnTask
+from relbench.base.task_autocomplete import AutoCompleteTask
 from relbench.tasks.f1 import DriverPositionTask, DriverTop3Task, DriverDNFTask
 from gnn_datasets import (
     RossmannDataset,
@@ -37,11 +37,6 @@ from gnn_datasets import (
     AirbnbDataset,
     BerkaDataset,
 )
-
-# TODO: The code we use here has been integrated into RelBench, we can move the
-# RDL utility to the main syntherela package and add relbench as a dependency.
-# TODO: Some of the functions have been refactored in the relbench merge:
-# PredictColumnTask -> AutoCompleteTask so we should also update the code here.
 
 
 DATASETS = {
@@ -56,7 +51,7 @@ TASKS = {
     "driver-position": DriverPositionTask,
     "driver-top3": DriverTop3Task,
     "driver-dnft": DriverDNFTask,
-    "predict-column": PredictColumnTask,
+    "predict-column": AutoCompleteTask,
 }
 
 parser = argparse.ArgumentParser()
@@ -73,8 +68,6 @@ parser.add_argument(
 )
 parser.add_argument("--dataset", type=str, default="walmart_subsampled")
 parser.add_argument("--entity_table", type=str, default="depts")
-parser.add_argument("--entity_col", type=str)
-parser.add_argument("--time_col", type=str, default="Date")
 parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
 parser.add_argument("--lr", type=float, default=0.01)
@@ -106,8 +99,6 @@ seed_everything(args.seed)
 predict_column_task_config = {
     "task_type": TaskType[args.task_type],
     "entity_table": args.entity_table,
-    "entity_col": args.entity_col if args.entity_col else None,
-    "time_col": args.time_col,
     "target_col": args.target_col,
 }
 
@@ -123,10 +114,10 @@ if args.task == "predict-column":
     dataset.entity_table = args.entity_table
     dataset_test.target_col = args.target_col
     dataset_test.entity_table = args.entity_table
-    task: PredictColumnTask = TASKS[args.task](
+    task: AutoCompleteTask = TASKS[args.task](
         dataset=dataset, **predict_column_task_config
     )
-    task_test: PredictColumnTask = TASKS[args.task](
+    task_test: AutoCompleteTask = TASKS[args.task](
         dataset=dataset_test, **predict_column_task_config
     )
 else:
