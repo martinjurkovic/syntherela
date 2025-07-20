@@ -33,7 +33,7 @@ UTILITY_TASKS = [
             "RGCLD",
             "SDV",
         ],
-        "task": "predict-column",
+        "task": "autocomplete",
     },
     {
         "dataset": "walmart_subsampled",
@@ -52,7 +52,7 @@ UTILITY_TASKS = [
             "SDV",
         ],
         "--lr": 0.1,
-        "task": "predict-column",
+        "task": "autocomplete",
     },
     # {
     #     "dataset": "f1_subsampled",
@@ -70,7 +70,7 @@ UTILITY_TASKS = [
     #                 "SDV",
     #                 ],
     #     "--lr": 0.005,
-    #     "task": "predict-column",
+    #     "task": "autocomplete",
     # },
     {
         "dataset": "f1_subsampled",
@@ -102,7 +102,7 @@ UTILITY_TASKS = [
             "SDV",
         ],
         "--lr": 0.01,
-        "task": "predict-column",
+        "task": "autocomplete",
     },
     {
         "dataset": "Berka_subsampled",
@@ -119,7 +119,7 @@ UTILITY_TASKS = [
         ],
         "--lr": 0.1,
         "--num_layers": 3,
-        "task": "predict-column",
+        "task": "autocomplete",
     },
 ]
 

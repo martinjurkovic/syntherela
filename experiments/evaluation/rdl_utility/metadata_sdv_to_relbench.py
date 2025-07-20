@@ -62,9 +62,13 @@ def main():
         
         # Convert to relbench format
         relbench_metadata = convert_metadata(sdv_metadata)
+
+        task = "autocomplete"
+        if dataset == "f1_subsampled":
+            task = "driver-top3"
         
         # Create output directory
-        output_dir = Path.home() / ".cache" / "relbench_examples" / dataset / "tasks" / "predict-column"
+        output_dir = Path.home() / ".cache" / "relbench_examples" / dataset / "tasks" / task
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # Save relbench metadata
