@@ -41,11 +41,11 @@ TASKS = {
     "driver-position": DriverPositionTask,
     "driver-top3": DriverTop3Task,
     "driver-dnft": DriverDNFTask,
-    "predict-column": AutoCompleteTask,
+    "autocomplete": AutoCompleteTask,
 }
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--task", type=str, default="predict-column")
+parser.add_argument("--task", type=str, default="autocomplete")
 parser.add_argument("--method", type=str, default="ORIGINAL")
 parser.add_argument("--run_id", type=str, default="1")
 
@@ -101,7 +101,7 @@ dataset_test: Dataset = DATASETS[args.dataset](
 )
 
 # task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
-if args.task == "predict-column":
+if args.task == "autocomplete":
     dataset.target_col = args.target_col
     dataset.entity_table = args.entity_table
     dataset_test.target_col = args.target_col
@@ -126,7 +126,7 @@ dfs: Dict[str, pd.DataFrame] = {}
 entity_table = dataset.get_db().table_dict[task.entity_table]
 entity_df = entity_table.df
 
-entity_table_test = dataset_test.get_db(upto_test_timestamp=False if args.task == "predict-column" else True).table_dict[task.entity_table]
+entity_table_test = dataset_test.get_db(upto_test_timestamp=False if args.task == "autocomplete" else True).table_dict[task.entity_table]
 entity_df_test = entity_table_test.df
 
 stypes_cache_path = Path(

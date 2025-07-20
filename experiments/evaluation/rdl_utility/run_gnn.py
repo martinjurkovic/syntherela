@@ -51,12 +51,12 @@ TASKS = {
     "driver-position": DriverPositionTask,
     "driver-top3": DriverTop3Task,
     "driver-dnft": DriverDNFTask,
-    "predict-column": AutoCompleteTask,
+    "autocomplete": AutoCompleteTask,
 }
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--task", type=str, default="predict-column")
+parser.add_argument("--task", type=str, default="autocomplete")
 parser.add_argument("--run_id", type=str, default="1")
 parser.add_argument("--method", type=str, default="ORIGINAL")
 
@@ -109,7 +109,7 @@ dataset_test: Dataset = DATASETS[args.dataset](
 )
 
 # task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
-if args.task == "predict-column":
+if args.task == "autocomplete":
     dataset.target_col = args.target_col
     dataset.entity_table = args.entity_table
     dataset_test.target_col = args.target_col
@@ -143,7 +143,7 @@ except FileNotFoundError:
 
 data, col_stats_dict = make_pkey_fkey_graph(
     dataset.get_db(
-        upto_test_timestamp=False if args.task == "predict-column" else True,
+        upto_test_timestamp=False if args.task == "autocomplete" else True,
     ),
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
@@ -153,7 +153,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
 )
 data_test, col_stats_dict_test = make_pkey_fkey_graph(
     dataset_test.get_db(
-        upto_test_timestamp=False if args.task == "predict-column" else True,
+        upto_test_timestamp=False if args.task == "autocomplete" else True,
     ),
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(

@@ -37,13 +37,13 @@ TASKS = {
     "driver-position": DriverPositionTask,
     "driver-top3": DriverTop3Task,
     "driver-dnft": DriverDNFTask,
-    "predict-column": AutoCompleteTask,
+    "autocomplete": AutoCompleteTask,
 }
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--dataset", type=str, default="airbnb-simplified_subsampled")
-parser.add_argument("--task", type=str, default="predict-column")
+parser.add_argument("--dataset", type=str, default="f1_subsampled")
+parser.add_argument("--task", type=str, default="driver-top3")
 parser.add_argument("--run_id", type=str, default="1")
 parser.add_argument("--method", type=str, default="ORIGINAL")
 
@@ -76,22 +76,26 @@ dataset_test: Dataset = DATASETS[args.dataset](
 )
 
 # task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
-if args.task == "predict-column":
+if args.task == "autocomplete":
     dataset.target_col = args.target_col
     dataset.entity_table = args.entity_table
     dataset_test.target_col = args.target_col
     dataset_test.entity_table = args.entity_table
     task: AutoCompleteTask = TASKS[args.task](
+        dataset=dataset, **predict_column_task_config
+    )
+    task_test: AutoCompleteTask = TASKS[args.task](
         dataset=dataset_test, **predict_column_task_config
     )
 else:
-    # task: BaseTask = TASKS[args.task](dataset=dataset)
+    task: BaseTask = TASKS[args.task](dataset=dataset)
     # task_test: BaseTask = TASKS[args.task](dataset=dataset_test)
-    task: EntityTask = get_task("rel-f1", args.task, download=False)
+    task_test: EntityTask = get_task("rel-f1", args.task, download=False)
+
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")
-test_table = task.get_table("test")
+test_table = task_test.get_table("test")
 
 
 def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, float]:
