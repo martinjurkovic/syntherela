@@ -108,7 +108,7 @@ UTILITY_TASKS = [
 results_dir = os.path.join(PROJECT_PATH, "results")
 os.makedirs(results_dir, exist_ok=True)
 
-results_file = os.path.join(results_dir, "gnn_baseline_results_testing_new.json")
+results_file = os.path.join(results_dir, "gnn_baseline_results.json")
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
