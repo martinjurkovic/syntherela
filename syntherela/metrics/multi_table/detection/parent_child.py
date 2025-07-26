@@ -114,7 +114,12 @@ class ParentChildDetection(DenormalizedDetection):
             parent_table: synthetic_data[parent_table],
             child_table: synthetic_data[child_table],
         }
-        return super().prepare_data(real_data_pair, synthetic_data_pair, pair_metadata)
+        return super().prepare_data(
+            real_data_pair,
+            synthetic_data_pair,
+            pair_metadata,
+            parent_table,
+        )
 
     def run(self, real_data: dict, synthetic_data: dict, metadata: Metadata, **kwargs):
         """Run the parent-child detection metric on all parent-child relationships.
