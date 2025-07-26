@@ -36,6 +36,7 @@ GNN_ARCHITECTURES = [
     "hetero-graphconv",
     "hetero-gat",
     "hetero-gatv2",
+    "relgnn",
 ]
 
 UTILITY_TASKS = [

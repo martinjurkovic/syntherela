@@ -30,11 +30,15 @@ python run_gnn.py --gnn_architecture hetero-gat
 
 # Use HeteroGNN with GAT v2 convolution (uses default 4 heads, concat=True)
 python run_gnn.py --gnn_architecture hetero-gatv2
+
+# Use RelGNN_Model directly (relational GNN with message passing)
+python run_gnn.py --gnn_architecture relgnn
 """
 
 import numpy as np
 import torch
 from model import Model, create_hetero_gin, create_hetero_graphconv, create_hetero_gat, create_hetero_gatv2
+from relgnn_nn import RelGNN_Model, get_atomic_routes
 from text_embedder import GloveTextEmbedding
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame import stype
@@ -96,7 +100,7 @@ parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--gnn_architecture", type=str, default="hetero-graphsage", 
-                    choices=["hetero-graphsage", "hetero-gin", "hetero-graphconv", "hetero-gat", "hetero-gatv2"],
+                    choices=["hetero-graphsage", "hetero-gin", "hetero-graphconv", "hetero-gat", "hetero-gatv2", "relgnn"],
                     help="GNN architecture to use")
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
@@ -300,22 +304,41 @@ GNN_FACTORY_MAP = {
     "hetero-graphconv": create_hetero_graphconv,
     "hetero-gat": create_hetero_gat,
     "hetero-gatv2": create_hetero_gatv2,
+    "relgnn": None,  # RelGNN_Model will be created directly (special case)
 }
 
 # Get the selected GNN factory
 selected_gnn_factory = GNN_FACTORY_MAP[args.gnn_architecture]
 
 # Create model with selected GNN architecture
-model = Model(
-    data=data,
-    col_stats_dict=col_stats_dict,
-    num_layers=args.num_layers,
-    channels=args.channels,
-    out_channels=out_channels,
-    aggr=args.aggr,
-    norm="batch_norm",
-    gnn_factory=selected_gnn_factory,  # None for default HeteroGraphSAGE
-).to(device)
+if args.gnn_architecture == "relgnn":
+    # Use RelGNN_Model directly (special case)
+    atomic_routes_list = get_atomic_routes(data.edge_types)
+    
+    model = RelGNN_Model(
+        data=data,
+        col_stats_dict=col_stats_dict,
+        num_model_layers=args.num_layers,
+        channels=args.channels,
+        out_channels=out_channels,
+        aggr=args.aggr,
+        norm="batch_norm",
+        atomic_routes=atomic_routes_list,
+        num_heads=1,  # Default number of heads
+        simplified_MP=False,  # Default simplified message passing
+    ).to(device)
+else:
+    # Use standard Model class with factory pattern
+    model = Model(
+        data=data,
+        col_stats_dict=col_stats_dict,
+        num_layers=args.num_layers,
+        channels=args.channels,
+        out_channels=out_channels,
+        aggr=args.aggr,
+        norm="batch_norm",
+        gnn_factory=selected_gnn_factory,  # None for default HeteroGraphSAGE
+    ).to(device)
 
 print(f"Using GNN architecture: {args.gnn_architecture}")
 
