@@ -1,6 +1,8 @@
 import os
 from typing import Optional
 from copy import deepcopy
+import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -9,6 +11,32 @@ from syntherela.data import load_tables, remove_sdv_columns
 
 from relbench.base import Database, Dataset, Table
 from syntherela.metadata import Metadata
+
+
+def update_stypes_cache(cache_dir: str, dataset_name: str, table_name: str, column_name: str):
+    """Update stypes.json to remove specified column from specified table."""
+    stypes_cache_path = Path(cache_dir) / dataset_name / "stypes.json"
+    
+    if stypes_cache_path.exists():
+        try:
+            # Read existing stypes.json
+            with open(stypes_cache_path, "r") as f:
+                col_to_stype_dict = json.load(f)
+            
+            # Remove column from table if it exists
+            if table_name in col_to_stype_dict and column_name in col_to_stype_dict[table_name]:
+                col_to_stype_dict[table_name].pop(column_name)
+                
+                # Save updated stypes.json
+                with open(stypes_cache_path, "w") as f:
+                    json.dump(col_to_stype_dict, f, indent=2)
+                
+                print(f"Updated stypes.json: removed '{column_name}' column from '{table_name}' table")
+                
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Warning: Could not update stypes.json at {stypes_cache_path}: {e}")
+    else:
+        print(f"Warning: stypes.json not found at {stypes_cache_path}")
 
 
 def append_test_set(
@@ -104,16 +132,17 @@ class RossmannDataset(Dataset):
 
     def __init__(
         self,
-        cache_dir: Optional[str] = None,
         predict_column_task_config: dict = {},
         method: str = "ORIGINAL",
         run_id: int = 0,
         type: str = "train",
+        cache_dir: Optional[str] = os.path.expanduser("~/.cache/relbench_examples"),
     ):
         super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
         self.type = type
+        self.cache_dir = None
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(
@@ -170,16 +199,21 @@ class AirbnbDataset(Dataset):
 
     def __init__(
         self,
-        cache_dir: Optional[str] = None,
         predict_column_task_config: dict = {},
         method: str = "ORIGINAL",
         run_id: int = 0,
         type: str = "train",
+        cache_dir: Optional[str] = os.path.expanduser("~/.cache/relbench_examples")
     ):
         super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
         self.type = type
+
+        # Update stypes cache to remove columns that will be popped
+        if cache_dir is not None:
+            update_stypes_cache(cache_dir, self.name, "users", "date_first_booking")
+        self.cache_dir = None
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(
@@ -243,16 +277,17 @@ class WalmartDataset(Dataset):
 
     def __init__(
         self,
-        cache_dir: Optional[str] = None,
         predict_column_task_config: dict = {},
         method: str = "ORIGINAL",
         run_id: int = 0,
         type: str = "train",
+        cache_dir: Optional[str] = os.path.expanduser("~/.cache/relbench_examples"),
     ):
         super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
         self.type = type
+        self.cache_dir = None
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(
@@ -319,16 +354,22 @@ class F1Dataset(Dataset):
 
     def __init__(
         self,
-        cache_dir: Optional[str] = None,
         predict_column_task_config: dict = {},
         method: str = "ORIGINAL",
         run_id: int = 0,
         type: str = "train",
+        cache_dir: Optional[str] = os.path.expanduser("~/.cache/relbench_examples")
     ):
         super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
         self.type = type
+        
+        # Update stypes cache to remove columns that will be popped
+        if cache_dir is not None:
+            update_stypes_cache(cache_dir, self.name, "races", "year")
+            update_stypes_cache(cache_dir, self.name, "races", "datetime")
+        self.cache_dir = None
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(
@@ -483,16 +524,17 @@ class BerkaDataset(Dataset):
 
     def __init__(
         self,
-        cache_dir: Optional[str] = None,
         predict_column_task_config: dict = {},
         method: str = "ORIGINAL",
         run_id: int = 0,
         type: str = "train",
+        cache_dir: Optional[str] = os.path.expanduser("~/.cache/relbench_examples"),
     ):
         super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
         self.type = type
+        self.cache_dir = None
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(

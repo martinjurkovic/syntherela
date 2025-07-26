@@ -25,7 +25,7 @@ def convert_sdv_to_relbench_type(sdtype, column_name, computer_representation=No
         return "numerical"
     else:
         # Default fallback
-        return "categorical"
+        raise ValueError(f"Unknown SDV type: {sdtype}")
 
 def convert_metadata(sdv_metadata):
     """Convert SDV metadata to relbench format."""
@@ -68,7 +68,7 @@ def main():
             task = "driver-top3"
         
         # Create output directory
-        output_dir = Path.home() / ".cache" / "relbench_examples" / dataset / "tasks" / task
+        output_dir = Path.home() / ".cache" / "relbench_examples" / dataset # / "tasks" / task
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # Save relbench metadata
