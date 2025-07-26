@@ -13,9 +13,28 @@ faulthandler.enable()
 # Set CUDA_LAUNCH_BLOCKING=1 to get better error messages
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
+"""
+Usage examples for different GNN architectures:
+
+# Default HeteroGraphSAGE
+python run_gnn.py --gnn_architecture hetero-graphsage
+
+# Use HeteroGNN with GIN convolution
+python run_gnn.py --gnn_architecture hetero-gin
+
+# Use HeteroGNN with GraphConv convolution (GCN-like but supports heterogeneous graphs)
+python run_gnn.py --gnn_architecture hetero-graphconv
+
+# Use HeteroGNN with GAT convolution (uses default 4 heads, concat=True)
+python run_gnn.py --gnn_architecture hetero-gat
+
+# Use HeteroGNN with GAT v2 convolution (uses default 4 heads, concat=True)
+python run_gnn.py --gnn_architecture hetero-gatv2
+"""
+
 import numpy as np
 import torch
-from model import Model
+from model import Model, create_hetero_gin, create_hetero_graphconv, create_hetero_gat, create_hetero_gatv2
 from text_embedder import GloveTextEmbedding
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame import stype
@@ -70,12 +89,15 @@ parser.add_argument("--dataset", type=str, default="walmart_subsampled")
 parser.add_argument("--entity_table", type=str, default="depts")
 parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
-parser.add_argument("--lr", type=float, default=0.01)
+parser.add_argument("--lr", type=float, default=0.1)
 parser.add_argument("--epochs", type=int, default=30)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
+parser.add_argument("--gnn_architecture", type=str, default="hetero-graphsage", 
+                    choices=["hetero-graphsage", "hetero-gin", "hetero-graphconv", "hetero-gat", "hetero-gatv2"],
+                    help="GNN architecture to use")
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
@@ -271,6 +293,19 @@ def test(loader: NeighborLoader) -> np.ndarray:
     return torch.cat(pred_list, dim=0).numpy()
 
 
+# Mapping from GNN architecture strings to factory functions
+GNN_FACTORY_MAP = {
+    "hetero-graphsage": None,  # None means use default HeteroGraphSAGE
+    "hetero-gin": create_hetero_gin,
+    "hetero-graphconv": create_hetero_graphconv,
+    "hetero-gat": create_hetero_gat,
+    "hetero-gatv2": create_hetero_gatv2,
+}
+
+# Get the selected GNN factory
+selected_gnn_factory = GNN_FACTORY_MAP[args.gnn_architecture]
+
+# Create model with selected GNN architecture
 model = Model(
     data=data,
     col_stats_dict=col_stats_dict,
@@ -279,7 +314,11 @@ model = Model(
     out_channels=out_channels,
     aggr=args.aggr,
     norm="batch_norm",
+    gnn_factory=selected_gnn_factory,  # None for default HeteroGraphSAGE
 ).to(device)
+
+print(f"Using GNN architecture: {args.gnn_architecture}")
+
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 state_dict = None
 best_val_metric = -math.inf if higher_is_better else math.inf
