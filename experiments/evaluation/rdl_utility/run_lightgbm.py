@@ -129,9 +129,8 @@ entity_df = entity_table.df
 entity_table_test = dataset_test.get_db(upto_test_timestamp=False if args.task == "autocomplete" else True).table_dict[task.entity_table]
 entity_df_test = entity_table_test.df
 
-stypes_cache_path = Path(
-    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/stypes.json"
-)
+stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
+
 try:
     with open(stypes_cache_path, "r") as f:
         col_to_stype_dict = json.load(f)

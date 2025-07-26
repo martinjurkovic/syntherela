@@ -140,8 +140,6 @@ UTILITY_TASKS = [
         "dataset": "Berka_subsampled",
         "task_type": "BINARY_CLASSIFICATION",
         "entity_table": "loan",
-        "entity_col": "loan_id",
-        "time_col": "date",
         "target_col": "status",
         "methods": [
             "ORIGINAL",
@@ -150,7 +148,7 @@ UTILITY_TASKS = [
             "RGCLD",
         ],
         "--lr": 0.1,
-        "--num_layers": 3,
+        "--num_layers": 2,
         "task": "autocomplete",
     },
 ]

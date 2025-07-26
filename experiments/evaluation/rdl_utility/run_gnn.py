@@ -89,9 +89,9 @@ parser.add_argument(
     default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--dataset", type=str, default="walmart_subsampled")
-parser.add_argument("--entity_table", type=str, default="depts")
-parser.add_argument("--target_col", type=str, default="Weekly_Sales")
+parser.add_argument("--dataset", type=str, default="rossmann_subsampled")
+parser.add_argument("--entity_table", type=str, default="historical")
+parser.add_argument("--target_col", type=str, default="Customers")
 
 parser.add_argument("--lr", type=float, default=0.1)
 parser.add_argument("--epochs", type=int, default=30)
@@ -161,7 +161,13 @@ try:
     for table, col_to_stype in col_to_stype_dict.items():
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
+
+    # remove target column from stypes.json
+    if args.task == "autocomplete": 
+        col_to_stype_dict[args.entity_table].pop(args.target_col)
 except FileNotFoundError:
+    print(f"No stypes.json found for {args.dataset}, generating new ones.")
+    print(f"Please consider generating them with the metadata_sdv_to_relbench.py script.")
     col_to_stype_dict = get_stype_proposal(dataset.get_db())
     # Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     # with open(stypes_cache_path, "w") as f:

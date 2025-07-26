@@ -53,11 +53,7 @@ def test_single_run(dataset, gpu_device):
     elif dataset == "Berka_subsampled":
         cmd_args.extend(["--entity_table", "loan", "--target_col", "status", "--task_type", "BINARY_CLASSIFICATION"])
     
-    # Create full command with environment setup
-    env_setup = f'cd {PROJECT_PATH} && source ../.zshrc && conda activate syntherela_new && '
-    full_command = env_setup + " ".join(cmd_args)
-    
-    command = ["bash", "-c", full_command]
+    command = cmd_args
     
     start_time = time.time()
     result = subprocess.run(command, capture_output=True, text=True)
