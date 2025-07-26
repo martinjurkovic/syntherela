@@ -2,6 +2,7 @@ import os
 import subprocess
 import json
 import ast
+import argparse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,14 +20,22 @@ Results are saved in JSON format with structure:
 results[dataset][method][gnn_architecture][run_id] = metrics
 """
 
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Run GNN utility benchmark')
+parser.add_argument('--dataset_filter', type=str, default=None, 
+                    help='Filter to run only specific dataset (e.g., rossmann_subsampled)')
+parser.add_argument('--torch_device', type=str, default='cuda:9',
+                    help='GPU device to use (e.g., cuda:7)')
+args = parser.parse_args()
+
 PROJECT_PATH = os.getenv("PROJECT_PATH")
 
 RUN_DATASETS = [
     "rossmann_subsampled",
-    # "walmart_subsampled",
-    # "airbnb-simplified_subsampled",
-    # "f1_subsampled",
-    # "Berka_subsampled",
+    "walmart_subsampled",
+    "airbnb-simplified_subsampled",
+    "f1_subsampled",
+    "Berka_subsampled",
 ]
 
 # GNN architectures to test
@@ -146,10 +155,14 @@ UTILITY_TASKS = [
     },
 ]
 
-results_dir = os.path.join(PROJECT_PATH, "results")
+results_dir = os.path.join(PROJECT_PATH, "results", "rdl_utility")
 os.makedirs(results_dir, exist_ok=True)
 
-results_file = os.path.join(results_dir, "gnn_utility_results_multi_arch.json")
+# Create dataset-specific results file name
+if args.dataset_filter:
+    results_file = os.path.join(results_dir, f"gnn_utility_results_{args.dataset_filter}.json")
+else:
+    results_file = os.path.join(results_dir, "gnn_utility_results_multi_arch.json")
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
@@ -161,6 +174,8 @@ with open(results_file, "r") as f:
 # print(existing_results)
 
 print(f"=== GNN Utility Benchmark ===")
+print(f"Device: {args.torch_device}")
+print(f"Dataset filter: {args.dataset_filter if args.dataset_filter else 'All datasets'}")
 print(f"Testing {len(RUN_DATASETS)} datasets: {RUN_DATASETS}")
 print(f"Testing {len(GNN_ARCHITECTURES)} GNN architectures: {GNN_ARCHITECTURES}")
 print(f"Results will be saved to: {results_file}")
@@ -169,6 +184,9 @@ print(f"{'='*50}")
 for task in UTILITY_TASKS:
     dataset = task["dataset"]
     task_type = task["task_type"]
+
+    if args.dataset_filter and dataset != args.dataset_filter:
+        continue
 
     if dataset not in RUN_DATASETS:
         continue
@@ -213,7 +231,7 @@ for task in UTILITY_TASKS:
                         "--gnn_architecture",
                         gnn_arch,
                         "--torch_device",
-                        "cuda:9",
+                        args.torch_device,
                         "--task",
                         task["task"],
                     ]
