@@ -184,7 +184,15 @@ class RelGNN_HeteroConv(torch.nn.Module):
                 f"passing as they do not occur as destination type in any "
                 f"edge type. This may lead to unexpected behavior.")
 
-        self.convs = ModuleDict(convs)
+        # Convert tuple keys to string keys for ModuleDict compatibility
+        str_convs = {}
+        self.edge_type_mapping = {}
+        for edge_type_tuple, module in convs.items():
+            edge_type_str = str(edge_type_tuple)
+            str_convs[edge_type_str] = module
+            self.edge_type_mapping[edge_type_str] = edge_type_tuple
+        
+        self.convs = ModuleDict(str_convs)
         self.aggr = aggr
         self.simplified_MP = simplified_MP
 
@@ -216,7 +224,8 @@ class RelGNN_HeteroConv(torch.nn.Module):
             else:
                 out_dict[dst].append(out)
 
-        for edge_type_info, conv in self.convs.items():
+        for edge_type_str, conv in self.convs.items():
+            edge_type_info = self.edge_type_mapping[edge_type_str]
             attn_type = edge_type_info[0]
 
             if attn_type == 'dim-dim':
