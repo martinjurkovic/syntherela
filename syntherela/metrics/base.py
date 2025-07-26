@@ -751,7 +751,7 @@ class DetectionBaseMetric(BaseMetric):
                     feature_type = find_column_type(feature_name, table_data["columns"])
                     if feature_type is not None:
                         break
-            return feature_type
+            return str(feature_type)
 
         colors = {
             "aggregate": "#d7191c",
@@ -759,6 +759,7 @@ class DetectionBaseMetric(BaseMetric):
             "datetime": "#e3d36b",
             "boolean": "#abd9e9",
             "categorical": "#2c7bb6",
+            "None": "#000000",
         }
 
         if ax is None:
