@@ -44,9 +44,10 @@ dev=[
 
 rdl-utility=[
   "relbench[full,example]@git+https://github.com/snap-stanford/relbench.git@main",
-  "torch_geometric",
+  "torch_geometric==2.6.1",
   "tqdm",
-  "lightgbm"
+  "lightgbm==4.6.0",
+  "featuretools==1.31.0"
 ]
 
 [project.urls]
