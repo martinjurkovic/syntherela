@@ -173,7 +173,7 @@ except FileNotFoundError:
     # with open(stypes_cache_path, "w") as f:
     #     json.dump(col_to_stype_dict, f, indent=2, default=str)
 
-data, col_stats_dict = make_pkey_fkey_graph(
+data, col_stats_dict_train = make_pkey_fkey_graph(
     dataset.get_db(
         upto_test_timestamp=False if args.task == "autocomplete" else True,
     ),
@@ -183,7 +183,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     ),
     # cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
-data_test, col_stats_dict_test = make_pkey_fkey_graph(
+data_test, col_stats_dict = make_pkey_fkey_graph(
     dataset_test.get_db(
         upto_test_timestamp=False if args.task == "autocomplete" else True,
     ),
