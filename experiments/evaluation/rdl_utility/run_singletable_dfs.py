@@ -47,20 +47,20 @@ TASKS = {
 }
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--task", type=str, default="autocomplete")
+parser.add_argument("--task", type=str, default="driver-top3")
 parser.add_argument("--method", type=str, default="ORIGINAL")
 parser.add_argument("--run_id", type=str, default="1")
 
 parser.add_argument(
     "--task_type",
     type=str,
-    default="REGRESSION",
+    default="BINARY_CLASSIFICATION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
 
-parser.add_argument("--dataset", type=str, default="rossmann_subsampled")
-parser.add_argument("--entity_table", type=str, default="historical")
-parser.add_argument("--target_col", type=str, default="Customers")
+parser.add_argument("--dataset", type=str, default="f1_subsampled")
+parser.add_argument("--entity_table", type=str, default="loan")
+parser.add_argument("--target_col", type=str, default="status")
 
 
 parser.add_argument("--num_trials", type=int, default=10)
@@ -175,6 +175,8 @@ elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
     #  install torch_frame from https://github.com/ValterH/pytorch-frame
 else:
     raise ValueError(f"Unsupported task type called {task.task_type}")
+
+DROPPED_COLS = False
 
 for split, table in [
     ("train", train_table),
@@ -351,6 +353,24 @@ for split, table in [
         left_on=left_entity,
         right_on=entity_table.pkey_col,
     )
+    # Drop rows where categorical columns are NaN
+    # categorical_cols = []
+    # merged_df_len = len(merged_df)
+    # for col in merged_df.columns:
+    #     dtype = merged_df[col].dtype
+    #     if (pd.api.types.is_object_dtype(dtype) or 
+    #         pd.api.types.is_string_dtype(dtype) or 
+    #         pd.api.types.is_bool_dtype(dtype) or 
+    #         isinstance(dtype, pd.CategoricalDtype)):
+    #         categorical_cols.append(col)
+    
+    
+    # # Drop rows where categorical columns are NaN
+    # if split in ["train", "val"]:
+    #     merged_df = merged_df.dropna(subset=categorical_cols)
+    #     if len(merged_df) < merged_df_len:
+    #         print(f"Dropped {merged_df_len - len(merged_df)} rows with NaN categorical values")
+    #         DROPPED_COLS = True
 
     print(f"Joined {split} data: task table {table.df.shape} + DFS features -> {merged_df.shape}")
 
@@ -361,9 +381,19 @@ for split, table in [
 # Convert dtypes from dfs features back to stype dict for proper torch_frame handling
 col_to_stype = {}
 for col in dfs["train"].columns:
-    # if col == task.target_col:
-    #     # Target column stype will be inferred by torch_frame
-    #     continue
+    if col == task.target_col:
+        # set target column stype based on task type
+        if task.task_type == TaskType.BINARY_CLASSIFICATION:
+            col_to_stype[col] = stype.categorical
+        elif task.task_type == TaskType.REGRESSION:
+            col_to_stype[col] = stype.numerical
+        elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
+            col_to_stype[col] = stype.embedding
+        elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            col_to_stype[col] = stype.categorical
+        else:
+            raise ValueError(f"Unsupported task type called {task.task_type}")
+        continue
     
     # Get the pandas dtype
     dtype = dfs["train"][col].dtype
@@ -440,10 +470,12 @@ if task.task_type in [
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
     pred = model.predict(tf_test=tf_train).numpy()
-    train_metrics = task.evaluate(pred, train_table)
+    if not DROPPED_COLS:
+        train_metrics = task.evaluate(pred, train_table)
 
     pred = model.predict(tf_test=tf_val).numpy()
-    val_metrics = task.evaluate(pred, val_table)
+    if not DROPPED_COLS:
+        val_metrics = task.evaluate(pred, val_table)
 
     pred = model.predict(tf_test=tf_test).numpy()
     test_metrics = task_test.evaluate(pred)
@@ -455,6 +487,7 @@ def clean_metrics(metrics):
     """Convert numpy values to regular Python numbers for cleaner output."""
     return {k: v.item() if hasattr(v, 'item') else v for k, v in metrics.items()}
 
-print(f"Train: {clean_metrics(train_metrics)}")
-print(f"Val: {clean_metrics(val_metrics)}")
+if not DROPPED_COLS:
+    print(f"Train: {clean_metrics(train_metrics)}")
+    print(f"Val: {clean_metrics(val_metrics)}")
 print(f"Test: {clean_metrics(test_metrics)}")

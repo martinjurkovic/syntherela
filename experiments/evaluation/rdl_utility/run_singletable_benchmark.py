@@ -27,8 +27,6 @@ UTILITY_TASKS = [
         "dataset": "rossmann_subsampled",
         "task_type": "REGRESSION",
         "entity_table": "historical",
-        "entity_col": "Id",
-        "time_col": "Date",
         "target_col": "Customers",
         "methods": [
             "ORIGINAL",
