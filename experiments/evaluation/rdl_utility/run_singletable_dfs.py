@@ -54,13 +54,13 @@ parser.add_argument("--run_id", type=str, default="1")
 parser.add_argument(
     "--task_type",
     type=str,
-    default="BINARY_CLASSIFICATION",
+    default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
 
-parser.add_argument("--dataset", type=str, default="airbnb-simplified_subsampled")
-parser.add_argument("--entity_table", type=str, default="users")
-parser.add_argument("--target_col", type=str, default="country_destination")
+parser.add_argument("--dataset", type=str, default="rossmann_subsampled")
+parser.add_argument("--entity_table", type=str, default="historical")
+parser.add_argument("--target_col", type=str, default="Customers")
 
 
 parser.add_argument("--num_trials", type=int, default=10)
@@ -358,9 +358,43 @@ for split, table in [
     dfs[split] = merged_df
     print(f"Stored {split} feature matrix: {merged_df.shape}")
 
+# Convert dtypes from dfs features back to stype dict for proper torch_frame handling
+col_to_stype = {}
+for col in dfs["train"].columns:
+    # if col == task.target_col:
+    #     # Target column stype will be inferred by torch_frame
+    #     continue
+    
+    # Get the pandas dtype
+    dtype = dfs["train"][col].dtype
+    
+    # Map pandas dtypes to torch_frame stypes
+    if pd.api.types.is_integer_dtype(dtype):
+        col_to_stype[col] = stype.numerical
+    elif pd.api.types.is_float_dtype(dtype):
+        col_to_stype[col] = stype.numerical
+    elif pd.api.types.is_bool_dtype(dtype):
+        col_to_stype[col] = stype.categorical
+    elif pd.api.types.is_object_dtype(dtype) or pd.api.types.is_string_dtype(dtype):
+        # All text fields are categorical
+        col_to_stype[col] = stype.categorical
+    elif pd.api.types.is_datetime64_any_dtype(dtype):
+        col_to_stype[col] = stype.timestamp
+    elif isinstance(dtype, pd.CategoricalDtype):
+        # Handle pandas categorical dtype
+        col_to_stype[col] = stype.categorical
+    else:
+        print(f"Unknown dtype for column {col}: {dtype}")
+        # Default to categorical for unknown types
+        col_to_stype[col] = stype.categorical
+
+print(f"Mapped {len(col_to_stype)} columns to stypes for DFS features")
+
+
+
 train_dataset = torch_frame.data.Dataset(
     df=dfs["train"],
-    col_to_stype=infer_df_stype(dfs["train"]),
+    col_to_stype=col_to_stype,
     target_col=task.target_col,
     col_to_text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device),
@@ -394,7 +428,7 @@ if task.task_type in [
     TaskType.REGRESSION,
     TaskType.MULTICLASS_CLASSIFICATION,
 ]:
-    model = XGBoost(
+    model = LightGBM(
         task_type=train_dataset.task_type,
         metric=tune_metric,
         num_classes=(
@@ -416,6 +450,11 @@ if task.task_type in [
 else:
     raise ValueError(f"Task task type is unsupported {task.task_type}")
 
-print(f"Train: {train_metrics}")
-print(f"Val: {val_metrics}")
-print(f"Test: {test_metrics}")
+
+def clean_metrics(metrics):
+    """Convert numpy values to regular Python numbers for cleaner output."""
+    return {k: v.item() if hasattr(v, 'item') else v for k, v in metrics.items()}
+
+print(f"Train: {clean_metrics(train_metrics)}")
+print(f"Val: {clean_metrics(val_metrics)}")
+print(f"Test: {clean_metrics(test_metrics)}")
