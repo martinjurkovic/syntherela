@@ -52,13 +52,13 @@ parser.add_argument("--run_id", type=str, default="1")
 parser.add_argument(
     "--task_type",
     type=str,
-    default="BINARY_CLASSIFICATION",
+    default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
 
-parser.add_argument("--dataset", type=str, default="airbnb-simplified_subsampled")
-parser.add_argument("--entity_table", type=str, default="users")
-parser.add_argument("--target_col", type=str, default="country_destination")
+parser.add_argument("--dataset", type=str, default="rossmann_subsampled")
+parser.add_argument("--entity_table", type=str, default="historical")
+parser.add_argument("--target_col", type=str, default="Customers")
 
 
 parser.add_argument("--num_trials", type=int, default=10)
@@ -249,7 +249,7 @@ path = Path(
     f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/{args.method}/{args.run_id}/node_train{'_join' if args.left_join_fkey else ''}.pt"
 )
 path.parent.mkdir(parents=True, exist_ok=True)
-train_dataset = train_dataset.materialize(path=path)
+train_dataset = train_dataset.materialize(path=None)
 
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
@@ -294,6 +294,12 @@ if task.task_type in [
 else:
     raise ValueError(f"Task task type is unsupported {task.task_type}")
 
-print(f"Train: {train_metrics}")
-print(f"Val: {val_metrics}")
-print(f"Test: {test_metrics}")
+
+
+def clean_metrics(metrics):
+    """Convert numpy values to regular Python numbers for cleaner output."""
+    return {k: v.item() if hasattr(v, 'item') else v for k, v in metrics.items()}
+
+print(f"Train: {clean_metrics(train_metrics)}")
+print(f"Val: {clean_metrics(val_metrics)}")
+print(f"Test: {clean_metrics(test_metrics)}")
