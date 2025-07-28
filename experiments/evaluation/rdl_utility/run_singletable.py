@@ -11,7 +11,7 @@ import torch_frame
 from text_embedder import GloveTextEmbedding
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
-from torch_frame.gbdt import LightGBM
+from torch_frame.gbdt import LightGBM, XGBoost
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm

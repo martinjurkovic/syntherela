@@ -3,10 +3,16 @@ import subprocess
 import json
 import ast
 from dotenv import load_dotenv
+import argparse
 
 load_dotenv()
 
 PROJECT_PATH = os.getenv("PROJECT_PATH")
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Run GNN utility benchmark')
+parser.add_argument('--singletable_model', type=str, default=None, help='singletable model to use', choices=["singletable", "singletable_dfs"])
+args = parser.parse_args()
 
 RUN_DATASETS = [
     "rossmann_subsampled",
@@ -126,7 +132,7 @@ UTILITY_TASKS = [
 results_dir = os.path.join(PROJECT_PATH, "results")
 os.makedirs(results_dir, exist_ok=True)
 
-results_file = os.path.join(results_dir, "lightgbm_utility_results.json")
+results_file = os.path.join(results_dir, f"{args.singletable_model}_utility_results.json")
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
@@ -168,7 +174,7 @@ for task in UTILITY_TASKS:
 
                 command = [
                     "python",
-                    "experiments/evaluation/rdl_utility/run_lightgbm.py",
+                    f"experiments/evaluation/rdl_utility/run_{args.singletable_model}.py",
                     "--dataset",
                     dataset,
                     "--task_type",
