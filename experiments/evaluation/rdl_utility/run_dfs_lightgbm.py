@@ -11,11 +11,12 @@ import torch_frame
 from text_embedder import GloveTextEmbedding
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
-from torch_frame.gbdt import LightGBM
+from torch_frame.gbdt import LightGBM, XGBoost
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 import featuretools as ft
+from torch_frame.utils import infer_df_stype
 
 
 from relbench.base import Dataset, TaskType, EntityTask, BaseTask, AutoCompleteTask
@@ -181,32 +182,32 @@ for split, table in [
     ("test", test_table),
 ]:
     print(f"\n=== Processing {split} split ===")
-    
+
     # Get database for this split
     if split == "test":
         db = dataset_test.get_db(upto_test_timestamp=False if args.task == "autocomplete" else True)
     else:
         db = dataset.get_db()
-    
+
     # Create EntitySet for DFS
     es = ft.EntitySet(id=f"{split}_entityset")
-    
+
     print(f"Adding tables to EntitySet...")
     for table_name, table_obj in db.table_dict.items():
         df = table_obj.df.copy()
-        
+
         # Remove duplicates if any
         if table_obj.pkey_col and table_obj.pkey_col in df.columns:
             before_len = len(df)
             df = df.drop_duplicates(subset=[table_obj.pkey_col])
             if len(df) < before_len:
                 print(f"  Removed {before_len - len(df)} duplicates from {table_name}")
-        
+
         # Create logical types mapping
         logical_types = {}
         if table_name in col_to_stype_dict:
             col_to_stype = col_to_stype_dict[table_name]
-            
+
             for col in df.columns:
                 if col in col_to_stype:
                     stype_val = col_to_stype[col]
@@ -238,7 +239,7 @@ for split, table in [
                         logical_types[col] = 'double'
                     else:
                         logical_types[col] = 'categorical'
-        
+
         try:
             # Handle primary key
             if table_obj.pkey_col is None:
@@ -251,15 +252,15 @@ for split, table in [
                 print(f"  Created artificial primary key for {table_name}: {artificial_pkey}")
             else:
                 pkey_to_use = table_obj.pkey_col
-                
+
             if pkey_to_use not in df.columns:
                 print(f"  ✗ Skipped {table_name}: primary key '{pkey_to_use}' not found")
                 continue
-                
+
             if df[pkey_to_use].nunique() != len(df):
                 print(f"  ✗ Skipped {table_name}: primary key '{pkey_to_use}' not unique")
                 continue
-                
+
             es = es.add_dataframe(
                 dataframe_name=table_name,
                 dataframe=df,
@@ -267,11 +268,11 @@ for split, table in [
                 logical_types=logical_types
             )
             print(f"  ✓ Added {table_name}: {len(df)} rows, pkey='{pkey_to_use}'")
-            
+
         except Exception as e:
             print(f"  ✗ Failed to add {table_name}: {e}")
             continue
-    
+
     # Add relationships
     print(f"Adding relationships...")
     relationships_added = 0
@@ -282,7 +283,7 @@ for split, table in [
                     try:
                         parent_obj = db.table_dict[parent_table]
                         parent_pkey = parent_obj.pkey_col if parent_obj.pkey_col else f"{parent_table}_id"
-                        
+
                         es = es.add_relationship(
                             parent_dataframe_name=parent_table,
                             child_dataframe_name=table_name,
@@ -293,9 +294,9 @@ for split, table in [
                         relationships_added += 1
                     except Exception as e:
                         print(f"  ✗ Failed relationship {parent_table} -> {table_name}: {e}")
-    
+
     print(f"EntitySet created with {relationships_added} relationships")
-    
+
     # Run DFS to create features
     if split == "train":
         print(f"Running DFS on target table: {task.entity_table}")
@@ -316,9 +317,9 @@ for split, table in [
             entityset=es,
             verbose=True
         )
-    
+
     print(f"{split} feature matrix shape: {feature_matrix.shape}")
-    
+
     # Join task table with DFS features (following the pattern from run_lightgbm.py)
     if split == "test":
         entity_df = entity_df_test
@@ -326,52 +327,51 @@ for split, table in [
     else:
         entity_df = db.table_dict[task.entity_table].df
         entity_table = db.table_dict[task.entity_table]
-    
+
     # Get foreign key column name
     left_entity = list(table.fkey_col_to_pkey_table.keys())[0]
-    
+
     # Ensure dtype compatibility between entity table primary key and task table foreign key
     entity_df = entity_df.astype({entity_table.pkey_col: table.df[left_entity].dtype})
-    
+
     # Use DFS features instead of raw entity_df
     # Reset index to make entity IDs a column for joining
     dfs_features = feature_matrix.copy()
     dfs_features[entity_table.pkey_col] = entity_df[entity_table.pkey_col].iloc[dfs_features.index].values
-    
+
     # Remove duplicated columns from DFS features that are already in the task table
     for col in set(dfs_features.columns).intersection(set(table.df.columns)):
         if col != entity_table.pkey_col:
             dfs_features = dfs_features.drop(columns=[col])
-    
+
     # Join task table with DFS features
     merged_df = table.df.merge(
-        dfs_features,
+        dfs_features.reset_index(drop=True),
         how="left",
         left_on=left_entity,
         right_on=entity_table.pkey_col,
     )
-    
+
     print(f"Joined {split} data: task table {table.df.shape} + DFS features -> {merged_df.shape}")
-    
+
     # Store the merged result
     dfs[split] = merged_df
     print(f"Stored {split} feature matrix: {merged_df.shape}")
 
-
 train_dataset = torch_frame.data.Dataset(
     df=dfs["train"],
-    col_to_stype=col_to_stype,
+    col_to_stype=infer_df_stype(dfs["train"]),
     target_col=task.target_col,
-    # col_to_text_embedder_cfg=TextEmbedderConfig(
-    #     text_embedder=GloveTextEmbedding(device=device),
-    #     batch_size=256,
-    # ),
+    col_to_text_embedder_cfg=TextEmbedderConfig(
+        text_embedder=GloveTextEmbedding(device=device),
+        batch_size=256,
+    ),
 )
 path = Path(
-    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/{args.method}/{args.run_id}/node_train{'_join' if args.left_join_fkey else ''}.pt"
+    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/dfs/materialized/{args.method}/{args.run_id}/node_train{'_join' if args.left_join_fkey else ''}.pt"
 )
 path.parent.mkdir(parents=True, exist_ok=True)
-train_dataset = train_dataset.materialize(path=path)
+train_dataset = train_dataset.materialize(path=None)
 
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
@@ -394,7 +394,7 @@ if task.task_type in [
     TaskType.REGRESSION,
     TaskType.MULTICLASS_CLASSIFICATION,
 ]:
-    model = LightGBM(
+    model = XGBoost(
         task_type=train_dataset.task_type,
         metric=tune_metric,
         num_classes=(
