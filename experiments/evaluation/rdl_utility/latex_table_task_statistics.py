@@ -6,11 +6,26 @@ from gnn_datasets import (
     BerkaDataset,
 )
 import pandas as pd
-from relbench.tasks import get_task
+from relbench.tasks import get_task 
+from relbench.base import BaseTask, EntityTask, TaskType
+from relbench.tasks.f1 import DriverTop3Task
 from relbench.base.task_autocomplete import AutoCompleteTask
 
 # Configuration
 INCLUDE_DST_ENTITIES_COLUMN = False  # Set to False to exclude the #Dst Entities column
+
+TASKS = {
+    "driver-top3": DriverTop3Task,
+    "autocomplete": AutoCompleteTask,
+}
+
+DATASETS = {
+    RossmannDataset.name: RossmannDataset,
+    WalmartDataset.name: WalmartDataset,
+    F1Dataset.name: F1Dataset,
+    AirbnbDataset.name: AirbnbDataset,
+    BerkaDataset.name: BerkaDataset,
+}
 
 def get_task_statistics():
     """Extract task statistics for each dataset and return as a list of dictionaries."""
@@ -78,59 +93,40 @@ def get_task_statistics():
     
     for task_info in tasks_info:
         print(f"Processing {task_info['display_name']} - {task_info['task_name']}...")
-        
+
+        if task_info["task_name"] == "autocomplete":
+            continue
+
         try:
             # Instantiate dataset
             dataset = task_info["dataset_class"](method="ORIGINAL", type="train")
-            dataset.target_col = task_info["target_col"]
-            dataset.entity_table = task_info["entity_table"]
             dataset_test = task_info["dataset_class"](method="ORIGINAL", type="test")
-            dataset_test.target_col = task_info["target_col"]
-            dataset_test.entity_table = task_info["entity_table"]
             # Get database
-            db = dataset.get_db(upto_test_timestamp=True)
-            db_test = dataset_test.get_db(upto_test_timestamp=False)
             
-            # Get the entity table
-            entity_table_name = task_info["entity_table"]
-            entity_table = db.table_dict[entity_table_name]
-            entity_df = entity_table.df
 
-            entity_table_test = db_test.table_dict[entity_table_name]
-            entity_df_test = entity_table_test.df
+            if task_info["task_name"] == "autocomplete":
+                dataset.target_col = task_info["target_col"]
+                dataset.entity_table = task_info["entity_table"]
+                dataset_test.target_col = task_info["target_col"]
+                dataset_test.entity_table = task_info["entity_table"]
+                task = AutoCompleteTask(dataset=dataset, task_type=TaskType[task_info["task_type"]], entity_table=task_info["entity_table"], target_col=task_info["target_col"])
+                task_test = AutoCompleteTask(dataset=dataset_test, task_type=TaskType[task_info["task_type"]], entity_table=task_info["entity_table"], target_col=task_info["target_col"])
+            else:
+                task: BaseTask = TASKS[task_info["task_name"]](dataset=dataset)
+                task_test: EntityTask = get_task("rel-f1", task_info["task_name"], download=False)
+
+            train_table = task.get_table("train", mask_input_cols=True)
+            val_table = task.get_table("val", mask_input_cols=False)
+            test_table = task_test.get_table("test", mask_input_cols=False)
             
             # Calculate basic statistics
-            if hasattr(dataset, 'val_timestamp') and hasattr(dataset, 'test_timestamp'):
-                val_timestamp = dataset.val_timestamp
-                test_timestamp = dataset.test_timestamp
-                time_col = task_info["time_col"]
-                
-                if time_col in entity_df.columns:
-                    # Convert time column to datetime
-                    entity_df[time_col] = pd.to_datetime(entity_df[time_col], errors='coerce')
-                    
-                    # Split into train/val/test based on timestamps
-                    train_df = entity_df[entity_df[time_col] < val_timestamp]
-                    val_df = entity_df[(entity_df[time_col] >= val_timestamp) & (entity_df[time_col] < test_timestamp)]
-                    test_df = entity_df_test[entity_df_test[time_col] >= test_timestamp]
-                    
-                    train_rows = len(train_df)
-                    val_rows = len(val_df) 
-                    test_rows = len(test_df)
-                else:
-                    # If no time column, use total rows for train and 0 for others
-                    train_rows = len(entity_df)
-                    val_rows = 0
-                    test_rows = 0
-                    train_df = entity_df
-                    test_df = pd.DataFrame()
-            else:
-                # No temporal split available
-                train_rows = len(entity_df)
-                val_rows = 0
-                test_rows = 0
-                train_df = entity_df
-                test_df = pd.DataFrame()
+            train_df = train_table.df
+            val_df = val_table.df
+            test_df = test_table.df
+            
+            train_rows = len(train_df)
+            val_rows = len(val_df) 
+            test_rows = len(test_df)
             
             # Calculate unique entities
             entity_col = task_info["entity_col"]
@@ -138,14 +134,16 @@ def get_task_statistics():
             if entity_col is None:
                 entity_col = "primary_key"
             
-            if entity_col and entity_col in entity_df.columns:
-                unique_entities = entity_df[entity_col].nunique()
+            if entity_col and entity_col in train_df.columns:
+                unique_entities = train_df[entity_col].nunique()
                 
                 # Calculate train/test entity overlap if we have both splits
                 if entity_col != "primary_key" and len(test_df) > 0 and entity_col in test_df.columns:
                     train_entities = set(train_df[entity_col].unique())
+                    val_entities = set(val_df[entity_col].unique())
+                    train_val_entities = set(train_entities).union(val_entities)
                     test_entities = set(test_df[entity_col].unique())
-                    overlap = len(train_entities.intersection(test_entities))
+                    overlap = len(train_val_entities.intersection(test_entities))
                     total_test_entities = len(test_entities)
                     overlap_pct = (overlap / total_test_entities * 100) if total_test_entities > 0 else 0
                 else:
@@ -161,8 +159,8 @@ def get_task_statistics():
                 if "recommendation" in task_info.get("task_type", "").lower() or "purchase" in task_info.get("target_col", "").lower():
                     # For recommendation tasks, count unique target items
                     target_col = task_info["target_col"]
-                    if target_col in entity_df.columns:
-                        dst_entities = f"{entity_df[target_col].nunique():,}"
+                    if target_col in train_df.columns:
+                        dst_entities = f"{train_df[target_col].nunique():,}"
             
             statistics.append({
                 "dataset": task_info["display_name"],
@@ -190,12 +188,12 @@ def generate_latex_table(statistics):
     
     if INCLUDE_DST_ENTITIES_COLUMN:
         tabular_spec = "llcrrrcrc"
-        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of training table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%train/test Entity Overlap} & \multirow{2}{*}{\#Dst Entities} \\"
+        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of training table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%train-val/test Entity Overlap} & \multirow{2}{*}{\#Dst Entities} \\"
         cmidrule = r"\cmidrule(lr){4-6}"
         header2 = r" &  &  & Train & Validation & Test &  &  &  \\"
     else:
         tabular_spec = "llcrrrcc"
-        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of training table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%train/test Entity Overlap} \\"
+        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of training table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%train-val/test Entity Overlap} \\"
         cmidrule = r"\cmidrule(lr){4-6}"
         header2 = r" &  &  & Train & Validation & Test &  &  \\"
     
