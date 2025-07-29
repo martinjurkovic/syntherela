@@ -18,7 +18,7 @@ dataset_metrics = {
 }
 
 results_dir = os.path.join(PROJECT_PATH, "results")
-results_file = os.path.join(results_dir, "gnn_utility_results.json")
+results_file = os.path.join(results_dir, "singletable_utility_results.json")
 
 with open(results_file, "r") as f:
     data = json.load(f)
