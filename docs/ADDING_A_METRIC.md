@@ -15,7 +15,7 @@ In our abstract metric classes we implement a `run` function additionally to the
 Statistical metrics calculate the metric value and the p-value. The `StatisticalBaseMetric` class is written in a way that when adding a new metric you only need to implement the `compute` function and the `validate` function. The compute function accepts an original and synthetic col returns a dictionary of the form:
 
 ```python
-{"statistic": <statistic>, "p_value": <pval>}
+{"statistic": <statistic>, "p_val": <pval>}
 ```
 
 The `validate` function should be implemented in the metric class and should return a boolean value indicating whether the metric results are valid. The `validate` function is called before the `compute` function on the real and synthetic data. If the `validate` function returns `False`, the metric is skipped for that specific column, table or dataset it is computed on.
