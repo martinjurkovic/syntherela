@@ -63,7 +63,9 @@ class BaseAggregationDetection(DetectionBaseMetric):
             child_fk = relationship["child_foreign_key"]
 
             # only add counts for the first level
-            if level == 0 and add_child_counts:
+            if (
+                level == 0 and add_child_counts
+            ):  # TODO: would level == 1 be more descriptive?
                 # add child counts
                 child_df = pd.DataFrame(
                     {
