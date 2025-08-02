@@ -25,6 +25,7 @@ The search space includes:
 - Number of layers: 1, 2, 3
 - Number of neighbors: -1 (all), 128
 - Weight decay: 0.0 to 0.01 (log uniform)
+- MLP layers: 1, 2, 3
 
 Usage:
     python run_optuna_hyperparameter_tuning.py --gnn_architecture hetero-graphsage --dataset rossmann_subsampled --torch_device cuda:9
@@ -83,7 +84,7 @@ def parse_args():
 
 def run_gnn_experiment(dataset: str, gnn_architecture: str, torch_device: str, 
                       lr: float, num_layers: int, num_neighbors: int, 
-                      weight_decay: float, run_id: int = 1) -> Dict[str, float]:
+                      weight_decay: float, mlp_layers: int, run_id: int = 1) -> Dict[str, float]:
     """Run a single GNN experiment and return metrics"""
     
     config = DATASET_CONFIGS[dataset]
@@ -101,6 +102,7 @@ def run_gnn_experiment(dataset: str, gnn_architecture: str, torch_device: str,
         "--num_layers", str(num_layers),
         "--num_neighbors", str(num_neighbors),
         "--weight_decay", str(weight_decay),
+        "--mlp_layers", str(mlp_layers),
         "--epochs", "30",  # Reasonable number for hyperparameter tuning
         "--max_steps_per_epoch", "1000",  # Faster iterations for tuning
         "--task_type", config["task_type"],
@@ -156,17 +158,18 @@ def objective(trial, gnn_architecture: str, dataset: str, torch_device: str) -> 
     num_layers = trial.suggest_categorical('num_layers', [1, 2, 3])
     num_neighbors = trial.suggest_categorical('num_neighbors', [-1, 128])
     weight_decay = trial.suggest_float('weight_decay', 1e-6, 0.01, log=True)
-    
+    mlp_layers = trial.suggest_categorical('mlp_layers', [1, 2, 3])
     # Store hyperparameters in trial
     trial.set_user_attr('hyperparameters', {
         'lr': lr,
         'num_layers': num_layers,
         'num_neighbors': num_neighbors,
-        'weight_decay': weight_decay
+        'weight_decay': weight_decay,
+        'mlp_layers': mlp_layers
     })
     
     print(f"Running trial {trial.number} for {dataset} with {gnn_architecture}")
-    print(f"Hyperparameters: lr={lr:.4f}, layers={num_layers}, neighbors={num_neighbors}, decay={weight_decay:.6f}")
+    print(f"Hyperparameters: lr={lr:.4f}, layers={num_layers}, neighbors={num_neighbors}, decay={weight_decay:.6f}, mlp_layers={mlp_layers}")
     
     # Run experiment on the specific dataset
     metrics = run_gnn_experiment(
@@ -176,7 +179,8 @@ def objective(trial, gnn_architecture: str, dataset: str, torch_device: str) -> 
         lr=lr,
         num_layers=num_layers,
         num_neighbors=num_neighbors,
-        weight_decay=weight_decay
+        weight_decay=weight_decay,
+        mlp_layers=mlp_layers
     )
     
     # Store results in trial for later analysis

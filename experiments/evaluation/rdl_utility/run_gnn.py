@@ -106,6 +106,7 @@ parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--weight_decay", type=float, default=0.0)
+parser.add_argument("--mlp_layers", type=int, default=1)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--torch_device", type=str, default="cuda:9")
@@ -333,6 +334,7 @@ if args.gnn_architecture == "relgnn":
         atomic_routes=atomic_routes_list,
         num_heads=1,  # Default number of heads
         simplified_MP=False,  # Default simplified message passing
+        mlp_layers=args.mlp_layers,
     ).to(device)
 else:
     # Use standard Model class with factory pattern
@@ -345,6 +347,7 @@ else:
         aggr=args.aggr,
         norm="batch_norm",
         gnn_factory=selected_gnn_factory,  # None for default HeteroGraphSAGE
+        mlp_layers=args.mlp_layers,
     ).to(device)
 
 print(f"Using GNN architecture: {args.gnn_architecture}")

@@ -28,6 +28,7 @@ class Model(torch.nn.Module):
         id_awareness: bool = False,
         # GNN factory function - defaults to HeteroGraphSAGE for backward compatibility
         gnn_factory: Callable = None,
+        mlp_layers: int = 1,
         **gnn_kwargs,
     ):
         """
@@ -85,7 +86,7 @@ class Model(torch.nn.Module):
             channels,
             out_channels=out_channels,
             norm=norm,
-            num_layers=1,
+            num_layers=mlp_layers,
         )
         self.embedding_dict = ModuleDict(
             {
