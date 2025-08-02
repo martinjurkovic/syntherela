@@ -92,6 +92,7 @@ method_order = [
 
 method_rename = {
     "ORIGINAL": "ORIG.",
+    "RELDIFF": "RELDIFF",
     "SDV": "SDV",
     "RCTGAN": "RCTGAN",
     "REALTABFORMER": "REALTABF.",
