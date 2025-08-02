@@ -108,6 +108,7 @@ parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--torch_device", type=str, default="cuda:9")
+parser.add_argument("--weight_decay", type=float, default=0.0)
 parser.add_argument(
     "--cache_dir",
     type=str,
@@ -348,7 +349,7 @@ else:
 
 print(f"Using GNN architecture: {args.gnn_architecture}")
 
-optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 state_dict = None
 best_val_metric = -math.inf if higher_is_better else math.inf
 for epoch in range(1, args.epochs + 1):
