@@ -16,33 +16,38 @@ def get_dataset_statistics():
     datasets_info = [
         {
             "class": RossmannDataset,
-            "name": "rossmann",
+            "name": "Rossmann",
             "domain": "E-commerce",
             "tasks": 1,  # Assuming one main prediction task per dataset
-        },
-        {
-            "class": WalmartDataset,
-            "name": "walmart", 
-            "domain": "E-commerce",
-            "tasks": 1,
+            "hierarchy_type": "Linear"
         },
         {
             "class": AirbnbDataset,
-            "name": "airbnb",
+            "name": "Airbnb",
             "domain": "E-commerce",
             "tasks": 1,
+            "hierarchy_type": "Linear",
+        },
+        {
+            "class": WalmartDataset,
+            "name": "Walmart", 
+            "domain": "E-commerce",
+            "tasks": 1,
+            "hierarchy_type": "Multi Child",
         },
         {
             "class": BerkaDataset,
-            "name": "berka",
+            "name": "Berka",
             "domain": "Financial",
             "tasks": 1,
+            "hierarchy_type": "Multi Child \\& Parent",
         },
         {
             "class": F1Dataset,
-            "name": "f1",
+            "name": "F1",
             "domain": "Sports", 
             "tasks": 1,
+            "hierarchy_type": "Multi Child \\& Parent",
         }
     ]
     
@@ -53,7 +58,7 @@ def get_dataset_statistics():
         
         try:
             # Instantiate dataset
-            dataset = dataset_info["class"](method="ORIGINAL", type="train")
+            dataset = dataset_info["class"](method="ORIGINAL", type="test")
             
             # Get database
             db = dataset.make_db()
@@ -62,6 +67,12 @@ def get_dataset_statistics():
             num_tables = len(db.table_dict)
             total_rows = sum(len(table.df) for table in db.table_dict.values())
             total_cols = sum(len(table.df.columns) for table in db.table_dict.values())
+            
+            # Count relationships (foreign key connections)
+            num_relationships = 0
+            for table_name, table_obj in db.table_dict.items():
+                if hasattr(table_obj, 'fkey_col_to_pkey_table') and table_obj.fkey_col_to_pkey_table:
+                    num_relationships += len(table_obj.fkey_col_to_pkey_table)
             
             # Get timestamps
             val_timestamp = getattr(dataset, 'val_timestamp', None)
@@ -94,12 +105,14 @@ def get_dataset_statistics():
                 "tables": num_tables,
                 "rows": total_rows,
                 "cols": total_cols,
+                "relationships": num_relationships,
                 "start": start_date,
                 "val": val_date,
-                "test": test_date
+                "test": test_date,
+                "hierarchy_type": dataset_info["hierarchy_type"]
             })
             
-            print(f"  Tables: {num_tables}, Rows: {total_rows:,}, Cols: {total_cols}")
+            print(f"  Tables: {num_tables}, Rows: {total_rows:,}, Cols: {total_cols}, Relationships: {num_relationships}")
             
         except Exception as e:
             print(f"Error processing {dataset_info['name']}: {e}")
@@ -111,15 +124,15 @@ def generate_latex_table(statistics):
     """Generate LaTeX table from the statistics."""
     
     if INCLUDE_TASKS_COLUMN:
-        tabular_spec = "lllrrrrccc"
-        header1 = r"\multirow{2}{*}{Name} & \multirow{2}{*}{Domain} & \multirow{2}{*}{\#Tasks} & \multicolumn{3}{c}{Tables} & \multicolumn{3}{c}{Timestamp (year-mon-day)} \\"
-        cmidrule = r"\cmidrule(lr){4-6} \cmidrule(lr){7-9}"
-        header2 = r" &  &  & \#Tables & \#Rows & \#Cols & Start & Val & Test \\"
+        tabular_spec = "lllrrrrcccc"
+        header1 = r"\multirow{2}{*}{Name} & \multirow{2}{*}{Domain} & \multirow{2}{*}{\#Tasks} & \multicolumn{4}{c}{Tables} & \multicolumn{3}{c}{Timestamp (year-mon-day)} & \multirow{2}{*}{Hierarchy Type} \\"
+        cmidrule = r"\cmidrule(lr){4-7} \cmidrule(lr){8-10}"
+        header2 = r" &  &  & \#Tables & \#Rows & \#Cols & \#Rels & Start & Val & Test & \\"
     else:
-        tabular_spec = "llrrrrrrr"
-        header1 = r"\multirow{2}{*}{Name} & \multirow{2}{*}{Domain} & \multicolumn{3}{c}{Tables} & \multicolumn{3}{c}{Timestamp (year-mon-day)} \\"
-        cmidrule = r"\cmidrule(lr){3-5} \cmidrule(lr){6-8}"
-        header2 = r" &  & \#Tables & \#Rows & \#Cols & Start & Val & Test \\"
+        tabular_spec = "llrrrrcccl"
+        header1 = r"\multirow{2}{*}{Name} & \multirow{2}{*}{Domain} & \multicolumn{4}{c}{Tables} & \multicolumn{3}{c}{Timestamp (year-mon-day)} & \multirow{2}{*}{Hierarchy Type} \\"
+        cmidrule = r"\cmidrule(lr){3-6} \cmidrule(lr){7-9}"
+        header2 = r" &  & \#Tables & \#Rows & \#Cols & \#Rels & Start & Val & Test & \\"
     
     latex = f"""
 \\begin{{table}}[htbp]
@@ -137,24 +150,26 @@ def generate_latex_table(statistics):
     total_tables = 0
     total_rows = 0
     total_cols = 0
+    total_relationships = 0
     
     for stat in statistics:
         total_tasks += stat["tasks"]
         total_tables += stat["tables"]
         total_rows += stat["rows"]
         total_cols += stat["cols"]
+        total_relationships += stat["relationships"]
         
         if INCLUDE_TASKS_COLUMN:
-            latex += f"{stat['name']} & {stat['domain']} & {stat['tasks']} & {stat['tables']} & {stat['rows']:,} & {stat['cols']} & {stat['start']} & {stat['val']} & {stat['test']} \\\\\n"
+            latex += f"{stat['name']} & {stat['domain']} & {stat['tasks']} & {stat['tables']} & {stat['rows']:,} & {stat['cols']} & {stat['relationships']} & {stat['start']} & {stat['val']} & {stat['test']} & {stat['hierarchy_type']} \\\\\n"
         else:
-            latex += f"{stat['name']} & {stat['domain']} & {stat['tables']} & {stat['rows']:,} & {stat['cols']} & {stat['start']} & {stat['val']} & {stat['test']} \\\\\n"
+            latex += f"{stat['name']} & {stat['domain']} & {stat['tables']} & {stat['rows']:,} & {stat['cols']} & {stat['relationships']} & {stat['start']} & {stat['val']} & {stat['test']} & {stat['hierarchy_type']} \\\\\n"
     
     # Add total row
     latex += r"\midrule" + "\n"
     if INCLUDE_TASKS_COLUMN:
-        latex += f"\\multicolumn{{2}}{{l}}{{Total}} & {total_tasks} & {total_tables} & {total_rows:,} & {total_cols} & / & / & / \\\\\n"
+        latex += f"\\multicolumn{{2}}{{l}}{{Total}} & {total_tasks} & {total_tables} & {total_rows:,} & {total_cols} & {total_relationships} & / & / & / & / \\\\\n"
     else:
-        latex += f"\\multicolumn{{2}}{{l}}{{Total}} & {total_tables} & {total_rows:,} & {total_cols} & / & / & / \\\\\n"
+        latex += f"\\multicolumn{{2}}{{l}}{{Total}} & {total_tables} & {total_rows:,} & {total_cols} & {total_relationships} & / & / & / & / \\\\\n"
     
     latex += r"""
 \bottomrule
@@ -181,9 +196,9 @@ def main():
     
     # Also print a summary
     print("\nDataset Summary:")
-    print("-" * 60)
+    print("-" * 100)
     for stat in statistics:
-        print(f"{stat['name']:15} | {stat['domain']:12} | {stat['tables']:2d} tables | {stat['rows']:8,} rows | {stat['cols']:3d} cols")
+        print(f"{stat['name']:15} | {stat['domain']:12} | {stat['tables']:2d} tables | {stat['rows']:8,} rows | {stat['cols']:3d} cols | {stat['relationships']:2d} rels | {stat['hierarchy_type']:20}")
 
 if __name__ == "__main__":
     main()
