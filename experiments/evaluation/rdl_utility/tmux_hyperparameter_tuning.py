@@ -186,6 +186,7 @@ def main():
     print("  - Num layers: 1, 2, 3")
     print("  - Num neighbors: -1, 128")
     print("  - Weight decay: 0.0 to 0.01 (log uniform)")
+    print("  - MLP layers: 1, 2, 3")
     print("  - Trials per architecture-dataset: 30")
     print("=" * 80)
 
