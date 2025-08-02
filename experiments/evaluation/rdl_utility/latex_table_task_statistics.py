@@ -46,7 +46,7 @@ def get_task_statistics():
         {
             "dataset_class": WalmartDataset,
             "dataset_name": "walmart_subsampled", 
-            "display_name": "walmart",
+            "display_name": "Walmart",
             "task_name": "autocomplete",
             "task_type": "REGRESSION",
             "entity_table": "depts",
@@ -57,7 +57,7 @@ def get_task_statistics():
         {
             "dataset_class": AirbnbDataset,
             "dataset_name": "airbnb-simplified_subsampled",
-            "display_name": "airbnb",
+            "display_name": "Airbnb",
             "task_name": "autocomplete", 
             "task_type": "BINARY_CLASSIFICATION",
             "entity_table": "users",
@@ -93,9 +93,6 @@ def get_task_statistics():
     
     for task_info in tasks_info:
         print(f"Processing {task_info['display_name']} - {task_info['task_name']}...")
-
-        if task_info["task_name"] == "autocomplete":
-            continue
 
         try:
             # Instantiate dataset
@@ -164,8 +161,8 @@ def get_task_statistics():
             
             statistics.append({
                 "dataset": task_info["display_name"],
-                "task_name": task_info["task_name"],
-                "task_type": "entity-reg" if task_info["task_type"] == "REGRESSION" else "entity-cls",
+                "task_name": task_info["task_name"].capitalize(),
+                "task_type": "Classification" if task_info["task_type"] == "BINARY_CLASSIFICATION" else "Regression",
                 "train_rows": train_rows,
                 "val_rows": val_rows,
                 "test_rows": test_rows,
@@ -188,12 +185,12 @@ def generate_latex_table(statistics):
     
     if INCLUDE_DST_ENTITIES_COLUMN:
         tabular_spec = "llcrrrcrc"
-        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of training table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%train-val/test Entity Overlap} & \multirow{2}{*}{\#Dst Entities} \\"
+        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of training table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%Train-Val/test Entity Overlap} & \multirow{2}{*}{\#Dst Entities} \\"
         cmidrule = r"\cmidrule(lr){4-6}"
         header2 = r" &  &  & Train & Validation & Test &  &  &  \\"
     else:
         tabular_spec = "llcrrrcc"
-        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of training table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%train-val/test Entity Overlap} \\"
+        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of training table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%Train-Val/test Entity Overlap} \\"
         cmidrule = r"\cmidrule(lr){4-6}"
         header2 = r" &  &  & Train & Validation & Test &  &  \\"
     
