@@ -94,7 +94,7 @@ parser.add_argument("--entity_table", type=str, default="historical")
 parser.add_argument("--target_col", type=str, default="Customers")
 
 parser.add_argument("--lr", type=float, default=0.1)
-parser.add_argument("--epochs", type=int, default=30)
+parser.add_argument("--epochs", type=int, default=50)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
@@ -105,10 +105,10 @@ parser.add_argument("--gnn_architecture", type=str, default="hetero-graphsage",
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
+parser.add_argument("--weight_decay", type=float, default=0.0)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--torch_device", type=str, default="cuda:9")
-parser.add_argument("--weight_decay", type=float, default=0.0)
 parser.add_argument(
     "--cache_dir",
     type=str,
