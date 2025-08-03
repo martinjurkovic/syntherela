@@ -76,7 +76,7 @@ def parse_args():
                         help='Dataset to tune on')
     parser.add_argument('--torch_device', type=str, default='cuda:9',
                         help='GPU device to use (e.g., cuda:7)')
-    parser.add_argument('--n_trials', type=int, default=50,
+    parser.add_argument('--n_trials', type=int, default=100,
                         help='Number of Optuna trials')
     parser.add_argument('--timeout', type=int, default=3600,
                         help='Timeout per trial in seconds (default: 1 hour)')
@@ -84,7 +84,7 @@ def parse_args():
 
 def run_gnn_experiment(dataset: str, gnn_architecture: str, torch_device: str, 
                       lr: float, num_layers: int, num_neighbors: int, 
-                      weight_decay: float, mlp_layers: int, run_id: int = 1) -> Dict[str, float]:
+                      weight_decay: float, mlp_layers: int, aggr: str, run_id: int = 1) -> Dict[str, float]:
     """Run a single GNN experiment and return metrics"""
     
     config = DATASET_CONFIGS[dataset]
@@ -103,10 +103,11 @@ def run_gnn_experiment(dataset: str, gnn_architecture: str, torch_device: str,
         "--num_neighbors", str(num_neighbors),
         "--weight_decay", str(weight_decay),
         "--mlp_layers", str(mlp_layers),
-        "--epochs", "30",  # Reasonable number for hyperparameter tuning
-        "--max_steps_per_epoch", "1000",  # Faster iterations for tuning
+        "--epochs", "50",  # Reasonable number for hyperparameter tuning
+        "--max_steps_per_epoch", "2000",  # Faster iterations for tuning
         "--task_type", config["task_type"],
         "--task", config["task"],
+        "--aggr", str(aggr),
     ]
     
     # Add dataset-specific arguments
@@ -154,22 +155,24 @@ def objective(trial, gnn_architecture: str, dataset: str, torch_device: str) -> 
     """Optuna objective function"""
     
     # Define hyperparameter search space
-    lr = trial.suggest_categorical('lr', [0.0001, 0.001, 0.01, 0.1])
+    lr = trial.suggest_categorical('lr', [0.0001, 0.001, 0.01, 0.1, 0.5, 1.0])
     num_layers = trial.suggest_categorical('num_layers', [1, 2, 3])
     num_neighbors = trial.suggest_categorical('num_neighbors', [-1, 128])
-    weight_decay = trial.suggest_float('weight_decay', 1e-6, 0.01, log=True)
+    weight_decay = trial.suggest_float('weight_decay', 1e-9, 0.01, log=True)
     mlp_layers = trial.suggest_categorical('mlp_layers', [1, 2, 3])
+    aggr = trial.suggest_categorical('aggr', ['sum', 'mean', 'max', 'min'])
     # Store hyperparameters in trial
     trial.set_user_attr('hyperparameters', {
         'lr': lr,
         'num_layers': num_layers,
         'num_neighbors': num_neighbors,
         'weight_decay': weight_decay,
-        'mlp_layers': mlp_layers
+        'mlp_layers': mlp_layers,
+        'aggr': aggr
     })
     
     print(f"Running trial {trial.number} for {dataset} with {gnn_architecture}")
-    print(f"Hyperparameters: lr={lr:.4f}, layers={num_layers}, neighbors={num_neighbors}, decay={weight_decay:.6f}, mlp_layers={mlp_layers}")
+    print(f"Hyperparameters: lr={lr:.4f}, layers={num_layers}, neighbors={num_neighbors}, decay={weight_decay:.6f}, mlp_layers={mlp_layers}, aggr={aggr}")
     
     # Run experiment on the specific dataset
     metrics = run_gnn_experiment(
@@ -180,7 +183,8 @@ def objective(trial, gnn_architecture: str, dataset: str, torch_device: str) -> 
         num_layers=num_layers,
         num_neighbors=num_neighbors,
         weight_decay=weight_decay,
-        mlp_layers=mlp_layers
+        mlp_layers=mlp_layers,
+        aggr=aggr
     )
     
     # Store results in trial for later analysis
