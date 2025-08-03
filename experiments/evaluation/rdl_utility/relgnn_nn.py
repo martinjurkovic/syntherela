@@ -76,7 +76,7 @@ class RelGNNConv(TransformerConv):
         if attn_type == 'dim-fact-dim':
             self.aggr_conv = SAGEConv(in_channels, out_channels, aggr=aggr)
         self.simplified_MP = simplified_MP
-        self.final_proj = MLP(heads * out_channels, out_channels, bias=bias, num_layers=mlp_layers)
+        self.final_proj = Linear(heads * out_channels, out_channels, bias=bias)
         self.final_proj.reset_parameters()
 
     def forward(
@@ -351,6 +351,7 @@ class RelGNN_Model(torch.nn.Module):
         atomic_routes=None,
         num_heads=None,
         simplified_MP=False,
+        mlp_layers=1,
     ):
         super().__init__()
 
@@ -379,9 +380,10 @@ class RelGNN_Model(torch.nn.Module):
         )
         self.head = MLP(
             channels,
+            hidden_channels=channels,
             out_channels=out_channels,
             norm=norm,
-            num_layers=1,
+            num_layers=mlp_layers,
         )
         self.embedding_dict = ModuleDict(
             {
