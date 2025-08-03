@@ -269,11 +269,16 @@ class AirbnbDataset(Dataset):
 
 class WalmartDataset(Dataset):
     name = "walmart_subsampled"
-    val_timestamp = pd.Timestamp("2012-01-24")
-    test_timestamp = pd.Timestamp("2012-02-01")
+    # val_timestamp = pd.Timestamp("2012-01-24")
+    # test_timestamp = pd.Timestamp("2012-02-01")
+
+    # from_timestamp = pd.Timestamp("2012-01-01")
+    # upto_timestamp = pd.Timestamp("2012-03-01")
+    val_timestamp = pd.Timestamp("2012-01-15")
+    test_timestamp = pd.Timestamp("2012-01-24")
 
     from_timestamp = pd.Timestamp("2012-01-01")
-    upto_timestamp = pd.Timestamp("2012-03-01")
+    upto_timestamp = pd.Timestamp("2012-02-01")
 
     def __init__(
         self,
@@ -287,16 +292,18 @@ class WalmartDataset(Dataset):
         self.method = method
         self.run_id = run_id
         self.type = type
+        if cache_dir is not None:
+            update_stypes_cache(cache_dir, self.name, "depts", "Dept")
         self.cache_dir = None
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(
             self.name, self.method, self.run_id
         )
-        tables_test = load_tables(os.path.join("data", "original", "walmart"), metadata)
+        tables_test = load_tables(os.path.join("data", "original", "walmart_subsampled"), metadata)
         tables_test, metadata = remove_sdv_columns(tables_test, metadata)
 
-        tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
+        # tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
 
         tables = None
         if self.type == "test":
@@ -309,8 +316,13 @@ class WalmartDataset(Dataset):
         features_df = tables["features"]
 
         depts_df["Date"] = pd.to_datetime(depts_df["Date"], format="%Y-%m-%d")
+        # sort by Date
+        depts_df = depts_df.sort_values(by=["Store", "Dept", "Date"], ascending=True)
+        features_df = features_df.sort_values(by=["Store", "Date"], ascending=True)
+        depts_df["primary_key"] = range(len(depts_df))
 
-        # depts_df = depts_df.drop(columns=["IsHoliday"])
+
+        depts_df = depts_df.drop(columns=["Dept"])
         # features_df = features_df.drop(columns=["IsHoliday"])
         # features_df = features_df[["Date", "Store", "Temperature"]]
 
@@ -322,6 +334,7 @@ class WalmartDataset(Dataset):
                         "Store": "stores",
                     },
                     time_col="Date",
+                    pkey_col="primary_key",
                 ),
                 "stores": Table(
                     df=stores_df,

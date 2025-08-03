@@ -95,11 +95,10 @@ method_rename = {
     "RELDIFF": "RELDIFF",
     "SDV": "SDV",
     "RCTGAN": "RCTGAN",
-    "REALTABFORMER": "REALTABF.",
-    "CLAVADDPM": "CLAVADDPM",
-    "MOSTLYAI": "TabularARGN",
+    "REALTABFORMER": "REALTF.",
+    "CLAVADDPM": "CLAVA",
+    "MOSTLYAI": "TARGN",
     "RGCLD": "RGCLD",
-    "RELDIFF": "RelDiff",
 }
 
 dataset_rename = {
@@ -111,9 +110,9 @@ dataset_rename = {
 }
 
 gnn_arch_rename = {
-    "hetero-graphsage": "GraphSAGE",
+    "hetero-graphsage": "G-SAGE",
     "hetero-gin": "GIN",
-    "hetero-graphconv": "GraphConv",
+    "hetero-graphconv": "G-Conv",
     "hetero-gat": "GAT",
     "hetero-gatv2": "GATv2",
     "relgnn": "RelGNN",
