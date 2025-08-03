@@ -81,7 +81,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--task", type=str, default="autocomplete")
 parser.add_argument("--run_id", type=str, default="1")
-parser.add_argument("--method", type=str, default="RELDIFF")
+parser.add_argument("--method", type=str, default="ORIGINAL")
 
 parser.add_argument(
     "--task_type",
@@ -98,7 +98,7 @@ parser.add_argument("--epochs", type=int, default=20)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
-parser.add_argument("--num_layers", type=int, default=1)
+parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--gnn_architecture", type=str, default="hetero-gin", 
                     choices=["hetero-graphsage", "hetero-gin", "hetero-graphconv", "hetero-gat", "hetero-gatv2", "relgnn"],
                     help="GNN architecture to use")
@@ -106,10 +106,10 @@ parser.add_argument("--num_neighbors", type=int, default=-1)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--weight_decay", type=float, default=0.0)
-parser.add_argument("--mlp_layers", type=int, default=3)
+parser.add_argument("--mlp_layers", type=int, default=1)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument("--torch_device", type=str, default="cuda:9")
+parser.add_argument("--torch_device", type=str, default="cuda:0")
 parser.add_argument(
     "--cache_dir",
     type=str,
@@ -185,7 +185,7 @@ data, col_stats_dict_train = make_pkey_fkey_graph(
     # ),
     # cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
-data_test, col_stats_dict = make_pkey_fkey_graph(
+data_test, col_stats_dict_test = make_pkey_fkey_graph(
     dataset_test.get_db(
         upto_test_timestamp=False if args.task == "autocomplete" else True,
     ),
@@ -323,7 +323,7 @@ if args.gnn_architecture == "relgnn":
     
     model = RelGNN_Model(
         data=data,
-        col_stats_dict=col_stats_dict_train,
+        col_stats_dict=col_stats_dict_test,
         num_model_layers=args.num_layers,
         channels=args.channels,
         out_channels=out_channels,
@@ -338,7 +338,7 @@ else:
     # Use standard Model class with factory pattern
     model = Model(
         data=data,
-        col_stats_dict=col_stats_dict_train,
+        col_stats_dict=col_stats_dict_test,
         num_layers=args.num_layers,
         channels=args.channels,
         out_channels=out_channels,

@@ -26,9 +26,35 @@ parser.add_argument('--dataset_filter', type=str, default=None,
                     help='Filter to run only specific dataset (e.g., rossmann_subsampled)')
 parser.add_argument('--torch_device', type=str, default='cuda:9',
                     help='GPU device to use (e.g., cuda:7)')
+parser.add_argument('--use_tuned_hyperparameters', action='store_true',
+                    help='Use best hyperparameters from hyperparameter tuning results')
 args = parser.parse_args()
 
 PROJECT_PATH = os.getenv("PROJECT_PATH")
+
+def load_tuned_hyperparameters(dataset, gnn_architecture):
+    """Load best hyperparameters for a specific dataset-architecture combination"""
+    
+    # Construct filename based on naming convention
+    filename = f"hyperparameter_results_{gnn_architecture.replace('-', '_')}_{dataset.replace('-', '_')}.json"
+    filepath = os.path.join(PROJECT_PATH, "results", "hyperparameter_tuning", filename)
+    
+    if not os.path.exists(filepath):
+        print(f"Warning: No tuned hyperparameters found for {gnn_architecture} + {dataset}")
+        print(f"Expected file: {filepath}")
+        return None
+    
+    try:
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        
+        best_hyperparams = data.get('best_hyperparameters', {})
+        print(f"✓ Loaded tuned hyperparameters for {gnn_architecture} + {dataset}: {best_hyperparams}")
+        return best_hyperparams
+        
+    except Exception as e:
+        print(f"Error loading hyperparameters from {filepath}: {e}")
+        return None
 
 RUN_DATASETS = [
     "rossmann_subsampled",
@@ -179,6 +205,7 @@ with open(results_file, "r") as f:
 print(f"=== GNN Utility Benchmark ===")
 print(f"Device: {args.torch_device}")
 print(f"Dataset filter: {args.dataset_filter if args.dataset_filter else 'All datasets'}")
+print(f"Use tuned hyperparameters: {args.use_tuned_hyperparameters}")
 print(f"Testing {len(RUN_DATASETS)} datasets: {RUN_DATASETS}")
 print(f"Testing {len(GNN_ARCHITECTURES)} GNN architectures: {GNN_ARCHITECTURES}")
 print(f"Results will be saved to: {results_file}")
@@ -246,12 +273,43 @@ for task in UTILITY_TASKS:
                         command.extend(["--target_col", task["target_col"]])
                     # if "entity_col" in task and task["entity_col"] is not None:
                     #     command.extend(["--entity_col", task["entity_col"]])
-                    if "--lr" in task:
-                        command.extend(["--lr", str(task["--lr"])])
-                    if "--batch_size" in task:
-                        command.extend(["--batch_size", str(task["--batch_size"])])
-                    if "--num_layers" in task:
-                        command.extend(["--num_layers", str(task["--num_layers"])])
+                    
+                    # Handle hyperparameters - use tuned ones if available and requested
+                    if args.use_tuned_hyperparameters:
+                        tuned_params = load_tuned_hyperparameters(dataset, gnn_arch)
+                        if tuned_params:
+                            # Use tuned hyperparameters
+                            if "lr" in tuned_params:
+                                command.extend(["--lr", str(tuned_params["lr"])])
+                            if "num_layers" in tuned_params:
+                                command.extend(["--num_layers", str(tuned_params["num_layers"])])
+                            if "num_neighbors" in tuned_params:
+                                command.extend(["--num_neighbors", str(tuned_params["num_neighbors"])])
+                            if "weight_decay" in tuned_params:
+                                command.extend(["--weight_decay", str(tuned_params["weight_decay"])])
+                            if "aggr" in tuned_params:
+                                command.extend(["--aggr", str(tuned_params["aggr"])])
+                            print(f"Using tuned hyperparameters: lr={tuned_params.get('lr')}, "
+                                  f"layers={tuned_params.get('num_layers')}, "
+                                  f"neighbors={tuned_params.get('num_neighbors')}, "
+                                  f"decay={tuned_params.get('weight_decay')}")
+                        else:
+                            # Fall back to default hyperparameters from task
+                            print(f"No tuned hyperparameters found, using defaults for {gnn_arch} + {dataset}")
+                            if "--lr" in task:
+                                command.extend(["--lr", str(task["--lr"])])
+                            if "--batch_size" in task:
+                                command.extend(["--batch_size", str(task["--batch_size"])])
+                            if "--num_layers" in task:
+                                command.extend(["--num_layers", str(task["--num_layers"])])
+                    else:
+                        # Use default hyperparameters from task configuration
+                        if "--lr" in task:
+                            command.extend(["--lr", str(task["--lr"])])
+                        if "--batch_size" in task:
+                            command.extend(["--batch_size", str(task["--batch_size"])])
+                        if "--num_layers" in task:
+                            command.extend(["--num_layers", str(task["--num_layers"])])
 
                     result = subprocess.run(command, capture_output=True, text=True)
 

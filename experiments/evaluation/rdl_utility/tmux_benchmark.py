@@ -76,7 +76,7 @@ def setup_dataset_window(session_name, window_index, dataset, gpu_device):
         f"conda activate syntherela_new && "
         f"echo 'Starting {dataset} on {gpu_device}' && "
         f"python experiments/evaluation/rdl_utility/run_utility_benchmark.py "
-        f"--dataset_filter {dataset} --torch_device {gpu_device} && "
+        f"--dataset_filter {dataset} --torch_device {gpu_device} --use_tuned_hyperparameters && "
         f"echo 'COMPLETED {dataset}' || "
         f"echo 'FAILED {dataset}'"
     )
