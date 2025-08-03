@@ -245,10 +245,10 @@ train_dataset = torch_frame.data.Dataset(
     #     batch_size=256,
     # ),
 )
-path = Path(
-    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/{args.method}/{args.run_id}/node_train{'_join' if args.left_join_fkey else ''}.pt"
-)
-path.parent.mkdir(parents=True, exist_ok=True)
+# path = Path(
+#     f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/{args.method}/{args.run_id}/node_train{'_join' if args.left_join_fkey else ''}.pt"
+# )
+# path.parent.mkdir(parents=True, exist_ok=True)
 train_dataset = train_dataset.materialize(path=None)
 
 tf_train = train_dataset.tensor_frame

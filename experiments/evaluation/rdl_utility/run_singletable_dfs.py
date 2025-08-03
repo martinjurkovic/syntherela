@@ -47,20 +47,20 @@ TASKS = {
 }
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--task", type=str, default="driver-top3")
+parser.add_argument("--task", type=str, default="autocomplete")
 parser.add_argument("--method", type=str, default="ORIGINAL")
 parser.add_argument("--run_id", type=str, default="1")
 
 parser.add_argument(
     "--task_type",
     type=str,
-    default="BINARY_CLASSIFICATION",
+    default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
 
-parser.add_argument("--dataset", type=str, default="f1_subsampled")
-parser.add_argument("--entity_table", type=str, default="loan")
-parser.add_argument("--target_col", type=str, default="status")
+parser.add_argument("--dataset", type=str, default="walmart_subsampled")
+parser.add_argument("--entity_table", type=str, default="depts")
+parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
 
 parser.add_argument("--num_trials", type=int, default=10)
@@ -125,11 +125,11 @@ test_table = task_test.get_table("test", mask_input_cols=False)
 
 
 dfs: Dict[str, pd.DataFrame] = {}
-entity_table = dataset.get_db().table_dict[task.entity_table]
-entity_df = entity_table.df
+# entity_table = dataset.get_db().table_dict[task.entity_table]
+# entity_df = entity_table.df
 
-entity_table_test = dataset_test.get_db(upto_test_timestamp=False if args.task == "autocomplete" else True).table_dict[task.entity_table]
-entity_df_test = entity_table_test.df
+# entity_table_test = dataset_test.get_db(upto_test_timestamp=False if args.task == "autocomplete" else True).table_dict[task.entity_table]
+# entity_df_test = entity_table_test.df
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 
@@ -156,8 +156,8 @@ except FileNotFoundError:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 col_to_stype = col_to_stype_dict[task.entity_table]
-remove_pkey_fkey(col_to_stype, entity_table)
-remove_pkey_fkey(col_to_stype, entity_table_test)
+# remove_pkey_fkey(col_to_stype, entity_table)
+# remove_pkey_fkey(col_to_stype, entity_table_test)
 for col in dataset.remove_columns:
     if col in col_to_stype:
         del col_to_stype[col]
@@ -179,19 +179,21 @@ else:
 DROPPED_COLS = False
 
 for split, table in [
+    ("test", test_table),
     ("train", train_table),
     ("val", val_table),
-    ("test", test_table),
 ]:
     print(f"\n=== Processing {split} split ===")
 
+    db = None
     # Get database for this split
     if split == "test":
-        db = dataset_test.get_db(upto_test_timestamp=False if args.task == "autocomplete" else True)
+        db = dataset_test.get_db(upto_test_timestamp=False)
     else:
         db = dataset.get_db()
 
     # Create EntitySet for DFS
+    es = None
     es = ft.EntitySet(id=f"{split}_entityset")
 
     print(f"Adding tables to EntitySet...")
@@ -300,35 +302,35 @@ for split, table in [
     print(f"EntitySet created with {relationships_added} relationships")
 
     # Run DFS to create features
-    if split == "train":
-        print(f"Running DFS on target table: {task.entity_table}")
-        feature_matrix, feature_defs = ft.dfs(
-            entityset=es,
-            target_dataframe_name=task.entity_table,
-            agg_primitives=["count", "mean", "sum"],
-            trans_primitives=["month", "year"],
-            max_depth=2,
-            features_only=False,
-            verbose=True
-        )
-        print(f"Generated {len(feature_defs)} features for training")
-    else:
-        print(f"Applying training features to {split} data")
-        feature_matrix = ft.calculate_feature_matrix(
-            features=feature_defs,
-            entityset=es,
-            verbose=True
-        )
+    # if split == "test":
+    print(f"Running DFS on target table: {task.entity_table}")
+    feature_matrix, feature_defs = ft.dfs(
+        entityset=es,
+        target_dataframe_name=task.entity_table,
+        agg_primitives=["count", "mean", "sum"],
+        trans_primitives=["month", "year"],
+        max_depth=2,
+        features_only=False,
+        verbose=True
+    )
+    #     print(f"Generated {len(feature_defs)} features for training")
+    # else:
+    #     print(f"Applying training features to {split} data")
+    #     feature_matrix = ft.calculate_feature_matrix(
+    #         features=feature_defs,
+    #         entityset=es,
+    #         verbose=True
+    #     )
 
     print(f"{split} feature matrix shape: {feature_matrix.shape}")
 
     # Join task table with DFS features (following the pattern from run_lightgbm.py)
-    if split == "test":
-        entity_df = entity_df_test
-        entity_table = entity_table_test
-    else:
-        entity_df = db.table_dict[task.entity_table].df
-        entity_table = db.table_dict[task.entity_table]
+    # if split == "test":
+    #     entity_df = entity_df_test
+    #     entity_table = entity_table_test
+    # else:
+    entity_df = db.table_dict[task.entity_table].df
+    entity_table = db.table_dict[task.entity_table]
 
     # Get foreign key column name
     left_entity = list(table.fkey_col_to_pkey_table.keys())[0]
@@ -339,7 +341,8 @@ for split, table in [
     # Use DFS features instead of raw entity_df
     # Reset index to make entity IDs a column for joining
     dfs_features = feature_matrix.copy()
-    dfs_features[entity_table.pkey_col] = entity_df[entity_table.pkey_col].iloc[dfs_features.index].values
+    # dfs_features[entity_table.pkey_col] = entity_df[entity_table.pkey_col].iloc[dfs_features.index].values
+    dfs_features = dfs_features.reset_index()
 
     # Remove duplicated columns from DFS features that are already in the task table
     for col in set(dfs_features.columns).intersection(set(table.df.columns)):
@@ -348,7 +351,7 @@ for split, table in [
 
     # Join task table with DFS features
     merged_df = table.df.merge(
-        dfs_features.reset_index(drop=True),
+        dfs_features,
         how="left",
         left_on=left_entity,
         right_on=entity_table.pkey_col,
@@ -426,15 +429,15 @@ train_dataset = torch_frame.data.Dataset(
     df=dfs["train"],
     col_to_stype=col_to_stype,
     target_col=task.target_col,
-    col_to_text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device),
-        batch_size=256,
-    ),
+    # col_to_text_embedder_cfg=TextEmbedderConfig(
+    #     text_embedder=GloveTextEmbedding(device=device),
+    #     batch_size=256,
+    # ),
 )
-path = Path(
-    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/dfs/materialized/{args.method}/{args.run_id}/node_train{'_join' if args.left_join_fkey else ''}.pt"
-)
-path.parent.mkdir(parents=True, exist_ok=True)
+# path = Path(
+#     f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/dfs/materialized/{args.method}/{args.run_id}/node_train{'_join' if args.left_join_fkey else ''}.pt"
+# )
+# path.parent.mkdir(parents=True, exist_ok=True)
 train_dataset = train_dataset.materialize(path=None)
 
 tf_train = train_dataset.tensor_frame
