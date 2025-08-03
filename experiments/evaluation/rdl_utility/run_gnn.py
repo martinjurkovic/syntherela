@@ -40,7 +40,7 @@ import torch
 from model import Model, create_hetero_gin, create_hetero_graphconv, create_hetero_gat, create_hetero_gatv2
 from relgnn_nn import RelGNN_Model, get_atomic_routes
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, L1Loss
+from torch.nn import BCEWithLogitsLoss, L1Loss, MSELoss
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
@@ -81,7 +81,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--task", type=str, default="autocomplete")
 parser.add_argument("--run_id", type=str, default="1")
-parser.add_argument("--method", type=str, default="ORIGINAL")
+parser.add_argument("--method", type=str, default="RELDIFF")
 
 parser.add_argument(
     "--task_type",
@@ -89,24 +89,24 @@ parser.add_argument(
     default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--dataset", type=str, default="rossmann_subsampled")
-parser.add_argument("--entity_table", type=str, default="historical")
-parser.add_argument("--target_col", type=str, default="Customers")
+parser.add_argument("--dataset", type=str, default="walmart_subsampled")
+parser.add_argument("--entity_table", type=str, default="depts")
+parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
 parser.add_argument("--lr", type=float, default=0.1)
-parser.add_argument("--epochs", type=int, default=50)
+parser.add_argument("--epochs", type=int, default=20)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
-parser.add_argument("--num_layers", type=int, default=2)
-parser.add_argument("--gnn_architecture", type=str, default="hetero-graphsage", 
+parser.add_argument("--num_layers", type=int, default=1)
+parser.add_argument("--gnn_architecture", type=str, default="hetero-gin", 
                     choices=["hetero-graphsage", "hetero-gin", "hetero-graphconv", "hetero-gat", "hetero-gatv2", "relgnn"],
                     help="GNN architecture to use")
-parser.add_argument("--num_neighbors", type=int, default=128)
+parser.add_argument("--num_neighbors", type=int, default=-1)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--weight_decay", type=float, default=0.0)
-parser.add_argument("--mlp_layers", type=int, default=1)
+parser.add_argument("--mlp_layers", type=int, default=3)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--torch_device", type=str, default="cuda:9")
@@ -180,9 +180,9 @@ data, col_stats_dict_train = make_pkey_fkey_graph(
         upto_test_timestamp=False if args.task == "autocomplete" else True,
     ),
     col_to_stype_dict=col_to_stype_dict,
-    text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=256
-    ),
+    # text_embedder_cfg=TextEmbedderConfig(
+    #     text_embedder=GloveTextEmbedding(device=device), batch_size=256
+    # ),
     # cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
 data_test, col_stats_dict = make_pkey_fkey_graph(
@@ -190,9 +190,9 @@ data_test, col_stats_dict = make_pkey_fkey_graph(
         upto_test_timestamp=False if args.task == "autocomplete" else True,
     ),
     col_to_stype_dict=col_to_stype_dict,
-    text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=256
-    ),
+    # text_embedder_cfg=TextEmbedderConfig(
+    #     text_embedder=GloveTextEmbedding(device=device), batch_size=256
+    # ),
     # cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
 
@@ -226,11 +226,9 @@ g.manual_seed(args.seed)
 loader_dict: Dict[str, NeighborLoader] = {}
 for split in ["train", "val", "test"]:
     tmp_task = task_test if split == "test" else task
-    table = tmp_task.get_table(split)
+    table = tmp_task.get_table(split, mask_input_cols=False)
     table_input = get_node_train_table_input(table=table, task=tmp_task)
-    entity_table = table_input.nodes[0]
     tmp_data = data if split in ("train", "val") else data_test
-    entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         tmp_data,
         num_neighbors=[int(args.num_neighbors / 2**i) for i in range(args.num_layers)],
@@ -264,7 +262,7 @@ def train() -> float:
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
 
-        loss = loss_fn(pred.float(), batch[entity_table].y.float())
+        loss = loss_fn(pred.float(), batch[task.entity_table].y.float())
         loss.backward()
         optimizer.step()
 
@@ -289,10 +287,10 @@ def test(loader: NeighborLoader) -> np.ndarray:
             batch,
             task.entity_table,
         )
-        if task.task_type == TaskType.REGRESSION:
-            assert clamp_min is not None
-            assert clamp_max is not None
-            pred = torch.clamp(pred, clamp_min, clamp_max)
+        # if task.task_type == TaskType.REGRESSION:
+        #     assert clamp_min is not None
+        #     assert clamp_max is not None
+        #     pred = torch.clamp(pred, clamp_min, clamp_max)
 
         if task.task_type in [
             TaskType.BINARY_CLASSIFICATION,
@@ -325,7 +323,7 @@ if args.gnn_architecture == "relgnn":
     
     model = RelGNN_Model(
         data=data,
-        col_stats_dict=col_stats_dict,
+        col_stats_dict=col_stats_dict_train,
         num_model_layers=args.num_layers,
         channels=args.channels,
         out_channels=out_channels,
@@ -340,12 +338,13 @@ else:
     # Use standard Model class with factory pattern
     model = Model(
         data=data,
-        col_stats_dict=col_stats_dict,
+        col_stats_dict=col_stats_dict_train,
         num_layers=args.num_layers,
         channels=args.channels,
         out_channels=out_channels,
         aggr=args.aggr,
         norm="batch_norm",
+        # norm=None,
         gnn_factory=selected_gnn_factory,  # None for default HeteroGraphSAGE
         mlp_layers=args.mlp_layers,
     ).to(device)
@@ -359,8 +358,9 @@ for epoch in range(1, args.epochs + 1):
     train_loss = train()
     val_pred = test(loader_dict["val"])
     val_metrics = task.evaluate(val_pred, task.get_table("val"))
-    print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}")
-
+    test_pred = test(loader_dict["test"])
+    test_metrics = task_test.evaluate(test_pred)
+    print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}, Test metrics: {test_metrics}")
     if (higher_is_better and val_metrics[tune_metric] >= best_val_metric) or (
         not higher_is_better and val_metrics[tune_metric] <= best_val_metric
     ):
