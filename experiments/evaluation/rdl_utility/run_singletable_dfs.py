@@ -188,7 +188,7 @@ for split, table in [
     db = None
     # Get database for this split
     if split == "test":
-        db = dataset_test.get_db(upto_test_timestamp=False)
+        db = dataset_test.get_db(upto_test_timestamp=False if args.task == "autocomplete" else True)
     else:
         db = dataset.get_db()
 
@@ -357,23 +357,24 @@ for split, table in [
         right_on=entity_table.pkey_col,
     )
     # Drop rows where categorical columns are NaN
-    # categorical_cols = []
-    # merged_df_len = len(merged_df)
-    # for col in merged_df.columns:
-    #     dtype = merged_df[col].dtype
-    #     if (pd.api.types.is_object_dtype(dtype) or 
-    #         pd.api.types.is_string_dtype(dtype) or 
-    #         pd.api.types.is_bool_dtype(dtype) or 
-    #         isinstance(dtype, pd.CategoricalDtype)):
-    #         categorical_cols.append(col)
-    
-    
-    # # Drop rows where categorical columns are NaN
-    # if split in ["train", "val"]:
-    #     merged_df = merged_df.dropna(subset=categorical_cols)
-    #     if len(merged_df) < merged_df_len:
-    #         print(f"Dropped {merged_df_len - len(merged_df)} rows with NaN categorical values")
-    #         DROPPED_COLS = True
+    if args.method == "RGCLD":
+        categorical_cols = []
+        merged_df_len = len(merged_df)
+        for col in merged_df.columns:
+            dtype = merged_df[col].dtype
+            if (pd.api.types.is_object_dtype(dtype) or 
+                pd.api.types.is_string_dtype(dtype) or 
+                pd.api.types.is_bool_dtype(dtype) or 
+                isinstance(dtype, pd.CategoricalDtype)):
+                categorical_cols.append(col)
+        
+        
+        # Drop rows where categorical columns are NaN
+        if split in ["train", "val"]:
+            merged_df = merged_df.dropna(subset=categorical_cols)
+            if len(merged_df) < merged_df_len:
+                print(f"Dropped {merged_df_len - len(merged_df)} rows with NaN categorical values")
+                DROPPED_COLS = True
 
     print(f"Joined {split} data: task table {table.df.shape} + DFS features -> {merged_df.shape}")
 
