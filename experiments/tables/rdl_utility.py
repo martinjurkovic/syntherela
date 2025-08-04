@@ -1,12 +1,22 @@
 import os
 import json
 import numpy as np
+import glob
 
 from dotenv import load_dotenv
+
+# Note: The generated LaTeX table uses cell coloring for highlighting
+# Make sure to include \usepackage[table]{xcolor} in your LaTeX document preamble
 
 load_dotenv()
 
 PROJECT_PATH = os.getenv("PROJECT_PATH")
+
+# Configuration for reading results
+USE_HYPERPARAMETER_TUNING_RESULTS = True  # Set to True to read from hyperparameter_tuning_100 directory
+
+# Configuration for table highlighting
+HIGHLIGHT_COLOR = "green!10"  # Change this to adjust the highlight color (e.g., "blue!15", "yellow!8", etc.)
 
 # Define which metric to use for each dataset
 dataset_metrics = {
@@ -17,17 +27,47 @@ dataset_metrics = {
     "f1_subsampled": "roc_auc",
 }
 
+# Read from existing merged results file (contains all synthetic data methods)
 results_dir = os.path.join(PROJECT_PATH, "results", "rdl_utility")
 results_file = os.path.join(results_dir, "gnn_utility_results_merged.json")
 
 with open(results_file, "r") as f:
     data = json.load(f)
 
+if USE_HYPERPARAMETER_TUNING_RESULTS:
+    # Override ORIGINAL method results with hyperparameter tuning results
+    hyperparameter_dir = os.path.join(PROJECT_PATH, "results", "hyperparameter_tuning_100")
+    hyperparameter_files = glob.glob(os.path.join(hyperparameter_dir, "hyperparameter_results_*.json"))
+    
+    for file_path in hyperparameter_files:
+        with open(file_path, "r") as f:
+            result = json.load(f)
+        
+        dataset = result["dataset"]
+        gnn_arch = result["gnn_architecture"]
+        best_results = result["best_results"]
+        
+        # Initialize nested structure if needed for this dataset
+        if dataset not in data:
+            data[dataset] = {}
+        if "ORIGINAL" not in data[dataset]:
+            data[dataset]["ORIGINAL"] = {}
+        if gnn_arch not in data[dataset]["ORIGINAL"]:
+            data[dataset]["ORIGINAL"][gnn_arch] = {}
+        
+        # Override the ORIGINAL method results with hyperparameter tuning results
+        data[dataset]["ORIGINAL"][gnn_arch]["1"] = best_results
+        data[dataset]["ORIGINAL"][gnn_arch]["2"] = best_results
+        data[dataset]["ORIGINAL"][gnn_arch]["3"] = best_results
 
 # Compute mean and standard error
 def compute_mean_and_se(values):
     mean = np.mean(values)
-    se = np.std(values, ddof=1) / np.sqrt(len(values))
+    if len(values) == 1:
+        # For single values (like hyperparameter tuning results), no standard error
+        se = 0.0
+    else:
+        se = np.std(values, ddof=1) / np.sqrt(len(values))
     return mean, se
 
 
@@ -137,6 +177,40 @@ score_types_with_arrow = {
 # Filter methods to only include those that exist in our data
 available_methods = [method_rename[method] for method in method_order if method in methods]
 
+# Find the global best score per dataset across all GNN architectures
+dataset_global_best = {}
+for dataset in datasets:
+    all_scores_for_dataset = []
+    
+    for gnn_arch in gnn_architectures:
+        for method in method_order:
+            if method not in methods or method == "ORIGINAL":
+                continue
+                
+            if (dataset in results and 
+                gnn_arch in results[dataset] and 
+                method in results[dataset][gnn_arch]):
+                
+                mean, se = results[dataset][gnn_arch][method]
+                all_scores_for_dataset.append((mean, se, method, gnn_arch))
+    
+    if all_scores_for_dataset:
+        metric_type = dataset_metrics.get(dataset, "mae")
+        if metric_type == "roc_auc":
+            # For ROC AUC, higher is better
+            best_score = max(all_scores_for_dataset, key=lambda x: x[0])
+        else:
+            # For MAE, lower is better
+            best_score = min(all_scores_for_dataset, key=lambda x: x[0])
+        
+        best_mean, best_se, best_method, best_gnn_arch = best_score
+        dataset_global_best[dataset] = {
+            'method': method_rename[best_method],
+            'gnn_arch': best_gnn_arch,
+            'mean': best_mean,
+            'se': best_se
+        }
+
 # Generate LaTeX table
 num_columns = len(available_methods) + 3  # Dataset + GNN Arch + Score Type + Methods
 latex_table = (
@@ -245,29 +319,46 @@ for dataset_idx, dataset in enumerate(datasets):
 
                 # Format based on highlighting rules
                 if original_method not in ["ORIGINAL"]:
+                    # Check if this is the global best for the dataset
+                    is_global_best = (dataset in dataset_global_best and 
+                                    dataset_global_best[dataset]['method'] == method and 
+                                    dataset_global_best[dataset]['gnn_arch'] == gnn_arch)
+                    
                     if method == best_method_name_for_bolding:
-                        # Bold for best method
-                        formatted_score = f"$\\mathbf{{{mean_val_str}}}$"
+                        # Bold for best method (per architecture)
+                        if is_global_best:
+                            # Add green background for global best
+                            formatted_score = f"\\cellcolor{{{HIGHLIGHT_COLOR}}}$\\mathbf{{{mean_val_str}}}$"
+                        else:
+                            formatted_score = f"$\\mathbf{{{mean_val_str}}}$"
                         if pm_se_str_core:
                             formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
                         row.append(formatted_score)
                     elif method in underlined_methods:
                         # Underline for methods within margin
-                        formatted_score = f"$\\underline{{{mean_val_str}}}$"
+                        if is_global_best:
+                            # Add green background for global best
+                            formatted_score = f"\\cellcolor{{{HIGHLIGHT_COLOR}}}$\\underline{{{mean_val_str}}}$"
+                        else:
+                            formatted_score = f"$\\underline{{{mean_val_str}}}$"
                         if pm_se_str_core:
                             formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
                         row.append(formatted_score)
                     else:
                         # Regular formatting
-                        formatted_score = f"${mean_val_str}$"
+                        if is_global_best:
+                            # Add green background for global best
+                            formatted_score = f"\\cellcolor{{{HIGHLIGHT_COLOR}}}${mean_val_str}$"
+                        else:
+                            formatted_score = f"${mean_val_str}$"
                         if pm_se_str_core:
                             formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
                         row.append(formatted_score)
                 elif original_method == "ORIGINAL":
                     # ORIGINAL method with baseline score
                     base_score_part = f"${mean_val_str}$"
-                    if pm_se_str_core:
-                        base_score_part += f"{{\\tiny${pm_se_str_core}$}}"
+                    # if pm_se_str_core:
+                    #     base_score_part += f"{{\\tiny${pm_se_str_core}$}}"
                     row.append(f"{base_score_part} $({baseline_scores[dataset]})$")
                 else:
                     # Other methods (shouldn't reach here with current logic)

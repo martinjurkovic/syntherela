@@ -37,7 +37,7 @@ def load_tuned_hyperparameters(dataset, gnn_architecture):
     
     # Construct filename based on naming convention
     filename = f"hyperparameter_results_{gnn_architecture.replace('-', '_')}_{dataset.replace('-', '_')}.json"
-    filepath = os.path.join(PROJECT_PATH, "results", "hyperparameter_tuning", filename)
+    filepath = os.path.join(PROJECT_PATH, "results", "hyperparameter_tuning_100", filename)
     
     if not os.path.exists(filepath):
         print(f"Warning: No tuned hyperparameters found for {gnn_architecture} + {dataset}")
