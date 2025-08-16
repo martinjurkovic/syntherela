@@ -95,7 +95,7 @@ def critical_difference(num_algorithms, num_datasets, alpha=0.05):
     cd = q_val * np.sqrt((num_algorithms * (num_algorithms + 1)) / (6.0 * num_datasets))
     return cd
 
-def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None, std_errors=None):
+def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
     """
     Draw critical difference diagram matching the reference style exactly
     """
@@ -111,11 +111,7 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None, std_error
     else:
         display_values = sorted_ranks
     
-    # Sort standard errors if provided
-    if std_errors is not None:
-        sorted_std_errors = [std_errors[i] for i in sorted_indices]
-    else:
-        sorted_std_errors = None
+
     
     n_algorithms = len(sorted_ranks)
     
@@ -189,10 +185,15 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None, std_error
         ax.plot([rank, rank], [y_main, y_pos], color=color, linewidth=1.5)  # Vertical line
         ax.plot([rank, line_start - 0.2], [y_pos, y_pos], color=color, linewidth=1.5)  # Horizontal line
         
-        # Add algorithm name with score
-        score_text = f"[{score:.3f}]"
-        ax.text(line_start - 0.25, y_pos, f"{name} {score_text}", 
-               ha='right', va='center', fontsize=10, color=color, fontweight='bold')
+        # Add algorithm name with score (or rank if no scores)
+        if scores is not None:
+            score_text = f"[{score:.3f}]"
+            ax.text(line_start - 0.25, y_pos, f"{name} {score_text}", 
+                   ha='right', va='center', fontsize=10, color=color, fontweight='bold')
+        else:
+            rank_text = f"[{rank:.1f}]"
+            ax.text(line_start - 0.25, y_pos, f"{name} {rank_text}", 
+                   ha='right', va='center', fontsize=10, color=color, fontweight='bold')
     
     # Draw algorithm names on the right  
     for idx, (rank, name, orig_idx, score) in enumerate(right_positions):
@@ -203,82 +204,43 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None, std_error
         ax.plot([rank, rank], [y_main, y_pos], color=color, linewidth=1.5)  # Vertical line
         ax.plot([rank, line_end + 0.2], [y_pos, y_pos], color=color, linewidth=1.5)  # Horizontal line
         
-        # Add algorithm name with score
-        score_text = f"[{score:.3f}]"
-        ax.text(line_end + 0.25, y_pos, f"{score_text} {name}", 
-               ha='left', va='center', fontsize=10, color=color, fontweight='bold')
+        # Add algorithm name with score (or rank if no scores)
+        if scores is not None:
+            score_text = f"[{score:.3f}]"
+            ax.text(line_end + 0.25, y_pos, f"{score_text} {name}", 
+                   ha='left', va='center', fontsize=10, color=color, fontweight='bold')
+        else:
+            rank_text = f"[{rank:.1f}]"
+            ax.text(line_end + 0.25, y_pos, f"{rank_text} {name}", 
+                   ha='left', va='center', fontsize=10, color=color, fontweight='bold')
     
-    # Find and draw significance groups based on standard error overlaps
+    # Find and draw significance groups based on critical difference
     groups = []
     
-    if sorted_std_errors is not None and scores is not None:
-        # Use standard error overlaps for grouping
-        # Find maximal cliques where all algorithms in a group have overlapping confidence intervals
+    # Use proper critical difference method based on rank differences
+    # Two algorithms are in the same group if their rank difference is <= CD
+    used = [False] * n_algorithms
+    
+    for i in range(n_algorithms):
+        if used[i]:
+            continue
         
-        def intervals_overlap(i, j):
-            """Check if confidence intervals of algorithms i and j overlap"""
-            score_i = display_values[i]
-            se_i = sorted_std_errors[i]
-            score_j = display_values[j]
-            se_j = sorted_std_errors[j]
-            
-            interval_i_min = score_i - se_i
-            interval_i_max = score_i + se_i
-            interval_j_min = score_j - se_j
-            interval_j_max = score_j + se_j
-            
-            return max(interval_i_min, interval_j_min) <= min(interval_i_max, interval_j_max)
+        # Start a new group with algorithm i
+        current_group = [i]
+        used[i] = True
         
-        def all_pairwise_overlap(group):
-            """Check if all algorithms in group have pairwise overlapping intervals"""
-            for i in range(len(group)):
-                for j in range(i + 1, len(group)):
-                    if not intervals_overlap(group[i], group[j]):
-                        return False
-            return True
-        
-        # Find maximal groups using a greedy approach
-        # Start with each algorithm and try to build the largest possible group
-        used = [False] * n_algorithms
-        
-        for start_idx in range(n_algorithms):
-            if used[start_idx]:
+        # Find all algorithms whose rank difference from algorithm i is <= CD
+        for j in range(i + 1, n_algorithms):
+            if used[j]:
                 continue
             
-            # Start with single algorithm
-            current_group = [start_idx]
-            
-            # Try to add more algorithms one by one
-            for candidate in range(start_idx + 1, n_algorithms):
-                if used[candidate]:
-                    continue
-                
-                # Try adding this candidate to the group
-                test_group = current_group + [candidate]
-                
-                # Check if all pairs in the test group overlap
-                if all_pairwise_overlap(test_group):
-                    current_group.append(candidate)
-            
-            # Mark all algorithms in this group as used
-            for idx in current_group:
-                used[idx] = True
-            
-            # Only add groups with more than one member
-            if len(current_group) > 1:
-                groups.append(current_group)
-    else:
-        # Fallback to critical difference method if no standard errors
-        current_group = [0]
+            # Check if rank difference is within critical difference
+            rank_diff = abs(sorted_ranks[j] - sorted_ranks[i])
+            if rank_diff <= cd:
+                current_group.append(j)
+                used[j] = True
         
-        for i in range(1, len(sorted_ranks)):
-            if sorted_ranks[i] - sorted_ranks[current_group[0]] <= cd:
-                current_group.append(i)
-            else:
-                if len(current_group) > 1:
-                    groups.append(current_group)
-                current_group = [i]
-        
+        # Only add groups with more than one member
         if len(current_group) > 1:
             groups.append(current_group)
     
@@ -299,24 +261,12 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None, std_error
             ax.plot([end_rank, end_rank], [y_main - 0.02, bracket_y], 
                    color='black', linewidth=2, alpha=0.8)
     
-    # Add score scale at the top (use actual scores instead of ranks)
-    if scores is not None:
-        # Use actual algorithm positions and their scores
-        for i, (rank, score) in enumerate(zip(sorted_ranks, display_values)):
-            # Tick mark
-            ax.plot([rank, rank], [y_main + 0.5, y_main + 0.55], 'k-', linewidth=1)
-            # Score value
-            ax.text(rank, y_main + 0.6, f'{score:.3f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
-    else:
-        # Fallback to rank ticks
-        num_ticks = min(8, n_algorithms)
-        rank_ticks = np.linspace(min_rank, max_rank, num_ticks)
-        
-        for tick in rank_ticks:
-            # Tick mark
-            ax.plot([tick, tick], [y_main + 0.5, y_main + 0.55], 'k-', linewidth=1)
-            # Rank value
-            ax.text(tick, y_main + 0.6, f'{tick:.1f}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+    # Add rank scale at the top (always show ranks, not scores)
+    for i, rank in enumerate(sorted_ranks):
+        # Tick mark
+        ax.plot([rank, rank], [y_main + 0.5, y_main + 0.55], 'k-', linewidth=1)
+        # Rank value (always show ranks, not scores)
+        ax.text(rank, y_main + 0.6, f'{rank:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
     
     # Draw top scale line
     ax.plot([line_start, line_end], [y_main + 0.5, y_main + 0.5], 'k-', linewidth=1)
@@ -456,10 +406,7 @@ for dataset in datasets:
         print(f"  Skipping {dataset}: insufficient algorithms ({len(algorithm_results)} < 4)")
         continue
     
-    # For a single dataset, we can't do traditional Friedman test across datasets
-    # Instead, we'll rank the algorithms by their performance and show the ranking
-    # with confidence intervals based on standard errors
-    
+    # For a single dataset, rank the algorithms by their performance
     algorithm_results = np.array(algorithm_results)
     
     # Determine ranking (lower is better for MAE, higher is better for AUC)
@@ -471,10 +418,12 @@ for dataset in datasets:
         # Lower is better - rank in ascending order  
         ranks = rankdata(algorithm_results, method='average')
     
-    # For single dataset, we'll use a heuristic CD based on the number of algorithms
-    # This is not statistically rigorous but provides a visual comparison
+    # For single dataset, we can't use proper Nemenyi critical difference
+    # Instead, use a conservative threshold based on algorithm count
+    # This is for visualization purposes only - not statistically rigorous
     num_algorithms = len(algorithm_results)
-    cd_heuristic = np.sqrt(num_algorithms * (num_algorithms + 1) / 6.0) * 1.96 / np.sqrt(3)  # Rough approximation
+    # Use a more conservative threshold for single dataset
+    cd_heuristic = 2.0  # Conservative fixed threshold for visualization
     
     # Create the diagram
     dataset_display = dataset_rename.get(dataset, dataset)
@@ -486,7 +435,7 @@ for dataset in datasets:
     print(f"  Creating diagram with {num_algorithms} algorithms")
     print(f"  Heuristic CD threshold: {cd_heuristic:.3f}")
     
-    draw_cd_diagram(ranks, algorithm_names, cd_heuristic, title, output_path, scores=algorithm_results, std_errors=algorithm_std_errors)
+    draw_cd_diagram(ranks, algorithm_names, cd_heuristic, title, output_path, scores=algorithm_results)
     
     # Also save ranking data
     ranking_data = pd.DataFrame({
@@ -522,7 +471,7 @@ for dataset in datasets:
                 
                 gnn_display = gnn_arch_rename.get(gnn_arch, gnn_arch)
                 method_display = method_rename.get(method, method)
-                all_combinations.add((gnn_arch, method, f"{gnn_display}-{method_display}"))
+                all_combinations.add((gnn_arch, method, f"{method_display}-{gnn_display}"))
 
 all_combinations = sorted(list(all_combinations))
 
@@ -576,11 +525,9 @@ if len(complete_algorithms) >= 4:
     title = f"Critical Difference Diagram Across All Datasets\n(Nemenyi test, α={ALPHA})"
     output_path = os.path.join(output_dir, "cd_diagram_combined.png")
     
-    # For combined analysis, we'll use ranks but could also use average scores
-    # Calculate average scores across datasets
-    avg_scores = np.mean(complete_performance, axis=1)
-    # For combined analysis, we don't have individual standard errors, so use CD method
-    draw_cd_diagram(avg_ranks, complete_algorithms, cd, title, output_path, scores=avg_scores, std_errors=None)
+    # For combined analysis, only ranks are meaningful (scores have different scales)
+    # Don't pass scores since averaging AUC and MAE values is meaningless
+    draw_cd_diagram(avg_ranks, complete_algorithms, cd, title, output_path, scores=None)
     
     # Save combined ranking data
     combined_ranking = pd.DataFrame({
