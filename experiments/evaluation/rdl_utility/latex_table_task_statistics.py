@@ -185,12 +185,12 @@ def generate_latex_table(statistics):
     
     if INCLUDE_DST_ENTITIES_COLUMN:
         tabular_spec = "llcrrrcrc"
-        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of training table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%Train-Val/test Entity Overlap} & \multirow{2}{*}{\#Dst Entities} \\"
+        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of Task Table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%Train-Val/Test Entity Overlap} & \multirow{2}{*}{\#Dst Entities} \\"
         cmidrule = r"\cmidrule(lr){4-6}"
         header2 = r" &  &  & Train & Validation & Test &  &  &  \\"
     else:
         tabular_spec = "llcrrrcc"
-        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of training table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%Train-Val/test Entity Overlap} \\"
+        header1 = r"\multirow{2}{*}{Dataset} & \multirow{2}{*}{Task name} & \multirow{2}{*}{Task type} & \multicolumn{3}{c}{\#Rows of Task Table} & \multirow{2}{*}{\#Unique Entities} & \multirow{2}{*}{\%Train-Val/Test Entity Overlap} \\"
         cmidrule = r"\cmidrule(lr){4-6}"
         header2 = r" &  &  & Train & Validation & Test &  &  \\"
     
