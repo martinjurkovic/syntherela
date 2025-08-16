@@ -355,11 +355,12 @@ for dataset in filtered_datasets:
             architecture_averaged_results[dataset][method] = (arch_mean, arch_se)
 
 # Generate architecture-averaged table
+num_columns_avg = len(available_synthetic_methods) + 2  # Dataset + Score Type + Methods
 arch_avg_latex_table = (
-    "\\begin{table}[ht]\n\\centering\n\\begin{tabular}{c" + "c" * len(available_synthetic_methods) + "}\n"
+    "\\begin{table}[ht]\n\\centering\n\\begin{tabular}{c" + "c" * num_columns_avg + "}\n"
 )
 arch_avg_latex_table += "\\toprule\n"
-arch_avg_latex_table += "Dataset & " + " & ".join(available_synthetic_methods) + " \\\\\n"
+arch_avg_latex_table += "Dataset & Score Type & " + " & ".join(available_synthetic_methods) + " \\\\\n"
 arch_avg_latex_table += "\\midrule\n"
 
 for dataset_idx, dataset in enumerate(filtered_datasets):
@@ -401,7 +402,7 @@ for dataset_idx, dataset in enumerate(filtered_datasets):
                 underlined_methods.append(current_method)
     
     # Build table row
-    row = [f"{dataset_name} ({score_type})"]
+    row = [dataset_name, score_type]
     
     # Method columns (averaged differences)
     for method in synthetic_methods:
