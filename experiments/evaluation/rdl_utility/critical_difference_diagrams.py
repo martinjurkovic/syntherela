@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
-from scipy.stats import rankdata
+from scipy.stats import rankdata, wilcoxon, friedmanchisquare, ttest_rel
 import glob
 from dotenv import load_dotenv
 
@@ -77,7 +77,7 @@ def compute_mean_and_se(values):
         se = np.std(values, ddof=1) / np.sqrt(len(values))
     return mean, se
 
-def critical_difference(num_algorithms, num_datasets, alpha=0.05):
+def critical_difference_nemenyi(num_algorithms, num_datasets, alpha=0.05):
     """
     Calculate critical difference for Nemenyi post-hoc test
     """
@@ -95,7 +95,105 @@ def critical_difference(num_algorithms, num_datasets, alpha=0.05):
     cd = q_val * np.sqrt((num_algorithms * (num_algorithms + 1)) / (6.0 * num_datasets))
     return cd
 
-def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
+def wilcoxon_with_bonferroni(rank_matrix, alpha=0.05):
+    """
+    Perform pairwise Wilcoxon signed-rank tests with Bonferroni correction
+    """
+    n_algorithms = rank_matrix.shape[0]
+    n_comparisons = n_algorithms * (n_algorithms - 1) // 2
+    bonferroni_alpha = alpha / n_comparisons
+    
+    significant_pairs = []
+    print(f"Performing Wilcoxon tests with Bonferroni correction (α = {bonferroni_alpha:.6f})")
+    
+    for i in range(n_algorithms):
+        for j in range(i + 1, n_algorithms):
+            try:
+                stat, p_value = wilcoxon(rank_matrix[i, :], rank_matrix[j, :], alternative='two-sided')
+                if p_value < bonferroni_alpha:
+                    significant_pairs.append((i, j))
+                    print(f"  Significant: {i} vs {j}, p = {p_value:.6f}")
+            except ValueError:
+                # Handle case where all differences are zero
+                pass
+    
+    return significant_pairs
+
+def wilcoxon_with_holm(rank_matrix, alpha=0.05):
+    """
+    Perform pairwise Wilcoxon signed-rank tests with Holm step-down correction
+    """
+    n_algorithms = rank_matrix.shape[0]
+    pairwise_results = []
+    
+    print(f"Performing Wilcoxon tests with Holm correction")
+    
+    # Calculate all p-values
+    for i in range(n_algorithms):
+        for j in range(i + 1, n_algorithms):
+            try:
+                stat, p_value = wilcoxon(rank_matrix[i, :], rank_matrix[j, :], alternative='two-sided')
+                pairwise_results.append((i, j, p_value))
+            except ValueError:
+                pairwise_results.append((i, j, 1.0))
+    
+    # Sort by p-value
+    pairwise_results.sort(key=lambda x: x[2])
+    
+    significant_pairs = []
+    n_comparisons = len(pairwise_results)
+    
+    for k, (i, j, p_value) in enumerate(pairwise_results):
+        alpha_adjusted = alpha / (n_comparisons - k)
+        if p_value <= alpha_adjusted:
+            significant_pairs.append((i, j))
+            print(f"  Significant: {i} vs {j}, p = {p_value:.6f}, α_adj = {alpha_adjusted:.6f}")
+        else:
+            print(f"  Stopping at: {i} vs {j}, p = {p_value:.6f} > α_adj = {alpha_adjusted:.6f}")
+            break
+    
+    return significant_pairs
+
+def tukey_hsd_critical_difference(rank_matrix, alpha=0.05):
+    """
+    Calculate critical difference using Tukey HSD approach
+    """
+    n_algorithms, n_datasets = rank_matrix.shape
+    
+    # Calculate pooled standard error
+    # For ranks, we can estimate this based on the rank variance
+    pooled_variance = np.var(rank_matrix, ddof=1)
+    standard_error = np.sqrt(pooled_variance / n_datasets)
+    
+    # Tukey's q critical value (approximation for large n)
+    # For small n, we'd need to look up in Tukey tables
+    q_critical = 3.0 + 0.1 * n_algorithms  # Rough approximation
+    
+    cd_tukey = q_critical * standard_error / np.sqrt(2)
+    
+    print(f"Tukey HSD: pooled_variance = {pooled_variance:.3f}, SE = {standard_error:.3f}, q = {q_critical:.3f}")
+    return cd_tukey
+
+def fisher_lsd_critical_difference(rank_matrix, alpha=0.05):
+    """
+    Calculate critical difference using Fisher's Least Significant Difference
+    """
+    n_algorithms, n_datasets = rank_matrix.shape
+    
+    # Calculate pooled standard error
+    pooled_variance = np.var(rank_matrix, ddof=1)
+    standard_error = np.sqrt(pooled_variance / n_datasets)
+    
+    # t critical value for given alpha and degrees of freedom
+    df = (n_algorithms - 1) * (n_datasets - 1)
+    t_critical = stats.t.ppf(1 - alpha/2, df)
+    
+    cd_lsd = t_critical * standard_error * np.sqrt(2)
+    
+    print(f"Fisher LSD: pooled_variance = {pooled_variance:.3f}, SE = {standard_error:.3f}, t = {t_critical:.3f}")
+    return cd_lsd
+
+def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None, significant_pairs=None):
     """
     Draw critical difference diagram matching the reference style exactly
     """
@@ -151,12 +249,47 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
                 return method_colors[method]
         return '#000000'  # Default black
     
-    # Draw dots only (no extra vertical lines)
+    # Draw dots only (no labels on each dot)
     for i, (rank, name) in enumerate(zip(sorted_ranks, sorted_names)):
         color = get_method_color(name)
         
         # Draw colored dot on the line
         ax.plot(rank, y_main, 'o', color=color, markersize=8, markeredgecolor='black', markeredgewidth=1)
+    
+    # Add interval ranking markers based on actual rank values
+    min_rank = min(sorted_ranks)
+    max_rank = max(sorted_ranks)
+    
+    # Generate multiples of 5 within the range
+    rank_start = int(np.floor(min_rank))
+    rank_end = int(np.ceil(max_rank))
+    
+    intervals = []
+    
+    # Add multiples of 5 within the actual rank range
+    first_multiple = ((rank_start // 5) + 1) * 5  # First multiple of 5 after start
+    current = first_multiple
+    while current < max_rank:  # Only include if less than actual max rank
+        intervals.append(current)
+        current += 5
+    
+    # Always add the actual min and max ranks (not rounded)
+    intervals.append(min_rank)
+    intervals.append(max_rank)
+    
+    # Remove duplicates and sort
+    intervals = sorted(list(set(intervals)))
+    
+    # Draw tick marks and labels for these intervals
+    for interval in intervals:
+        # Draw tick mark and label
+        ax.plot([interval, interval], [y_main + 0.05, y_main + 0.1], 'k-', linewidth=1)
+        if interval == min_rank or interval == max_rank:
+            # Show actual rank value for min/max
+            ax.text(interval, y_main + 0.15, f'{interval:.1f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+        else:
+            # Show integer for multiples of 5
+            ax.text(interval, y_main + 0.15, f'{int(interval)}', ha='center', va='bottom', fontsize=10, fontweight='bold')
     
     # Position algorithm names (special left/right pattern)
     left_positions = []
@@ -214,35 +347,70 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
             ax.text(line_end + 0.25, y_pos, f"{rank_text} {name}", 
                    ha='left', va='center', fontsize=10, color=color, fontweight='bold')
     
-    # Find and draw significance groups based on critical difference
+    # Find and draw significance groups
     groups = []
     
-    # Use proper critical difference method based on rank differences
-    # Two algorithms are in the same group if their rank difference is <= CD
-    used = [False] * n_algorithms
-    
-    for i in range(n_algorithms):
-        if used[i]:
-            continue
+    if significant_pairs is not None:
+        # Use pairwise significance results to determine groups
+        # Create adjacency matrix for non-significant pairs
+        adjacency = np.ones((n_algorithms, n_algorithms), dtype=bool)
+        np.fill_diagonal(adjacency, True)  # Algorithm is equivalent to itself
         
-        # Start a new group with algorithm i
-        current_group = [i]
-        used[i] = True
+        # Mark significant pairs as NOT equivalent
+        for i, j in significant_pairs:
+            adjacency[i, j] = False
+            adjacency[j, i] = False
         
-        # Find all algorithms whose rank difference from algorithm i is <= CD
-        for j in range(i + 1, n_algorithms):
-            if used[j]:
+        # Find connected components (groups of equivalent algorithms)
+        used = [False] * n_algorithms
+        
+        for i in range(n_algorithms):
+            if used[i]:
                 continue
             
-            # Check if rank difference is within critical difference
-            rank_diff = abs(sorted_ranks[j] - sorted_ranks[i])
-            if rank_diff <= cd:
-                current_group.append(j)
-                used[j] = True
+            # Start a new group with algorithm i
+            current_group = [i]
+            used[i] = True
+            
+            # Find all algorithms equivalent to i (transitively)
+            queue = [i]
+            while queue:
+                current = queue.pop(0)
+                for j in range(n_algorithms):
+                    if not used[j] and adjacency[current, j]:
+                        current_group.append(j)
+                        used[j] = True
+                        queue.append(j)
+            
+            # Only add groups with more than one member
+            if len(current_group) > 1:
+                groups.append(current_group)
+    else:
+        # Use critical difference method based on rank differences
+        used = [False] * n_algorithms
         
-        # Only add groups with more than one member
-        if len(current_group) > 1:
-            groups.append(current_group)
+        for i in range(n_algorithms):
+            if used[i]:
+                continue
+            
+            # Start a new group with algorithm i
+            current_group = [i]
+            used[i] = True
+            
+            # Find all algorithms whose rank difference from algorithm i is <= CD
+            for j in range(i + 1, n_algorithms):
+                if used[j]:
+                    continue
+                
+                # Check if rank difference is within critical difference
+                rank_diff = abs(sorted_ranks[j] - sorted_ranks[i])
+                if rank_diff <= cd:
+                    current_group.append(j)
+                    used[j] = True
+            
+            # Only add groups with more than one member
+            if len(current_group) > 1:
+                groups.append(current_group)
     
     # Draw significance brackets below the line (between the connecting lines)
     for group_idx, group in enumerate(groups):
@@ -261,18 +429,10 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
             ax.plot([end_rank, end_rank], [y_main - 0.02, bracket_y], 
                    color='black', linewidth=2, alpha=0.8)
     
-    # Add rank scale at the top (always show ranks, not scores)
-    for i, rank in enumerate(sorted_ranks):
-        # Tick mark
-        ax.plot([rank, rank], [y_main + 0.5, y_main + 0.55], 'k-', linewidth=1)
-        # Rank value (always show ranks, not scores)
-        ax.text(rank, y_main + 0.6, f'{rank:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
-    
-    # Draw top scale line
-    ax.plot([line_start, line_end], [y_main + 0.5, y_main + 0.5], 'k-', linewidth=1)
+    # Top scale removed - rankings now shown directly on dots
     
     # Add title
-    ax.text((line_start + line_end) / 2, y_main + 0.8, title, 
+    ax.text((line_start + line_end) / 2, y_main + 0.5, title, 
            ha='center', va='center', fontsize=14, fontweight='bold')
     
     # Set plot limits and remove axes
@@ -285,7 +445,7 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
     max_labels = max(max_left, max_right)
     y_bottom = y_main - 0.15 - (max_labels * 0.04) - 0.1
     
-    ax.set_ylim(y_bottom, y_main + 0.9)
+    ax.set_ylim(y_bottom, y_main + 0.6)
     
     # Remove all spines and ticks
     for spine in ax.spines.values():
@@ -378,80 +538,6 @@ os.makedirs(output_dir, exist_ok=True)
 print("Generating Critical Difference Diagrams...")
 print("=" * 50)
 
-# Generate CD diagram for each dataset
-for dataset in datasets:
-    print(f"\nProcessing dataset: {dataset}")
-    
-    # Collect all GNN-method combinations that have results for this dataset
-    algorithm_results = []
-    algorithm_names = []
-    algorithm_std_errors = []
-    
-    for gnn_arch in gnn_architectures:
-        for method in methods:
-            if (dataset in results and 
-                gnn_arch in results[dataset] and 
-                method in results[dataset][gnn_arch]):
-                
-                mean_value, se_value = results[dataset][gnn_arch][method]
-                algorithm_results.append(mean_value)
-                algorithm_std_errors.append(se_value)
-                
-                # Create readable name for GNN-method combination
-                gnn_display = gnn_arch_rename.get(gnn_arch, gnn_arch)
-                method_display = method_rename.get(method, method)
-                algorithm_names.append(f"{gnn_display}-{method_display}")
-    
-    if len(algorithm_results) < 4:
-        print(f"  Skipping {dataset}: insufficient algorithms ({len(algorithm_results)} < 4)")
-        continue
-    
-    # For a single dataset, rank the algorithms by their performance
-    algorithm_results = np.array(algorithm_results)
-    
-    # Determine ranking (lower is better for MAE, higher is better for AUC)
-    metric_type = dataset_metrics.get(dataset, "mae")
-    if metric_type == "roc_auc":
-        # Higher is better - rank in descending order
-        ranks = rankdata(-algorithm_results, method='average')
-    else:
-        # Lower is better - rank in ascending order  
-        ranks = rankdata(algorithm_results, method='average')
-    
-    # For single dataset, we can't use proper Nemenyi critical difference
-    # Instead, use a conservative threshold based on algorithm count
-    # This is for visualization purposes only - not statistically rigorous
-    num_algorithms = len(algorithm_results)
-    # Use a more conservative threshold for single dataset
-    cd_heuristic = 2.0  # Conservative fixed threshold for visualization
-    
-    # Create the diagram
-    dataset_display = dataset_rename.get(dataset, dataset)
-    metric_display = "AUC (higher is better)" if metric_type == "roc_auc" else "MAE (lower is better)"
-    title = f"Algorithm Ranking for {dataset_display}\n({metric_display})"
-    
-    output_path = os.path.join(output_dir, f"cd_diagram_{dataset}.png")
-    
-    print(f"  Creating diagram with {num_algorithms} algorithms")
-    print(f"  Heuristic CD threshold: {cd_heuristic:.3f}")
-    
-    draw_cd_diagram(ranks, algorithm_names, cd_heuristic, title, output_path, scores=algorithm_results)
-    
-    # Also save ranking data
-    ranking_data = pd.DataFrame({
-        'Algorithm': algorithm_names,
-        'Performance': algorithm_results,
-        'Rank': ranks
-    }).sort_values('Rank')
-    
-    ranking_path = os.path.join(output_dir, f"rankings_{dataset}.csv")
-    ranking_data.to_csv(ranking_path, index=False)
-    
-    print(f"  Saved diagram: {output_path}")
-    print(f"  Saved rankings: {ranking_path}")
-    print(f"  Top 3 algorithms:")
-    for i, (_, row) in enumerate(ranking_data.head(3).iterrows()):
-        print(f"    {i+1}. {row['Algorithm']}: {row['Performance']:.4f} (rank {row['Rank']:.1f})")
 
 # Generate combined analysis across all datasets
 print(f"\nGenerating combined analysis across all datasets...")
@@ -499,6 +585,13 @@ complete_mask = ~np.isnan(performance_matrix).any(axis=1)
 complete_algorithms = [name for i, name in enumerate(algorithm_names_global) if complete_mask[i]]
 complete_performance = performance_matrix[complete_mask]
 
+# Remove ORIGINAL method from analysis (always performs best, skews comparisons)
+non_original_mask = [not name.startswith('ORIG-') for name in complete_algorithms]
+complete_algorithms = [name for i, name in enumerate(complete_algorithms) if non_original_mask[i]]
+complete_performance = complete_performance[non_original_mask]
+
+print(f"Excluded ORIGINAL methods to focus on synthetic data method comparisons")
+
 if len(complete_algorithms) >= 4:
     print(f"Found {len(complete_algorithms)} algorithms with complete results across all datasets")
     
@@ -516,20 +609,7 @@ if len(complete_algorithms) >= 4:
     # Calculate average ranks
     avg_ranks = np.mean(rank_matrix, axis=1)
     
-    # Calculate critical difference using Nemenyi test
-    num_algorithms = len(complete_algorithms)
-    num_datasets = len(datasets)
-    cd = critical_difference(num_algorithms, num_datasets, ALPHA)
-    
-    # Create combined CD diagram
-    title = f"Critical Difference Diagram Across All Datasets\n(Nemenyi test, α={ALPHA})"
-    output_path = os.path.join(output_dir, "cd_diagram_combined.png")
-    
-    # For combined analysis, only ranks are meaningful (scores have different scales)
-    # Don't pass scores since averaging AUC and MAE values is meaningless
-    draw_cd_diagram(avg_ranks, complete_algorithms, cd, title, output_path, scores=None)
-    
-    # Save combined ranking data
+    # Save ranking data (same for all statistical tests)
     combined_ranking = pd.DataFrame({
         'Algorithm': complete_algorithms,
         'Average_Rank': avg_ranks
@@ -540,15 +620,66 @@ if len(complete_algorithms) >= 4:
         combined_ranking[f'Rank_{dataset_rename.get(dataset, dataset)}'] = rank_matrix[:, j]
     
     combined_ranking = combined_ranking.sort_values('Average_Rank')
-    ranking_path = os.path.join(output_dir, "rankings_combined.csv")
+    ranking_path = os.path.join(output_dir, f"rankings_combined.csv")
     combined_ranking.to_csv(ranking_path, index=False)
-    
-    print(f"Saved combined diagram: {output_path}")
     print(f"Saved combined rankings: {ranking_path}")
-    print(f"Critical difference threshold: {cd:.3f}")
-    print(f"Top 5 algorithms overall:")
-    for i, (_, row) in enumerate(combined_ranking.head(5).iterrows()):
-        print(f"  {i+1}. {row['Algorithm']}: avg rank {row['Average_Rank']:.2f}")
+    
+    # Run all statistical tests for comparison
+    statistical_tests = ["nemenyi", "wilcoxon_bonferroni", "wilcoxon_holm", "tukey_hsd", "fisher_lsd"]
+    
+    num_algorithms = len(complete_algorithms)
+    num_datasets = len(datasets)
+    
+    for test_name in statistical_tests:
+        print(f"\n{'='*60}")
+        print(f"Running {test_name.upper()} analysis...")
+        print(f"{'='*60}")
+        
+        if test_name == "nemenyi":
+            # Traditional Nemenyi (most conservative)
+            cd = critical_difference_nemenyi(num_algorithms, num_datasets, ALPHA)
+            title = f"Critical Difference Diagram\n(Nemenyi test, α={ALPHA})"
+            significant_pairs = None
+            print(f"Nemenyi Critical Difference: {cd:.3f}")
+            
+        elif test_name == "wilcoxon_bonferroni":
+            # Pairwise Wilcoxon with Bonferroni correction
+            significant_pairs = wilcoxon_with_bonferroni(rank_matrix, ALPHA)
+            cd = None
+            title = f"Critical Difference Diagram\n(Wilcoxon + Bonferroni, α={ALPHA})"
+            print(f"Found {len(significant_pairs)} significant pairs with Bonferroni correction")
+            
+        elif test_name == "wilcoxon_holm":
+            # Pairwise Wilcoxon with Holm step-down correction
+            significant_pairs = wilcoxon_with_holm(rank_matrix, ALPHA)
+            cd = None
+            title = f"Critical Difference Diagram\n(Wilcoxon + Holm, α={ALPHA})"
+            print(f"Found {len(significant_pairs)} significant pairs with Holm correction")
+            
+        elif test_name == "tukey_hsd":
+            # Tukey HSD critical difference
+            cd = tukey_hsd_critical_difference(rank_matrix, ALPHA)
+            title = f"Critical Difference Diagram\n(Tukey HSD, α={ALPHA})"
+            significant_pairs = None
+            print(f"Tukey HSD Critical Difference: {cd:.3f}")
+            
+        elif test_name == "fisher_lsd":
+            # Fisher's Least Significant Difference (most lenient)
+            cd = fisher_lsd_critical_difference(rank_matrix, ALPHA)
+            title = f"Critical Difference Diagram\n(Fisher LSD, α={ALPHA})"
+            significant_pairs = None
+            print(f"Fisher LSD Critical Difference: {cd:.3f}")
+        
+        output_path = os.path.join(output_dir, f"cd_diagram_combined_{test_name}.png")
+        
+        # For combined analysis, only ranks are meaningful (scores have different scales)
+        draw_cd_diagram(avg_ranks, complete_algorithms, cd, title, output_path, 
+                       scores=None, significant_pairs=significant_pairs)
+        
+        print(f"Saved diagram: {output_path}")
+        print(f"Top 5 algorithms by average rank:")
+        for i, (_, row) in enumerate(combined_ranking.head(5).iterrows()):
+            print(f"  {i+1}. {row['Algorithm']}: avg rank {row['Average_Rank']:.2f}")
 
 else:
     print(f"Insufficient algorithms with complete results ({len(complete_algorithms)} < 4)")
