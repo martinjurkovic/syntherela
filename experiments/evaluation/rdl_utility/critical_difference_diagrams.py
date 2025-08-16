@@ -5,7 +5,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
-from scipy.stats import rankdata, wilcoxon, friedmanchisquare, ttest_rel
+from scipy.stats import rankdata, friedmanchisquare
+import scikit_posthocs as sp
 import glob
 from dotenv import load_dotenv
 
@@ -77,121 +78,93 @@ def compute_mean_and_se(values):
         se = np.std(values, ddof=1) / np.sqrt(len(values))
     return mean, se
 
-def critical_difference_nemenyi(num_algorithms, num_datasets, alpha=0.05):
+def nemenyi_test_with_friedman(rank_matrix, alpha=0.05):
     """
-    Calculate critical difference for Nemenyi post-hoc test
+    Perform proper Friedman test followed by Nemenyi post-hoc test
+    Returns significant pairs from the Nemenyi test
     """
-    q_alpha = {
-        0.05: {4: 2.569, 5: 2.728, 6: 2.850, 7: 2.949, 8: 3.031, 9: 3.102, 10: 3.164},
-        0.10: {4: 2.291, 5: 2.420, 6: 2.514, 7: 2.589, 8: 2.650, 9: 2.701, 10: 2.746}
-    }
+    print("Performing Friedman test...")
     
-    if num_algorithms in q_alpha[alpha]:
-        q_val = q_alpha[alpha][num_algorithms]
-    else:
-        # Approximate for larger numbers
-        q_val = 2.576  # Conservative estimate
+    # Remove rows/columns with all NaN values
+    valid_algorithms = ~np.all(np.isnan(rank_matrix), axis=1)
+    valid_datasets = ~np.all(np.isnan(rank_matrix), axis=0)
     
-    cd = q_val * np.sqrt((num_algorithms * (num_algorithms + 1)) / (6.0 * num_datasets))
-    return cd
-
-def wilcoxon_with_bonferroni(rank_matrix, alpha=0.05):
-    """
-    Perform pairwise Wilcoxon signed-rank tests with Bonferroni correction
-    """
-    n_algorithms = rank_matrix.shape[0]
-    n_comparisons = n_algorithms * (n_algorithms - 1) // 2
-    bonferroni_alpha = alpha / n_comparisons
+    clean_rank_matrix = rank_matrix[valid_algorithms][:, valid_datasets]
     
-    significant_pairs = []
-    print(f"Performing Wilcoxon tests with Bonferroni correction (α = {bonferroni_alpha:.6f})")
+    # Debug information
+    print(f"Original rank matrix shape: {rank_matrix.shape}")
+    print(f"Clean rank matrix shape: {clean_rank_matrix.shape}")
+    print(f"Average ranks: {np.nanmean(rank_matrix, axis=1)[:10]}...")  # Show first 10
     
-    for i in range(n_algorithms):
-        for j in range(i + 1, n_algorithms):
-            try:
-                stat, p_value = wilcoxon(rank_matrix[i, :], rank_matrix[j, :], alternative='two-sided')
-                if p_value < bonferroni_alpha:
-                    significant_pairs.append((i, j))
-                    print(f"  Significant: {i} vs {j}, p = {p_value:.6f}")
-            except ValueError:
-                # Handle case where all differences are zero
-                pass
+    # Check if we have any NaN values remaining
+    if np.any(np.isnan(clean_rank_matrix)):
+        print("Warning: NaN values detected in rank matrix. Using available data only.")
+        # For now, we'll use nanmean for average ranks, but proper Friedman needs complete data
+        # We'll proceed with a modified approach
+        return []
     
-    return significant_pairs
-
-def wilcoxon_with_holm(rank_matrix, alpha=0.05):
-    """
-    Perform pairwise Wilcoxon signed-rank tests with Holm step-down correction
-    """
-    n_algorithms = rank_matrix.shape[0]
-    pairwise_results = []
+    # Friedman test expects data in format: (n_observations, n_algorithms)
+    # Our rank_matrix is (n_algorithms, n_datasets), so we need to transpose
+    data_for_friedman = clean_rank_matrix.T
     
-    print(f"Performing Wilcoxon tests with Holm correction")
-    
-    # Calculate all p-values
-    for i in range(n_algorithms):
-        for j in range(i + 1, n_algorithms):
-            try:
-                stat, p_value = wilcoxon(rank_matrix[i, :], rank_matrix[j, :], alternative='two-sided')
-                pairwise_results.append((i, j, p_value))
-            except ValueError:
-                pairwise_results.append((i, j, 1.0))
-    
-    # Sort by p-value
-    pairwise_results.sort(key=lambda x: x[2])
-    
-    significant_pairs = []
-    n_comparisons = len(pairwise_results)
-    
-    for k, (i, j, p_value) in enumerate(pairwise_results):
-        alpha_adjusted = alpha / (n_comparisons - k)
-        if p_value <= alpha_adjusted:
-            significant_pairs.append((i, j))
-            print(f"  Significant: {i} vs {j}, p = {p_value:.6f}, α_adj = {alpha_adjusted:.6f}")
+    # Perform Friedman test
+    try:
+        n_datasets, n_algorithms = data_for_friedman.shape
+        print(f"Data for Friedman: {n_datasets} datasets, {n_algorithms} algorithms")
+        
+        # Show sample of the data
+        print("Sample rank data (first 5 algorithms, all datasets):")
+        for i in range(min(5, n_algorithms)):
+            print(f"  Algorithm {i}: {data_for_friedman[:, i]}")
+        
+        # Friedman chi-square test
+        friedman_stat, friedman_p = friedmanchisquare(*[data_for_friedman[:, i] for i in range(n_algorithms)])
+        
+        print(f"Friedman test: χ² = {friedman_stat:.4f}, p = {friedman_p:.6f}")
+        print(f"Critical p-value: {alpha}")
+        
+        if friedman_p < alpha:
+            print(f"Friedman test significant (p < {alpha}), proceeding with Nemenyi post-hoc test")
+            
+            # Perform Nemenyi post-hoc test
+            nemenyi_results = sp.posthoc_nemenyi_friedman(data_for_friedman)
+            print(f"Nemenyi results matrix shape: {nemenyi_results.shape}")
+            
+            # Show some sample p-values
+            print("Sample Nemenyi p-values (first 5x5):")
+            print(nemenyi_results.iloc[:5, :5])
+            
+            # Extract significant pairs
+            significant_pairs = []
+            min_p = 1.0
+            for i in range(n_algorithms):
+                for j in range(i + 1, n_algorithms):
+                    p_value = nemenyi_results.iloc[i, j]
+                    min_p = min(min_p, p_value)
+                    if p_value < alpha:
+                        significant_pairs.append((i, j))
+                        print(f"  Significant pair: {i} vs {j}, p = {p_value:.6f}")
+            
+            print(f"Found {len(significant_pairs)} significant pairs from Nemenyi test")
+            print(f"Minimum p-value found: {min_p:.6f}")
+            print(f"Alpha threshold: {alpha}")
+            
+            return significant_pairs
         else:
-            print(f"  Stopping at: {i} vs {j}, p = {p_value:.6f} > α_adj = {alpha_adjusted:.6f}")
-            break
-    
-    return significant_pairs
+            print(f"Friedman test not significant (p = {friedman_p:.6f} >= {alpha})")
+            print("No post-hoc testing performed")
+            return []
+            
+    except Exception as e:
+        print(f"Error in Friedman/Nemenyi test: {e}")
+        print("Falling back to no significant pairs")
+        return []
 
-def tukey_hsd_critical_difference(rank_matrix, alpha=0.05):
-    """
-    Calculate critical difference using Tukey HSD approach
-    """
-    n_algorithms, n_datasets = rank_matrix.shape
-    
-    # Calculate pooled standard error
-    # For ranks, we can estimate this based on the rank variance
-    pooled_variance = np.var(rank_matrix, ddof=1)
-    standard_error = np.sqrt(pooled_variance / n_datasets)
-    
-    # Tukey's q critical value (approximation for large n)
-    # For small n, we'd need to look up in Tukey tables
-    q_critical = 3.0 + 0.1 * n_algorithms  # Rough approximation
-    
-    cd_tukey = q_critical * standard_error / np.sqrt(2)
-    
-    print(f"Tukey HSD: pooled_variance = {pooled_variance:.3f}, SE = {standard_error:.3f}, q = {q_critical:.3f}")
-    return cd_tukey
 
-def fisher_lsd_critical_difference(rank_matrix, alpha=0.05):
-    """
-    Calculate critical difference using Fisher's Least Significant Difference
-    """
-    n_algorithms, n_datasets = rank_matrix.shape
-    
-    # Calculate pooled standard error
-    pooled_variance = np.var(rank_matrix, ddof=1)
-    standard_error = np.sqrt(pooled_variance / n_datasets)
-    
-    # t critical value for given alpha and degrees of freedom
-    df = (n_algorithms - 1) * (n_datasets - 1)
-    t_critical = stats.t.ppf(1 - alpha/2, df)
-    
-    cd_lsd = t_critical * standard_error * np.sqrt(2)
-    
-    print(f"Fisher LSD: pooled_variance = {pooled_variance:.3f}, SE = {standard_error:.3f}, t = {t_critical:.3f}")
-    return cd_lsd
+
+
+
+
 
 def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None, significant_pairs=None):
     """
@@ -580,39 +553,49 @@ for gnn_arch, method, display_name in all_combinations:
 
 performance_matrix = np.array(performance_matrix)
 
-# Filter out algorithms that don't have results for all datasets
-complete_mask = ~np.isnan(performance_matrix).any(axis=1)
-complete_algorithms = [name for i, name in enumerate(algorithm_names_global) if complete_mask[i]]
-complete_performance = performance_matrix[complete_mask]
-
 # Remove ORIGINAL method from analysis (always performs best, skews comparisons)
-non_original_mask = [not name.startswith('ORIG-') for name in complete_algorithms]
-complete_algorithms = [name for i, name in enumerate(complete_algorithms) if non_original_mask[i]]
-complete_performance = complete_performance[non_original_mask]
+non_original_mask = [not name.startswith('ORIG-') for name in algorithm_names_global]
+filtered_algorithms = [name for i, name in enumerate(algorithm_names_global) if non_original_mask[i]]
+filtered_performance = performance_matrix[non_original_mask]
 
 print(f"Excluded ORIGINAL methods to focus on synthetic data method comparisons")
+print(f"Including algorithms with partial results (missing data handled in ranking)")
 
-if len(complete_algorithms) >= 4:
-    print(f"Found {len(complete_algorithms)} algorithms with complete results across all datasets")
+if len(filtered_algorithms) >= 4:
+    print(f"Found {len(filtered_algorithms)} algorithms for analysis")
     
-    # Calculate ranks for each dataset
-    rank_matrix = np.zeros_like(complete_performance)
+    # Calculate ranks for each dataset (handling missing data)
+    rank_matrix = np.full_like(filtered_performance, np.nan)
     for j, dataset in enumerate(datasets):
-        metric_type = dataset_metrics.get(dataset, "mae")
-        if metric_type == "roc_auc":
-            # Higher is better
-            rank_matrix[:, j] = rankdata(-complete_performance[:, j], method='average')
+        # Get non-missing values for this dataset
+        dataset_scores = filtered_performance[:, j]
+        valid_mask = ~np.isnan(dataset_scores)
+        
+        if np.sum(valid_mask) > 1:  # Need at least 2 algorithms for ranking
+            metric_type = dataset_metrics.get(dataset, "mae")
+            if metric_type == "roc_auc":
+                # Higher is better
+                ranks = rankdata(-dataset_scores[valid_mask], method='average')
+            else:
+                # Lower is better  
+                ranks = rankdata(dataset_scores[valid_mask], method='average')
+            
+            # Assign ranks back to the full matrix
+            rank_matrix[valid_mask, j] = ranks
         else:
-            # Lower is better
-            rank_matrix[:, j] = rankdata(complete_performance[:, j], method='average')
+            print(f"Warning: Dataset {dataset} has insufficient valid algorithms for ranking")
     
-    # Calculate average ranks
-    avg_ranks = np.mean(rank_matrix, axis=1)
+    # Calculate average ranks (ignoring NaN values for algorithms with missing datasets)
+    avg_ranks = np.nanmean(rank_matrix, axis=1)
+    
+    # Count how many datasets each algorithm was evaluated on
+    dataset_counts = np.sum(~np.isnan(rank_matrix), axis=1)
     
     # Save ranking data (same for all statistical tests)
     combined_ranking = pd.DataFrame({
-        'Algorithm': complete_algorithms,
-        'Average_Rank': avg_ranks
+        'Algorithm': filtered_algorithms,
+        'Average_Rank': avg_ranks,
+        'Datasets_Count': dataset_counts
     })
     
     # Add individual dataset ranks
@@ -624,65 +607,29 @@ if len(complete_algorithms) >= 4:
     combined_ranking.to_csv(ranking_path, index=False)
     print(f"Saved combined rankings: {ranking_path}")
     
-    # Run all statistical tests for comparison
-    statistical_tests = ["nemenyi", "wilcoxon_bonferroni", "wilcoxon_holm", "tukey_hsd", "fisher_lsd"]
+    # Run Nemenyi analysis
+    print(f"\n{'='*60}")
+    print(f"Running NEMENYI analysis...")
+    print(f"{'='*60}")
     
-    num_algorithms = len(complete_algorithms)
-    num_datasets = len(datasets)
+    # Proper Friedman + Nemenyi post-hoc test
+    significant_pairs = nemenyi_test_with_friedman(rank_matrix, ALPHA)
+    cd = None  # No CD needed, we have significant pairs
+    title = f"Critical Difference Diagram\n(Friedman + Nemenyi, α={ALPHA})"
     
-    for test_name in statistical_tests:
-        print(f"\n{'='*60}")
-        print(f"Running {test_name.upper()} analysis...")
-        print(f"{'='*60}")
-        
-        if test_name == "nemenyi":
-            # Traditional Nemenyi (most conservative)
-            cd = critical_difference_nemenyi(num_algorithms, num_datasets, ALPHA)
-            title = f"Critical Difference Diagram\n(Nemenyi test, α={ALPHA})"
-            significant_pairs = None
-            print(f"Nemenyi Critical Difference: {cd:.3f}")
-            
-        elif test_name == "wilcoxon_bonferroni":
-            # Pairwise Wilcoxon with Bonferroni correction
-            significant_pairs = wilcoxon_with_bonferroni(rank_matrix, ALPHA)
-            cd = None
-            title = f"Critical Difference Diagram\n(Wilcoxon + Bonferroni, α={ALPHA})"
-            print(f"Found {len(significant_pairs)} significant pairs with Bonferroni correction")
-            
-        elif test_name == "wilcoxon_holm":
-            # Pairwise Wilcoxon with Holm step-down correction
-            significant_pairs = wilcoxon_with_holm(rank_matrix, ALPHA)
-            cd = None
-            title = f"Critical Difference Diagram\n(Wilcoxon + Holm, α={ALPHA})"
-            print(f"Found {len(significant_pairs)} significant pairs with Holm correction")
-            
-        elif test_name == "tukey_hsd":
-            # Tukey HSD critical difference
-            cd = tukey_hsd_critical_difference(rank_matrix, ALPHA)
-            title = f"Critical Difference Diagram\n(Tukey HSD, α={ALPHA})"
-            significant_pairs = None
-            print(f"Tukey HSD Critical Difference: {cd:.3f}")
-            
-        elif test_name == "fisher_lsd":
-            # Fisher's Least Significant Difference (most lenient)
-            cd = fisher_lsd_critical_difference(rank_matrix, ALPHA)
-            title = f"Critical Difference Diagram\n(Fisher LSD, α={ALPHA})"
-            significant_pairs = None
-            print(f"Fisher LSD Critical Difference: {cd:.3f}")
-        
-        output_path = os.path.join(output_dir, f"cd_diagram_combined_{test_name}.png")
-        
-        # For combined analysis, only ranks are meaningful (scores have different scales)
-        draw_cd_diagram(avg_ranks, complete_algorithms, cd, title, output_path, 
-                       scores=None, significant_pairs=significant_pairs)
-        
-        print(f"Saved diagram: {output_path}")
-        print(f"Top 5 algorithms by average rank:")
-        for i, (_, row) in enumerate(combined_ranking.head(5).iterrows()):
-            print(f"  {i+1}. {row['Algorithm']}: avg rank {row['Average_Rank']:.2f}")
+    output_path = os.path.join(output_dir, f"cd_diagram_nemenyi.png")
+    
+    # For combined analysis, only ranks are meaningful (scores have different scales)
+    draw_cd_diagram(avg_ranks, filtered_algorithms, cd, title, output_path, 
+                   scores=None, significant_pairs=significant_pairs)
+    
+    print(f"Saved diagram: {output_path}")
+    print(f"Top 5 algorithms by average rank:")
+    for i, (_, row) in enumerate(combined_ranking.head(5).iterrows()):
+        print(f"  {i+1}. {row['Algorithm']}: avg rank {row['Average_Rank']:.2f}")
 
 else:
-    print(f"Insufficient algorithms with complete results ({len(complete_algorithms)} < 4)")
+    print(f"Insufficient algorithms for analysis ({len(filtered_algorithms)} < 4)")
 
 print(f"\nAll diagrams saved to: {output_dir}")
 print("=" * 50)
