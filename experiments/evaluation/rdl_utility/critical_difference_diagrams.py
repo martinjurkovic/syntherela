@@ -95,7 +95,7 @@ def critical_difference(num_algorithms, num_datasets, alpha=0.05):
     cd = q_val * np.sqrt((num_algorithms * (num_algorithms + 1)) / (6.0 * num_datasets))
     return cd
 
-def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
+def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None, std_errors=None):
     """
     Draw critical difference diagram matching the reference style exactly
     """
@@ -110,6 +110,12 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
         display_values = sorted_scores
     else:
         display_values = sorted_ranks
+    
+    # Sort standard errors if provided
+    if std_errors is not None:
+        sorted_std_errors = [std_errors[i] for i in sorted_indices]
+    else:
+        sorted_std_errors = None
     
     n_algorithms = len(sorted_ranks)
     
@@ -149,16 +155,12 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
                 return method_colors[method]
         return '#000000'  # Default black
     
-    # Draw tick marks and dots
+    # Draw dots only (no extra vertical lines)
     for i, (rank, name) in enumerate(zip(sorted_ranks, sorted_names)):
         color = get_method_color(name)
         
         # Draw colored dot on the line
         ax.plot(rank, y_main, 'o', color=color, markersize=8, markeredgecolor='black', markeredgewidth=1)
-        
-        # Draw vertical line from dot
-        line_length = 0.15
-        ax.plot([rank, rank], [y_main, y_main - line_length], color=color, linewidth=2)
     
     # Position algorithm names (special left/right pattern)
     left_positions = []
@@ -183,9 +185,9 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
         color = get_method_color(name)
         y_pos = y_main - 0.15 - (idx * 0.04)
         
-        # Draw horizontal line to position
-        ax.plot([rank, rank - 0.5], [y_main, y_pos], color=color, linewidth=1.5)
-        ax.plot([rank - 0.5, line_start - 0.2], [y_pos, y_pos], color=color, linewidth=1.5)
+        # Draw L-shaped line: vertical down from score position, then horizontal to text
+        ax.plot([rank, rank], [y_main, y_pos], color=color, linewidth=1.5)  # Vertical line
+        ax.plot([rank, line_start - 0.2], [y_pos, y_pos], color=color, linewidth=1.5)  # Horizontal line
         
         # Add algorithm name with score
         score_text = f"[{score:.3f}]"
@@ -197,48 +199,105 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
         color = get_method_color(name)
         y_pos = y_main - 0.15 - (idx * 0.04)
         
-        # Draw horizontal line to position
-        ax.plot([rank, rank + 0.5], [y_main, y_pos], color=color, linewidth=1.5)
-        ax.plot([rank + 0.5, line_end + 0.2], [y_pos, y_pos], color=color, linewidth=1.5)
+        # Draw L-shaped line: vertical down from score position, then horizontal to text
+        ax.plot([rank, rank], [y_main, y_pos], color=color, linewidth=1.5)  # Vertical line
+        ax.plot([rank, line_end + 0.2], [y_pos, y_pos], color=color, linewidth=1.5)  # Horizontal line
         
         # Add algorithm name with score
         score_text = f"[{score:.3f}]"
         ax.text(line_end + 0.25, y_pos, f"{score_text} {name}", 
                ha='left', va='center', fontsize=10, color=color, fontweight='bold')
     
-    # Find and draw significance groups
+    # Find and draw significance groups based on standard error overlaps
     groups = []
-    current_group = [0]
     
-    for i in range(1, len(sorted_ranks)):
-        if sorted_ranks[i] - sorted_ranks[current_group[0]] <= cd:
-            current_group.append(i)
-        else:
+    if sorted_std_errors is not None and scores is not None:
+        # Use standard error overlaps for grouping
+        # Find maximal cliques where all algorithms in a group have overlapping confidence intervals
+        
+        def intervals_overlap(i, j):
+            """Check if confidence intervals of algorithms i and j overlap"""
+            score_i = display_values[i]
+            se_i = sorted_std_errors[i]
+            score_j = display_values[j]
+            se_j = sorted_std_errors[j]
+            
+            interval_i_min = score_i - se_i
+            interval_i_max = score_i + se_i
+            interval_j_min = score_j - se_j
+            interval_j_max = score_j + se_j
+            
+            return max(interval_i_min, interval_j_min) <= min(interval_i_max, interval_j_max)
+        
+        def all_pairwise_overlap(group):
+            """Check if all algorithms in group have pairwise overlapping intervals"""
+            for i in range(len(group)):
+                for j in range(i + 1, len(group)):
+                    if not intervals_overlap(group[i], group[j]):
+                        return False
+            return True
+        
+        # Find maximal groups using a greedy approach
+        # Start with each algorithm and try to build the largest possible group
+        used = [False] * n_algorithms
+        
+        for start_idx in range(n_algorithms):
+            if used[start_idx]:
+                continue
+            
+            # Start with single algorithm
+            current_group = [start_idx]
+            
+            # Try to add more algorithms one by one
+            for candidate in range(start_idx + 1, n_algorithms):
+                if used[candidate]:
+                    continue
+                
+                # Try adding this candidate to the group
+                test_group = current_group + [candidate]
+                
+                # Check if all pairs in the test group overlap
+                if all_pairwise_overlap(test_group):
+                    current_group.append(candidate)
+            
+            # Mark all algorithms in this group as used
+            for idx in current_group:
+                used[idx] = True
+            
+            # Only add groups with more than one member
             if len(current_group) > 1:
                 groups.append(current_group)
-            current_group = [i]
+    else:
+        # Fallback to critical difference method if no standard errors
+        current_group = [0]
+        
+        for i in range(1, len(sorted_ranks)):
+            if sorted_ranks[i] - sorted_ranks[current_group[0]] <= cd:
+                current_group.append(i)
+            else:
+                if len(current_group) > 1:
+                    groups.append(current_group)
+                current_group = [i]
+        
+        if len(current_group) > 1:
+            groups.append(current_group)
     
-    if len(current_group) > 1:
-        groups.append(current_group)
-    
-    # Draw significance brackets above the line
-    bracket_colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray']
-    
+    # Draw significance brackets below the line (between the connecting lines)
     for group_idx, group in enumerate(groups):
         if len(group) > 1:
             start_rank = sorted_ranks[group[0]]
             end_rank = sorted_ranks[group[-1]]
             
-            bracket_y = y_main + 0.1 + (group_idx % 4) * 0.08
-            bracket_color = bracket_colors[group_idx % len(bracket_colors)]
+            # Position brackets below the main line, staggered by group
+            bracket_y = y_main - 0.05 - (group_idx % 4) * 0.03
             
-            # Draw bracket
+            # Draw bracket in black
             ax.plot([start_rank, end_rank], [bracket_y, bracket_y], 
-                   color=bracket_color, linewidth=3, alpha=0.8)
-            ax.plot([start_rank, start_rank], [y_main + 0.05, bracket_y], 
-                   color=bracket_color, linewidth=2, alpha=0.8)
-            ax.plot([end_rank, end_rank], [y_main + 0.05, bracket_y], 
-                   color=bracket_color, linewidth=2, alpha=0.8)
+                   color='black', linewidth=2, alpha=0.8)
+            ax.plot([start_rank, start_rank], [y_main - 0.02, bracket_y], 
+                   color='black', linewidth=2, alpha=0.8)
+            ax.plot([end_rank, end_rank], [y_main - 0.02, bracket_y], 
+                   color='black', linewidth=2, alpha=0.8)
     
     # Add score scale at the top (use actual scores instead of ranks)
     if scores is not None:
@@ -376,6 +435,7 @@ for dataset in datasets:
     # Collect all GNN-method combinations that have results for this dataset
     algorithm_results = []
     algorithm_names = []
+    algorithm_std_errors = []
     
     for gnn_arch in gnn_architectures:
         for method in methods:
@@ -385,6 +445,7 @@ for dataset in datasets:
                 
                 mean_value, se_value = results[dataset][gnn_arch][method]
                 algorithm_results.append(mean_value)
+                algorithm_std_errors.append(se_value)
                 
                 # Create readable name for GNN-method combination
                 gnn_display = gnn_arch_rename.get(gnn_arch, gnn_arch)
@@ -425,7 +486,7 @@ for dataset in datasets:
     print(f"  Creating diagram with {num_algorithms} algorithms")
     print(f"  Heuristic CD threshold: {cd_heuristic:.3f}")
     
-    draw_cd_diagram(ranks, algorithm_names, cd_heuristic, title, output_path, scores=algorithm_results)
+    draw_cd_diagram(ranks, algorithm_names, cd_heuristic, title, output_path, scores=algorithm_results, std_errors=algorithm_std_errors)
     
     # Also save ranking data
     ranking_data = pd.DataFrame({
@@ -518,7 +579,8 @@ if len(complete_algorithms) >= 4:
     # For combined analysis, we'll use ranks but could also use average scores
     # Calculate average scores across datasets
     avg_scores = np.mean(complete_performance, axis=1)
-    draw_cd_diagram(avg_ranks, complete_algorithms, cd, title, output_path, scores=avg_scores)
+    # For combined analysis, we don't have individual standard errors, so use CD method
+    draw_cd_diagram(avg_ranks, complete_algorithms, cd, title, output_path, scores=avg_scores, std_errors=None)
     
     # Save combined ranking data
     combined_ranking = pd.DataFrame({
