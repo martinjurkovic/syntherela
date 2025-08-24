@@ -540,6 +540,26 @@ if len(complete_algorithms) >= 4:
     # Calculate average ranks
     avg_ranks = np.mean(rank_matrix, axis=1)
     
+    # Conduct Friedman test before CD calculation
+    # Prepare data for Friedman test (normalize metrics so higher is always better)
+    normalized_performance = np.zeros_like(complete_performance)
+    for j, dataset in enumerate(datasets):
+        metric_type = dataset_metrics.get(dataset, "mae")
+        if metric_type == "roc_auc":
+            # Higher is better - use as is
+            normalized_performance[:, j] = complete_performance[:, j]
+        else:
+            # Lower is better - negate so higher is better
+            normalized_performance[:, j] = -complete_performance[:, j]
+    
+    # Perform Friedman test
+    friedman_stat, friedman_p = stats.friedmanchisquare(*normalized_performance)
+    print(f"Friedman test: χ² = {friedman_stat:.4f}, p = {friedman_p:.4f}")
+    if friedman_p < ALPHA:
+        print(f"Friedman test is significant (p < {ALPHA})")
+    else:
+        print(f"Friedman test is not significant (p ≥ {ALPHA})")
+    
     # Calculate critical difference using Nemenyi test
     num_algorithms = len(complete_algorithms)
     num_datasets = len(datasets)
