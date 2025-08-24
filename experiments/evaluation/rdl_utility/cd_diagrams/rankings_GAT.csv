@@ -1,0 +1,9 @@
+Method,Average_Rank,Datasets_Count,Rank_Rossmann,Rank_Walmart,Rank_Airbnb,Rank_Berka,Rank_F1
+ORIG,1.0,5,1.0,1.0,1.0,1.0,1.0
+RELDIFF,2.6,5,4.0,3.0,2.0,2.0,2.0
+CLAVA,3.2,5,2.0,2.0,4.0,3.0,5.0
+RGCLD,4.6,5,3.0,4.0,5.0,5.0,6.0
+TARGN,4.8,5,6.0,7.0,3.0,4.0,4.0
+RCTGAN,5.0,4,5.0,6.0,6.0,,3.0
+SDV,6.75,4,8.0,5.0,7.0,,7.0
+REALTF,7.5,2,7.0,8.0,,,
