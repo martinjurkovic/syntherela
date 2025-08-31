@@ -115,8 +115,8 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
     
     n_algorithms = len(sorted_ranks)
     
-    # Create figure
-    fig, ax = plt.subplots(figsize=(16, 8))
+    # Create figure (adjusted for A4 page width, slightly wider for better spacing)
+    fig, ax = plt.subplots(figsize=(12, 6))
     
     # Set up coordinate system
     min_rank = min(sorted_ranks)
@@ -129,8 +129,8 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
     line_start = min_rank - x_margin
     line_end = max_rank + x_margin
     
-    # Draw main horizontal line
-    ax.plot([line_start, line_end], [y_main, y_main], 'k-', linewidth=2)
+    # Draw main horizontal line (thicker for thesis)
+    ax.plot([line_start, line_end], [y_main, y_main], 'k-', linewidth=2.5)
     
     # Color mapping by method
     method_colors = {
@@ -151,12 +151,7 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
                 return method_colors[method]
         return '#000000'  # Default black
     
-    # Draw dots only (no extra vertical lines)
-    for i, (rank, name) in enumerate(zip(sorted_ranks, sorted_names)):
-        color = get_method_color(name)
-        
-        # Draw colored dot on the line
-        ax.plot(rank, y_main, 'o', color=color, markersize=8, markeredgecolor='black', markeredgewidth=1)
+    # Draw dots will be done after connecting lines to appear on top
     
     # Position algorithm names (special left/right pattern)
     left_positions = []
@@ -182,18 +177,18 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
         y_pos = y_main - 0.15 - (idx * 0.04)
         
         # Draw L-shaped line: vertical down from score position, then horizontal to text
-        ax.plot([rank, rank], [y_main, y_pos], color=color, linewidth=1.5)  # Vertical line
-        ax.plot([rank, line_start - 0.2], [y_pos, y_pos], color=color, linewidth=1.5)  # Horizontal line
+        ax.plot([rank, rank], [y_main, y_pos], color=color, linewidth=2.0)  # Vertical line
+        ax.plot([rank, line_start - 0.2], [y_pos, y_pos], color=color, linewidth=2.0)  # Horizontal line
         
         # Add algorithm name with score (or rank if no scores)
         if scores is not None:
             score_text = f"[{score:.3f}]"
             ax.text(line_start - 0.25, y_pos, f"{name} {score_text}", 
-                   ha='right', va='center', fontsize=10, color=color, fontweight='bold')
+                   ha='right', va='center', fontsize=12, color=color, fontweight='bold')
         else:
             rank_text = f"[{rank:.1f}]"
             ax.text(line_start - 0.25, y_pos, f"{name} {rank_text}", 
-                   ha='right', va='center', fontsize=10, color=color, fontweight='bold')
+                   ha='right', va='center', fontsize=12, color=color, fontweight='bold')
     
     # Draw algorithm names on the right  
     for idx, (rank, name, orig_idx, score) in enumerate(right_positions):
@@ -201,18 +196,60 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
         y_pos = y_main - 0.15 - (idx * 0.04)
         
         # Draw L-shaped line: vertical down from score position, then horizontal to text
-        ax.plot([rank, rank], [y_main, y_pos], color=color, linewidth=1.5)  # Vertical line
-        ax.plot([rank, line_end + 0.2], [y_pos, y_pos], color=color, linewidth=1.5)  # Horizontal line
+        ax.plot([rank, rank], [y_main, y_pos], color=color, linewidth=2.0)  # Vertical line
+        ax.plot([rank, line_end + 0.2], [y_pos, y_pos], color=color, linewidth=2.0)  # Horizontal line
         
         # Add algorithm name with score (or rank if no scores)
         if scores is not None:
             score_text = f"[{score:.3f}]"
             ax.text(line_end + 0.25, y_pos, f"{score_text} {name}", 
-                   ha='left', va='center', fontsize=10, color=color, fontweight='bold')
+                   ha='left', va='center', fontsize=12, color=color, fontweight='bold')
         else:
             rank_text = f"[{rank:.1f}]"
             ax.text(line_end + 0.25, y_pos, f"{rank_text} {name}", 
-                   ha='left', va='center', fontsize=10, color=color, fontweight='bold')
+                   ha='left', va='center', fontsize=12, color=color, fontweight='bold')
+    
+    # Draw scale tick lines first (so they appear below dots)
+    # Add scale values above the main horizontal line
+    # Calculate scale values: start with minimum, then multiples of 5 up to maximum
+    min_rank = min(sorted_ranks)
+    max_rank = max(sorted_ranks)
+    
+    # Start with the minimum value
+    scale_values = [min_rank]
+    
+    # Find the next multiple of 5 after the minimum
+    next_multiple = int(np.ceil(min_rank / 5.0) * 5)
+    
+    # Add multiples of 5 up to the maximum
+    current_value = next_multiple
+    while current_value <= max_rank:
+        scale_values.append(current_value)
+        current_value += 5
+    
+    # If the maximum isn't already included, check if it's too close to the last value
+    if max_rank not in scale_values:
+        # If the difference between max and last value is small, replace the last multiple with max
+        if len(scale_values) > 1 and abs(max_rank - scale_values[-1]) < 2.0:
+            scale_values[-1] = max_rank  # Replace last multiple with max
+        else:
+            scale_values.append(max_rank)  # Add max as separate value
+    
+    # Add tick marks and values above the main line
+    for value in scale_values:
+        # Only draw tick if value is within our range
+        if line_start <= value <= line_end:
+            # Tick mark above the main line
+            ax.plot([value, value], [y_main, y_main + 0.05], 'k-', linewidth=1.5)
+            # Value label above the tick
+            ax.text(value, y_main + 0.1, f'{value:.1f}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+    
+    # Now draw dots on top of connecting lines and scale lines
+    for i, (rank, name) in enumerate(zip(sorted_ranks, sorted_names)):
+        color = get_method_color(name)
+        
+        # Draw colored dot on the line (larger for thesis)
+        ax.plot(rank, y_main, 'o', color=color, markersize=10, markeredgecolor='black', markeredgewidth=1.5)
     
     # Find and draw significance groups based on critical difference
     groups = []
@@ -253,47 +290,13 @@ def draw_cd_diagram(ranks, names, cd, title, output_path, scores=None):
             # Position brackets below the main line, staggered by group
             bracket_y = y_main - 0.05 - (group_idx % 4) * 0.03
             
-            # Draw bracket in black
+            # Draw bracket in black (thicker for thesis)
             ax.plot([start_rank, end_rank], [bracket_y, bracket_y], 
-                   color='black', linewidth=2, alpha=0.8)
+                   color='black', linewidth=2.5, alpha=0.8)
             ax.plot([start_rank, start_rank], [y_main - 0.02, bracket_y], 
-                   color='black', linewidth=2, alpha=0.8)
+                   color='black', linewidth=2.5, alpha=0.8)
             ax.plot([end_rank, end_rank], [y_main - 0.02, bracket_y], 
-                   color='black', linewidth=2, alpha=0.8)
-    
-    # Add scale values above the main horizontal line
-    # Calculate scale values: start with minimum, then multiples of 5 up to maximum
-    min_rank = min(sorted_ranks)
-    max_rank = max(sorted_ranks)
-    
-    # Start with the minimum value
-    scale_values = [min_rank]
-    
-    # Find the next multiple of 5 after the minimum
-    next_multiple = int(np.ceil(min_rank / 5.0) * 5)
-    
-    # Add multiples of 5 up to the maximum
-    current_value = next_multiple
-    while current_value <= max_rank:
-        scale_values.append(current_value)
-        current_value += 5
-    
-    # If the maximum isn't already included, check if it's too close to the last value
-    if max_rank not in scale_values:
-        # If the difference between max and last value is small, replace the last multiple with max
-        if len(scale_values) > 1 and abs(max_rank - scale_values[-1]) < 2.0:
-            scale_values[-1] = max_rank  # Replace last multiple with max
-        else:
-            scale_values.append(max_rank)  # Add max as separate value
-    
-    # Add tick marks and values above the main line
-    for value in scale_values:
-        # Only draw tick if value is within our range
-        if line_start <= value <= line_end:
-            # Tick mark above the main line
-            ax.plot([value, value], [y_main, y_main + 0.05], 'k-', linewidth=1)
-            # Value label above the tick
-            ax.text(value, y_main + 0.1, f'{value:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+                   color='black', linewidth=2.5, alpha=0.8)
     
     # Removed top scale bar as requested
     

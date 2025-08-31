@@ -18,7 +18,7 @@ dataset_metrics = {
 }
 
 results_dir = os.path.join(PROJECT_PATH, "results")
-results_file = os.path.join(results_dir, "singletable_dfs_utility_results.json")
+results_file = os.path.join(results_dir, "singletable_utility_results.json")
 
 with open(results_file, "r") as f:
     data = json.load(f)
@@ -169,7 +169,7 @@ for dataset in datasets:
         best_mean, best_se, best_method_name_for_bolding = best_method_tuple
         # Calculate the margin: user specified to multiply the best method's SE by sqrt(3).
         # np.sqrt is used as numpy is imported as np.
-        margin = best_se * np.sqrt(3)
+        margin = best_se # * np.sqrt(3)
 
         # Iterate through all scores (which are already filtered not to be ORIGINAL/BASELINE,
         # and are sorted) to find methods to underline.
@@ -205,31 +205,31 @@ for dataset in datasets:
                     # $\mathbf{MEAN}${\tiny$\pm SE$}
                     formatted_score = f"$\\mathbf{{{mean_val_str}}}$"
                     if pm_se_str_core:
-                        formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                        formatted_score += f"${pm_se_str_core}$"
                     row.append(formatted_score)
                 elif method in underlined_methods:
                     # $\underline{MEAN}${\tiny$\pm SE$}
                     formatted_score = f"$\\underline{{{mean_val_str}}}$"
                     if pm_se_str_core:
-                        formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                        formatted_score += f"${pm_se_str_core}$"
                     row.append(formatted_score)
                 else:
                     # $MEAN${\tiny$\pm SE$}
                     formatted_score = f"${mean_val_str}$"
                     if pm_se_str_core:
-                        formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                        formatted_score += f"${pm_se_str_core}$"
                     row.append(formatted_score)
             elif original_method == "ORIGINAL":
                 # $MEAN${\tiny$\pm SE$} (BASELINE)
                 base_score_part = f"${mean_val_str}$"
                 if pm_se_str_core:
-                    base_score_part += f"{{\\tiny${pm_se_str_core}$}}"
+                    base_score_part += f"${pm_se_str_core}$"
                 row.append(f"{base_score_part} $({baseline_scores[dataset]})$")
             else: # This is for 'BASELINE' method if it's in method_order and not filtered out
                 # $MEAN${\tiny$\pm SE$}
                 formatted_score = f"${mean_val_str}$"
                 if pm_se_str_core:
-                    formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                    formatted_score += f"${pm_se_str_core}$"
                 row.append(formatted_score)
         else:
             row.append("-")  # Placeholder for missing data

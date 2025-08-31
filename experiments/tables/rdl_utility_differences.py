@@ -304,7 +304,7 @@ for dataset_idx, dataset in enumerate(filtered_datasets):
                 
                 # Combine mean and SE
                 if pm_se_str_core:
-                    formatted_diff = f"${mean_str}${{\\tiny${pm_se_str_core}$}}"
+                    formatted_diff = f"${mean_str}$${pm_se_str_core}$"
                 else:
                     formatted_diff = f"${mean_str}$"
                 
@@ -391,7 +391,7 @@ for dataset_idx, dataset in enumerate(filtered_datasets):
     if best_method_tuple:
         best_mean, best_se, best_method = best_method_tuple
         # Calculate the margin: multiply the best method's SE by sqrt(3)
-        margin = best_se * np.sqrt(6)
+        margin = best_se # * np.sqrt(6)
         
         # Find methods to underline (within margin of best)
         for current_mean, current_se, current_method in sorted_scores:
@@ -434,19 +434,19 @@ for dataset_idx, dataset in enumerate(filtered_datasets):
             if method == best_method:
                 # Bold the best method
                 if pm_se_str_core:
-                    formatted_diff = f"$\\mathbf{{{mean_str}}}${{\\tiny${pm_se_str_core}$}}"
+                    formatted_diff = f"$\\mathbf{{{mean_str}}}$${pm_se_str_core}$"
                 else:
                     formatted_diff = f"$\\mathbf{{{mean_str}}}$"
             elif method in underlined_methods:
                 # Underline methods within margin of best
                 if pm_se_str_core:
-                    formatted_diff = f"$\\underline{{{mean_str}}}${{\\tiny${pm_se_str_core}$}}"
+                    formatted_diff = f"$\\underline{{{mean_str}}}$${pm_se_str_core}$"
                 else:
                     formatted_diff = f"$\\underline{{{mean_str}}}$"
             else:
                 # Regular formatting
                 if pm_se_str_core:
-                    formatted_diff = f"${mean_str}${{\\tiny${pm_se_str_core}$}}"
+                    formatted_diff = f"${mean_str}$${pm_se_str_core}$"
                 else:
                     formatted_diff = f"${mean_str}$"
             

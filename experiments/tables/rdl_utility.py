@@ -271,7 +271,7 @@ for dataset_idx, dataset in enumerate(datasets):
         if best_method_tuple:
             best_mean, best_se, best_method_name_for_bolding = best_method_tuple
             # Calculate the margin: multiply the best method's SE by sqrt(3)
-            margin = best_se * np.sqrt(3)
+            margin = best_se # * np.sqrt(3)
 
             # Find methods to underline (within margin of best)
             for current_mean, _current_se, current_method_name in sorted_scores:
@@ -332,7 +332,7 @@ for dataset_idx, dataset in enumerate(datasets):
                         else:
                             formatted_score = f"$\\mathbf{{{mean_val_str}}}$"
                         if pm_se_str_core:
-                            formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                            formatted_score += f"${pm_se_str_core}$"
                         row.append(formatted_score)
                     elif method in underlined_methods:
                         # Underline for methods within margin
@@ -342,7 +342,7 @@ for dataset_idx, dataset in enumerate(datasets):
                         else:
                             formatted_score = f"$\\underline{{{mean_val_str}}}$"
                         if pm_se_str_core:
-                            formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                            formatted_score += f"${pm_se_str_core}$"
                         row.append(formatted_score)
                     else:
                         # Regular formatting
@@ -352,19 +352,19 @@ for dataset_idx, dataset in enumerate(datasets):
                         else:
                             formatted_score = f"${mean_val_str}$"
                         if pm_se_str_core:
-                            formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                            formatted_score += f"${pm_se_str_core}$"
                         row.append(formatted_score)
                 elif original_method == "ORIGINAL":
                     # ORIGINAL method with baseline score
                     base_score_part = f"${mean_val_str}$"
                     # if pm_se_str_core:
-                    #     base_score_part += f"{{\\tiny${pm_se_str_core}$}}"
+                    #     base_score_part += f"${pm_se_str_core}$"
                     row.append(f"{base_score_part} $({baseline_scores[dataset]})$")
                 else:
                     # Other methods (shouldn't reach here with current logic)
                     formatted_score = f"${mean_val_str}$"
                     if pm_se_str_core:
-                        formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                        formatted_score += f"${pm_se_str_core}$"
                     row.append(formatted_score)
             else:
                 row.append("-")  # Placeholder for missing data
