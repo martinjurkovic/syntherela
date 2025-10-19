@@ -362,13 +362,13 @@ for split, table in [
         merged_df_len = len(merged_df)
         for col in merged_df.columns:
             dtype = merged_df[col].dtype
-            if (pd.api.types.is_object_dtype(dtype) or 
-                pd.api.types.is_string_dtype(dtype) or 
-                pd.api.types.is_bool_dtype(dtype) or 
+            if (pd.api.types.is_object_dtype(dtype) or
+                pd.api.types.is_string_dtype(dtype) or
+                pd.api.types.is_bool_dtype(dtype) or
                 isinstance(dtype, pd.CategoricalDtype)):
                 categorical_cols.append(col)
-        
-        
+
+
         # Drop rows where categorical columns are NaN
         if split in ["train", "val"]:
             merged_df = merged_df.dropna(subset=categorical_cols)
@@ -398,10 +398,10 @@ for col in dfs["train"].columns:
         else:
             raise ValueError(f"Unsupported task type called {task.task_type}")
         continue
-    
+
     # Get the pandas dtype
     dtype = dfs["train"][col].dtype
-    
+
     # Map pandas dtypes to torch_frame stypes
     if pd.api.types.is_integer_dtype(dtype):
         col_to_stype[col] = stype.numerical

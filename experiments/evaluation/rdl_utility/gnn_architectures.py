@@ -23,10 +23,10 @@ class HeteroGNN(torch.nn.Module):
     ):
         """
         A flexible heterogeneous GNN that can use different convolution layers.
-        
+
         Args:
             node_types: List of node types in the heterogeneous graph
-            edge_types: List of edge types in the heterogeneous graph  
+            edge_types: List of edge types in the heterogeneous graph
             channels: Number of channels/features
             conv_factory: A callable that takes (in_channels, out_channels) and returns a conv layer
             aggr: Aggregation method for HeteroConv

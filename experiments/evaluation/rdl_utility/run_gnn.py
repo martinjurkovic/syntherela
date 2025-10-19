@@ -99,7 +99,7 @@ parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
-parser.add_argument("--gnn_architecture", type=str, default="hetero-gin", 
+parser.add_argument("--gnn_architecture", type=str, default="hetero-gin",
                     choices=["hetero-graphsage", "hetero-gin", "hetero-graphconv", "hetero-gat", "hetero-gatv2", "relgnn"],
                     help="GNN architecture to use")
 parser.add_argument("--num_neighbors", type=int, default=-1)
@@ -165,7 +165,7 @@ try:
             col_to_stype[col] = stype(stype_str)
 
     # remove target column from stypes.json
-    if args.task == "autocomplete": 
+    if args.task == "autocomplete":
         col_to_stype_dict[args.entity_table].pop(args.target_col)
 except FileNotFoundError:
     print(f"No stypes.json found for {args.dataset}, generating new ones.")
@@ -320,7 +320,7 @@ selected_gnn_factory = GNN_FACTORY_MAP[args.gnn_architecture]
 if args.gnn_architecture == "relgnn":
     # Use RelGNN_Model directly (special case)
     atomic_routes_list = get_atomic_routes(data.edge_types)
-    
+
     model = RelGNN_Model(
         data=data,
         col_stats_dict=col_stats_dict_test,
