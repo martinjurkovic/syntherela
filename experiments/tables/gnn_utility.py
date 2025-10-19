@@ -8,6 +8,9 @@ load_dotenv()
 
 PROJECT_PATH = os.getenv("PROJECT_PATH")
 
+# Control whether to use tiny formatting for uncertainty values in the table
+USE_TINY_UNCERTAINTY = True
+
 # Define which metric to use for each dataset
 dataset_metrics = {
     "rossmann_subsampled": "mae",
@@ -65,7 +68,7 @@ for dataset, method_data in data.items():
 method_order = [
     # "BASELINE",
     "ORIGINAL",
-    "RELDIFF",
+    # "RELDIFF",
     "MOSTLYAI",
     "RGCLD",
     "CLAVADDPM",
@@ -81,7 +84,7 @@ method_rename = {
     "RCTGAN": "RCTGAN",
     "REALTABFORMER": "REALTABF.",
     "CLAVADDPM": "CLAVADDPM",
-    "MOSTLYAI": "TabularARGN",
+    "MOSTLYAI": "TARGN",
     "RGCLD": "RGCLD",
     "RELDIFF": "RelDiff",
 }
@@ -193,7 +196,7 @@ for dataset in datasets:
 
             mean_val_str = f"{mean:.2f}" if mean < 1 else f"{mean:.0f}"
 
-            # Prepare the \pm SE part, without any $ or \tiny yet
+            # Prepare the \pm SE part
             pm_se_str_core = ""
             if not np.isclose(se, 0, atol=1e-10):
                 se_val_for_format = f"{se:.2f}" if se < 1 else f"{se:.0f}"
@@ -202,34 +205,49 @@ for dataset in datasets:
             # Now, build the cell string based on highlighting rules
             if original_method not in ["ORIGINAL", "BASELINE"]:
                 if method == best_method_name_for_bolding:
-                    # $\mathbf{MEAN}${\tiny$\pm SE$}
+                    # $\mathbf{MEAN}${\tiny$\pm SE$} or $\mathbf{MEAN}${\pm SE$}
                     formatted_score = f"$\\mathbf{{{mean_val_str}}}$"
                     if pm_se_str_core:
-                        formatted_score += f"${pm_se_str_core}$"
+                        if USE_TINY_UNCERTAINTY:
+                            formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                        else:
+                            formatted_score += f"${pm_se_str_core}$"
                     row.append(formatted_score)
                 elif method in underlined_methods:
-                    # $\underline{MEAN}${\tiny$\pm SE$}
+                    # $\underline{MEAN}${\tiny$\pm SE$} or $\underline{MEAN}${\pm SE$}
                     formatted_score = f"$\\underline{{{mean_val_str}}}$"
                     if pm_se_str_core:
-                        formatted_score += f"${pm_se_str_core}$"
+                        if USE_TINY_UNCERTAINTY:
+                            formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                        else:
+                            formatted_score += f"${pm_se_str_core}$"
                     row.append(formatted_score)
                 else:
-                    # $MEAN${\tiny$\pm SE$}
+                    # $MEAN${\tiny$\pm SE$} or $MEAN${\pm SE$}
                     formatted_score = f"${mean_val_str}$"
                     if pm_se_str_core:
-                        formatted_score += f"${pm_se_str_core}$"
+                        if USE_TINY_UNCERTAINTY:
+                            formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                        else:
+                            formatted_score += f"${pm_se_str_core}$"
                     row.append(formatted_score)
             elif original_method == "ORIGINAL":
-                # $MEAN${\tiny$\pm SE$} (BASELINE)
+                # $MEAN${\tiny$\pm SE$} (BASELINE) or $MEAN${\pm SE$} (BASELINE)
                 base_score_part = f"${mean_val_str}$"
                 if pm_se_str_core:
-                    base_score_part += f"${pm_se_str_core}$"
+                    if USE_TINY_UNCERTAINTY:
+                        base_score_part += f"{{\\tiny${pm_se_str_core}$}}"
+                    else:
+                        base_score_part += f"${pm_se_str_core}$"
                 row.append(f"{base_score_part} $({baseline_scores[dataset]})$")
             else: # This is for 'BASELINE' method if it's in method_order and not filtered out
-                # $MEAN${\tiny$\pm SE$}
+                # $MEAN${\tiny$\pm SE$} or $MEAN${\pm SE$}
                 formatted_score = f"${mean_val_str}$"
                 if pm_se_str_core:
-                    formatted_score += f"${pm_se_str_core}$"
+                    if USE_TINY_UNCERTAINTY:
+                        formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                    else:
+                        formatted_score += f"${pm_se_str_core}$"
                 row.append(formatted_score)
         else:
             row.append("-")  # Placeholder for missing data

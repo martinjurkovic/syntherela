@@ -18,6 +18,9 @@ USE_HYPERPARAMETER_TUNING_RESULTS = True  # Set to True to read from hyperparame
 # Configuration for table highlighting
 HIGHLIGHT_COLOR = "green!10"  # Change this to adjust the highlight color (e.g., "blue!15", "yellow!8", etc.)
 
+# Control whether to use tiny formatting for uncertainty values in the table
+USE_TINY_UNCERTAINTY = True
+
 # Define which metric to use for each dataset
 dataset_metrics = {
     "rossmann_subsampled": "mae",
@@ -121,18 +124,18 @@ for dataset in datasets:
 # Set the desired order of methods
 method_order = [
     "ORIGINAL",
-    "RELDIFF",
-    "MOSTLYAI",
     "RGCLD",
+    "MOSTLYAI",
     "CLAVADDPM",
     "RCTGAN",
     "REALTABFORMER",
     "SDV",
+    # "RELDIFF",
 ]
 
 method_rename = {
     "ORIGINAL": "ORIG.",
-    "RELDIFF": "RELDIFF",
+    # "RELDIFF": "RELDIFF",
     "SDV": "SDV",
     "RCTGAN": "RCTGAN",
     "REALTABFORMER": "REALTF.",
@@ -332,7 +335,10 @@ for dataset_idx, dataset in enumerate(datasets):
                         else:
                             formatted_score = f"$\\mathbf{{{mean_val_str}}}$"
                         if pm_se_str_core:
-                            formatted_score += f"${pm_se_str_core}$"
+                            if USE_TINY_UNCERTAINTY:
+                                formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                            else:
+                                formatted_score += f"${pm_se_str_core}$"
                         row.append(formatted_score)
                     elif method in underlined_methods:
                         # Underline for methods within margin
@@ -342,7 +348,10 @@ for dataset_idx, dataset in enumerate(datasets):
                         else:
                             formatted_score = f"$\\underline{{{mean_val_str}}}$"
                         if pm_se_str_core:
-                            formatted_score += f"${pm_se_str_core}$"
+                            if USE_TINY_UNCERTAINTY:
+                                formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                            else:
+                                formatted_score += f"${pm_se_str_core}$"
                         row.append(formatted_score)
                     else:
                         # Regular formatting
@@ -352,19 +361,28 @@ for dataset_idx, dataset in enumerate(datasets):
                         else:
                             formatted_score = f"${mean_val_str}$"
                         if pm_se_str_core:
-                            formatted_score += f"${pm_se_str_core}$"
+                            if USE_TINY_UNCERTAINTY:
+                                formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                            else:
+                                formatted_score += f"${pm_se_str_core}$"
                         row.append(formatted_score)
                 elif original_method == "ORIGINAL":
                     # ORIGINAL method with baseline score
                     base_score_part = f"${mean_val_str}$"
                     # if pm_se_str_core:
-                    #     base_score_part += f"${pm_se_str_core}$"
+                    #     if USE_TINY_UNCERTAINTY:
+                    #         base_score_part += f"{{\\tiny${pm_se_str_core}$}}"
+                    #     else:
+                    #         base_score_part += f"${pm_se_str_core}$"
                     row.append(f"{base_score_part} $({baseline_scores[dataset]})$")
                 else:
                     # Other methods (shouldn't reach here with current logic)
                     formatted_score = f"${mean_val_str}$"
                     if pm_se_str_core:
-                        formatted_score += f"${pm_se_str_core}$"
+                        if USE_TINY_UNCERTAINTY:
+                            formatted_score += f"{{\\tiny${pm_se_str_core}$}}"
+                        else:
+                            formatted_score += f"${pm_se_str_core}$"
                     row.append(formatted_score)
             else:
                 row.append("-")  # Placeholder for missing data
