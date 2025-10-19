@@ -168,6 +168,7 @@ if __name__ == "__main__":
         'REALTABFORMER',
         'SDV',
         'SMOTE',
+        'MARE'
     ]
 
     for method in methods:
