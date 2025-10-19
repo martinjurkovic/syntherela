@@ -48,6 +48,10 @@ gnn-utility=[
   "python-dotenv==1.0.1"
 ]
 
+privacy=[
+  "syntheval"
+]
+
 [project.urls]
 Homepage = "https://github.com/martinjurkovic/syntherela"
 Issues = "https://github.com/martinjurkovic/syntherela/issues"
