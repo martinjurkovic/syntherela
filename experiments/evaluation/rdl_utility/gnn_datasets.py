@@ -16,23 +16,23 @@ from syntherela.metadata import Metadata
 def update_stypes_cache(cache_dir: str, dataset_name: str, table_name: str, column_name: str):
     """Update stypes.json to remove specified column from specified table."""
     stypes_cache_path = Path(cache_dir) / dataset_name / "stypes.json"
-    
+
     if stypes_cache_path.exists():
         try:
             # Read existing stypes.json
             with open(stypes_cache_path, "r") as f:
                 col_to_stype_dict = json.load(f)
-            
+
             # Remove column from table if it exists
             if table_name in col_to_stype_dict and column_name in col_to_stype_dict[table_name]:
                 col_to_stype_dict[table_name].pop(column_name)
-                
+
                 # Save updated stypes.json
                 with open(stypes_cache_path, "w") as f:
                     json.dump(col_to_stype_dict, f, indent=2)
-                
+
                 print(f"Updated stypes.json: removed '{column_name}' column from '{table_name}' table")
-                
+
         except (json.JSONDecodeError, IOError) as e:
             print(f"Warning: Could not update stypes.json at {stypes_cache_path}: {e}")
     else:
@@ -372,7 +372,7 @@ class F1Dataset(Dataset):
         self.method = method
         self.run_id = run_id
         self.type = type
-        
+
         # Update stypes cache to remove columns that will be popped
         if cache_dir is not None:
             update_stypes_cache(cache_dir, self.name, "races", "year")

@@ -22,7 +22,7 @@ results[dataset][method][gnn_architecture][run_id] = metrics
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Run GNN utility benchmark')
-parser.add_argument('--dataset_filter', type=str, default=None, 
+parser.add_argument('--dataset_filter', type=str, default=None,
                     help='Filter to run only specific dataset (e.g., rossmann_subsampled)')
 parser.add_argument('--torch_device', type=str, default='cuda:9',
                     help='GPU device to use (e.g., cuda:7)')
@@ -34,24 +34,24 @@ PROJECT_PATH = os.getenv("PROJECT_PATH")
 
 def load_tuned_hyperparameters(dataset, gnn_architecture):
     """Load best hyperparameters for a specific dataset-architecture combination"""
-    
+
     # Construct filename based on naming convention
     filename = f"hyperparameter_results_{gnn_architecture.replace('-', '_')}_{dataset.replace('-', '_')}.json"
     filepath = os.path.join(PROJECT_PATH, "results", "hyperparameter_tuning_100", filename)
-    
+
     if not os.path.exists(filepath):
         print(f"Warning: No tuned hyperparameters found for {gnn_architecture} + {dataset}")
         print(f"Expected file: {filepath}")
         return None
-    
+
     try:
         with open(filepath, 'r') as f:
             data = json.load(f)
-        
+
         best_hyperparams = data.get('best_hyperparameters', {})
         print(f"✓ Loaded tuned hyperparameters for {gnn_architecture} + {dataset}: {best_hyperparams}")
         return best_hyperparams
-        
+
     except Exception as e:
         print(f"Error loading hyperparameters from {filepath}: {e}")
         return None
@@ -226,7 +226,7 @@ for task in UTILITY_TASKS:
             for gnn_arch in GNN_ARCHITECTURES:
                 if gnn_arch not in existing_results[dataset][method]:
                     existing_results[dataset][method][gnn_arch] = {}
-                    
+
                 for run_id in (1, 2, 3):
                     # check if the result already exists
                     if str(run_id) in existing_results[dataset][method][gnn_arch]:
@@ -268,7 +268,7 @@ for task in UTILITY_TASKS:
                         command.extend(["--target_col", task["target_col"]])
                     # if "entity_col" in task and task["entity_col"] is not None:
                     #     command.extend(["--entity_col", task["entity_col"]])
-                    
+
                     # Handle hyperparameters - use tuned ones if available and requested
                     if args.use_tuned_hyperparameters:
                         tuned_params = load_tuned_hyperparameters(dataset, gnn_arch)

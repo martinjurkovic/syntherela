@@ -175,18 +175,18 @@ for task in UTILITY_TASKS:
                 baseline_results = None
                 try:
                     lines = result.stdout.splitlines()
-                    
+
                     # Find the baseline results in the last part of the output
                     baseline_results = {}
                     current_method = None
-                    
+
                     # Look for baseline method lines (ending with ':')
                     for i, line in enumerate(lines):
                         line = line.strip()
                         if line and line.endswith(':') and not line.startswith('Train:') and not line.startswith('Val:') and not line.startswith('Test:'):
                             current_method = line[:-1]  # Remove the ':'
                             baseline_results[current_method] = {}
-                            
+
                             # Extract Train/Val/Test results for this method
                             for j in range(i + 1, min(i + 4, len(lines))):
                                 if j < len(lines):
@@ -200,7 +200,7 @@ for task in UTILITY_TASKS:
                                     elif result_line.startswith('Test:'):
                                         metrics_str = result_line.split('Test: ')[1]
                                         baseline_results[current_method]['Test'] = ast.literal_eval(metrics_str)
-                    
+
                     print(f"BASELINE RESULTS: {baseline_results}")
                 except Exception as e:
                     print(
@@ -224,7 +224,7 @@ for task in UTILITY_TASKS:
                 with open(results_file, "w") as f:
                     json.dump(existing_results, f, indent=4)
 
-                
+
 
         except ValueError as e:
             print(f"Task: {task['dataset']}, Method: {method}, Error: {e}")

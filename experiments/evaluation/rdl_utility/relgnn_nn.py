@@ -29,7 +29,7 @@ from torch_geometric.nn import MLP
 from relbench.modeling.nn import HeteroEncoder, HeteroTemporalEncoder
 
 def get_atomic_routes(edge_type_list):
-    
+
     src_to_tuples = defaultdict(list)
     for src, rel, dst in edge_type_list:
         if rel.startswith('f2p'):
@@ -52,7 +52,7 @@ def get_atomic_routes(edge_type_list):
                 for _, rel_v, dst_v in tuples:
                     if rel_q != rel_v:
                         edge_q = (src, rel_q, dst_q)
-                        edge_v = (src, rel_v, dst_v)                   
+                        edge_v = (src, rel_v, dst_v)
                         atomic_routes_list.append(('dim-fact-dim',) + edge_q + get_rev_edge(edge_v))
 
     return atomic_routes_list
@@ -92,16 +92,16 @@ class RelGNNConv(TransformerConv):
                 return None
             out = super().forward(x, edge_index, edge_attr, return_attention_weights)
             return self.final_proj(out)
-        
+
         # dim-fact-dim
         edge_attn, edge_aggr = edge_index
-        
+
         src_aggr, dst_aggr, dst_attn = x
 
         if self.simplified_MP:
             if edge_attn.shape[1] == 0:
                 return None
-            
+
             if edge_aggr.shape[1] == 0:
                 src_attn = dst_aggr
             else:
@@ -192,7 +192,7 @@ class RelGNN_HeteroConv(torch.nn.Module):
             edge_type_str = str(edge_type_tuple)
             str_convs[edge_type_str] = module
             self.edge_type_mapping[edge_type_str] = edge_type_tuple
-        
+
         self.convs = ModuleDict(str_convs)
         self.aggr = aggr
         self.simplified_MP = simplified_MP
@@ -204,7 +204,7 @@ class RelGNN_HeteroConv(torch.nn.Module):
 
     def forward(
         self,
-        x_dict, 
+        x_dict,
         edge_index_dict,
     ) -> Dict[NodeType, Tensor]:
         r"""Runs the forward pass of the module.
@@ -243,7 +243,7 @@ class RelGNN_HeteroConv(torch.nn.Module):
                     continue
 
                 update(out_dict, dst, out)
-                        
+
             elif attn_type == 'dim-fact-dim':
                 edge_attn, edge_aggr = edge_type_info[1:4], edge_type_info[4:]
                 src_attn, _, dst = edge_attn
@@ -258,13 +258,13 @@ class RelGNN_HeteroConv(torch.nn.Module):
                         edge_index_dict[edge_aggr],
                     )
                 out = conv(x, edge_index)
-                
+
                 if self.simplified_MP and out is None:
                     continue
 
                 out_dst, out_src_attn = out
                 update(out_dict, dst, out_dst)
-                update(out_dict, src_attn, out_src_attn)            
+                update(out_dict, src_attn, out_src_attn)
 
 
         for key, value in out_dict.items():

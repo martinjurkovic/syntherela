@@ -42,7 +42,7 @@ class Model(torch.nn.Module):
             norm: Normalization method
             shallow_list: List of node types to add shallow embeddings to input
             id_awareness: Whether to use ID awareness
-            gnn_factory: Factory function to create GNN. Should accept (node_types, edge_types, channels, aggr, num_layers) 
+            gnn_factory: Factory function to create GNN. Should accept (node_types, edge_types, channels, aggr, num_layers)
                         and return a GNN module. Defaults to HeteroGraphSAGE if None.
             **gnn_kwargs: Additional keyword arguments passed to gnn_factory
         """
@@ -62,7 +62,7 @@ class Model(torch.nn.Module):
             ],
             channels=channels,
         )
-        
+
         # Use provided gnn_factory or default to HeteroGraphSAGE
         if gnn_factory is None:
             self.gnn = HeteroGraphSAGE(
@@ -81,7 +81,7 @@ class Model(torch.nn.Module):
                 num_layers=num_layers,
                 **gnn_kwargs,
             )
-            
+
         self.head = MLP(
             channels,
             hidden_channels=channels,
