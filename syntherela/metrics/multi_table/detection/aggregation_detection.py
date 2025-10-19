@@ -21,7 +21,11 @@ class BaseAggregationDetection(DetectionBaseMetric):
 
     @staticmethod
     def add_aggregations(
-        data: Tables, metadata: Metadata, update_metadata: bool = True, level=0
+        data: Tables,
+        metadata: Metadata,
+        update_metadata: bool = True,
+        level=0,
+        add_child_counts: bool = True,
     ):
         """Add aggregations from connected tables to the data.
 
@@ -35,6 +39,8 @@ class BaseAggregationDetection(DetectionBaseMetric):
             Whether to update the metadata with the new columns, by default True.
         level : int, optional
             The level of aggregation to add, by default 0.
+        add_child_counts : bool, optional
+            Whether to add child relationship counts, by default True.
 
         Returns
         -------
@@ -57,7 +63,9 @@ class BaseAggregationDetection(DetectionBaseMetric):
             child_fk = relationship["child_foreign_key"]
 
             # only add counts for the first level
-            if level == 0:  # TODO: would level == 1 be more descriptive?
+            if (
+                level == 0 and add_child_counts
+            ):  # TODO: would level == 1 be more descriptive?
                 # add child counts
                 child_df = pd.DataFrame(
                     {
@@ -175,6 +183,7 @@ class AggregationDetection(
         random_state: Optional[int] = None,
         folds: int = 5,
         levels: int = 1,
+        add_child_counts: bool = True,
     ):
         super().__init__(
             classifier_cls,
@@ -183,6 +192,7 @@ class AggregationDetection(
             folds=folds,
         )
         self.levels = levels
+        self.add_child_counts = add_child_counts
 
     @staticmethod
     def is_applicable(metadata: Metadata, table: str) -> bool:
@@ -234,20 +244,31 @@ class AggregationDetection(
             # Add one level of aggregation
             if level == 0:
                 real_data_with_aggregations, updated_metadata = self.add_aggregations(
-                    real_data, updated_metadata, level=level
+                    real_data,
+                    updated_metadata,
+                    level=level,
+                    add_child_counts=self.add_child_counts,
                 )
                 synthetic_data_with_aggregations, _ = self.add_aggregations(
-                    synthetic_data, metadata, update_metadata=False, level=level
+                    synthetic_data,
+                    metadata,
+                    update_metadata=False,
+                    level=level,
+                    add_child_counts=self.add_child_counts,
                 )
             else:
                 real_data_with_aggregations, metadata_level = self.add_aggregations(
-                    real_data_with_aggregations, updated_metadata, level=level
+                    real_data_with_aggregations,
+                    updated_metadata,
+                    level=level,
+                    add_child_counts=self.add_child_counts,
                 )
                 synthetic_data_with_aggregations, _ = self.add_aggregations(
                     synthetic_data_with_aggregations,
                     updated_metadata,
                     update_metadata=False,
                     level=level,
+                    add_child_counts=self.add_child_counts,
                 )
                 updated_metadata = metadata_level
         results = {}

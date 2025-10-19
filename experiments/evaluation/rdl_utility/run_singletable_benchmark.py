@@ -3,10 +3,16 @@ import subprocess
 import json
 import ast
 from dotenv import load_dotenv
+import argparse
 
 load_dotenv()
 
 PROJECT_PATH = os.getenv("PROJECT_PATH")
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Run GNN utility benchmark')
+parser.add_argument('--singletable_model', type=str, default=None, help='singletable model to use', choices=["singletable", "singletable_dfs"])
+args = parser.parse_args()
 
 RUN_DATASETS = [
     "rossmann_subsampled",
@@ -21,8 +27,6 @@ UTILITY_TASKS = [
         "dataset": "rossmann_subsampled",
         "task_type": "REGRESSION",
         "entity_table": "historical",
-        "entity_col": "Id",
-        "time_col": "Date",
         "target_col": "Customers",
         "methods": [
             "ORIGINAL",
@@ -31,7 +35,7 @@ UTILITY_TASKS = [
             "RCTGAN",
             "REALTABFORMER",
             "RGCLD",
-            "SDV",
+            "SDV"
         ],
         "task": "autocomplete",
     },
@@ -49,11 +53,29 @@ UTILITY_TASKS = [
             "RCTGAN",
             "REALTABFORMER",
             "RGCLD",
-            "SDV",
+            "SDV"
         ],
         "--lr": 0.1,
         "task": "autocomplete",
     },
+    # {
+    #     "dataset": "f1_subsampled",
+    #     "entity_table": "constructor_standings",
+    #     "entity_col": "constructorStandingsId",
+    #     "time_col": "date",
+    #     "target_col": "position",
+    #     "task_type": "REGRESSION",
+    #     "methods": [
+    #                 "ORIGINAL",
+    #                 "CLAVADDPM",
+    #                 "RGCLD",
+    #                 "MOSTLYAI",
+    #                 "RCTGAN",
+    #                 "SDV",
+    #                 ],
+    #     "--lr": 0.005,
+    #     "task": "autocomplete",
+    # },
     {
         "dataset": "f1_subsampled",
         "task_type": "BINARY_CLASSIFICATION",
@@ -108,7 +130,7 @@ UTILITY_TASKS = [
 results_dir = os.path.join(PROJECT_PATH, "results")
 os.makedirs(results_dir, exist_ok=True)
 
-results_file = os.path.join(results_dir, "gnn_baseline_results.json")
+results_file = os.path.join(results_dir, f"{args.singletable_model}_utility_results.json")
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
@@ -130,8 +152,6 @@ for task in UTILITY_TASKS:
         existing_results[dataset] = {}
 
     for method in task["methods"]:
-        if method != "ORIGINAL":
-            continue
         if method not in existing_results[dataset]:
             existing_results[dataset][method] = {}
         try:
@@ -152,79 +172,53 @@ for task in UTILITY_TASKS:
 
                 command = [
                     "python",
-                    "experiments/evaluation/rdl_utility/run_baseline.py",
+                    f"experiments/evaluation/rdl_utility/run_{args.singletable_model}.py",
                     "--dataset",
                     dataset,
+                    "--task_type",
+                    task_type,
                     "--run",
                     str(run_id),
                     "--method",
                     method,
                     "--task",
                     task["task"],
-                    "--task_type",
-                    task_type,
                 ]
                 if "entity_table" in task:
                     command.extend(["--entity_table", task["entity_table"]])
                 if "target_col" in task:
                     command.extend(["--target_col", task["target_col"]])
-
                 result = subprocess.run(command, capture_output=True, text=True)
 
-                # Parse the baseline results from the output
-                baseline_results = None
+                best_test_metrics = None
                 try:
                     lines = result.stdout.splitlines()
-                    
-                    # Find the baseline results in the last part of the output
-                    baseline_results = {}
-                    current_method = None
-                    
-                    # Look for baseline method lines (ending with ':')
-                    for i, line in enumerate(lines):
-                        line = line.strip()
-                        if line and line.endswith(':') and not line.startswith('Train:') and not line.startswith('Val:') and not line.startswith('Test:'):
-                            current_method = line[:-1]  # Remove the ':'
-                            baseline_results[current_method] = {}
-                            
-                            # Extract Train/Val/Test results for this method
-                            for j in range(i + 1, min(i + 4, len(lines))):
-                                if j < len(lines):
-                                    result_line = lines[j].strip()
-                                    if result_line.startswith('Train:'):
-                                        metrics_str = result_line.split('Train: ')[1]
-                                        baseline_results[current_method]['Train'] = ast.literal_eval(metrics_str)
-                                    elif result_line.startswith('Val:'):
-                                        metrics_str = result_line.split('Val: ')[1]
-                                        baseline_results[current_method]['Val'] = ast.literal_eval(metrics_str)
-                                    elif result_line.startswith('Test:'):
-                                        metrics_str = result_line.split('Test: ')[1]
-                                        baseline_results[current_method]['Test'] = ast.literal_eval(metrics_str)
-                    
-                    print(f"BASELINE RESULTS: {baseline_results}")
+                    final_line = lines[-1]
+
+                    best_test_metrics = final_line.split("Test: ")[1]
+                    print(f"BEST TEST METRICS: {best_test_metrics}")
                 except Exception as e:
                     print(
                         f"Task: {task['dataset']}, Output: {result.stdout}, Error: {result.stderr}"
                     )
-                    print(f"Parsing Error: {e}")
+                    print(f"Error: {e}")
                     continue
 
-                # Store the results
-                existing_results[dataset][method][str(run_id)] = baseline_results
+                # convert string to dictionary
+                best_test_metrics = ast.literal_eval(best_test_metrics)
+                # print(f"JSON TEST METRICS: {best_test_metrics}")
+                existing_results[dataset][method][str(run_id)] = best_test_metrics
 
-                # Save results to file after each run
                 with open(results_file, "w") as f:
                     json.dump(existing_results, f, indent=4)
 
                 if method == "ORIGINAL":
-                    existing_results[dataset][method]["2"] = baseline_results
-                    existing_results[dataset][method]["3"] = baseline_results
+                    existing_results[dataset][method]["2"] = best_test_metrics
+                    existing_results[dataset][method]["3"] = best_test_metrics
                     break
 
                 with open(results_file, "w") as f:
                     json.dump(existing_results, f, indent=4)
-
-                
 
         except ValueError as e:
             print(f"Task: {task['dataset']}, Method: {method}, Error: {e}")
