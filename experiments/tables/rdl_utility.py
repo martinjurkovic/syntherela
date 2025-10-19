@@ -121,7 +121,6 @@ for dataset in datasets:
 # Set the desired order of methods
 method_order = [
     "ORIGINAL",
-    "RELDIFF",
     "MOSTLYAI",
     "RGCLD",
     "CLAVADDPM",
@@ -132,7 +131,6 @@ method_order = [
 
 method_rename = {
     "ORIGINAL": "ORIG.",
-    "RELDIFF": "RELDIFF",
     "SDV": "SDV",
     "RCTGAN": "RCTGAN",
     "REALTABFORMER": "REALTF.",

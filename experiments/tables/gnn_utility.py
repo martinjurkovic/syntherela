@@ -65,7 +65,6 @@ for dataset, method_data in data.items():
 method_order = [
     # "BASELINE",
     "ORIGINAL",
-    "RELDIFF",
     "MOSTLYAI",
     "RGCLD",
     "CLAVADDPM",
@@ -83,7 +82,6 @@ method_rename = {
     "CLAVADDPM": "CLAVADDPM",
     "MOSTLYAI": "TabularARGN",
     "RGCLD": "RGCLD",
-    "RELDIFF": "RelDiff",
 }
 
 dataset_rename = {
