@@ -171,8 +171,7 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
 elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
     col_to_stype[task.target_col] = torch_frame.categorical
     # task.metrics = task.metrics[:1]  # NOTE: Probabilistic multiclass predictions
-    # are not supported by torch_frame LightGBM to enable probabilities:
-    #  install torch_frame from https://github.com/ValterH/pytorch-frame
+    # are not supported by torch_frame LightGBM
 else:
     raise ValueError(f"Unsupported task type called {task.task_type}")
 

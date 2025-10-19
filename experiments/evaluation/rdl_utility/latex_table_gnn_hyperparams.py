@@ -12,7 +12,7 @@ def load_hyperparameters():
     """Load hyperparameters from JSON files organized by GNN architecture and dataset"""
     
     # Path to hyperparameter results
-    results_dir = "/lfs/hyperturing1/0/martinj1/syntherela/results/hyperparameter_tuning_100"
+    results_dir = "./results/hyperparameter_tuning_100"
     
     # Initialize nested dictionary: {gnn_architecture: {dataset: hyperparams}}
     hyperparams = {}
