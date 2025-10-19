@@ -38,6 +38,7 @@ methods = [
     'RCTGAN',
     'REALTABFORMER',
     'SDV',
+    'MARE',
 ]
 
 model_names = {
@@ -47,6 +48,7 @@ model_names = {
     'RCTGAN': "RCTGAN",
     'REALTABFORMER': "REALTABF.",
     'SDV': "SDV",
+    'MARE': "MARE",
 }
 
 defaultmethod = 'RCTGAN'

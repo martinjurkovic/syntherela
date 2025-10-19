@@ -38,15 +38,15 @@ if USE_HYPERPARAMETER_TUNING_RESULTS:
     # Override ORIGINAL method results with hyperparameter tuning results
     hyperparameter_dir = os.path.join(PROJECT_PATH, "results", "hyperparameter_tuning_100")
     hyperparameter_files = glob.glob(os.path.join(hyperparameter_dir, "hyperparameter_results_*.json"))
-
+    
     for file_path in hyperparameter_files:
         with open(file_path, "r") as f:
             result = json.load(f)
-
+        
         dataset = result["dataset"]
         gnn_arch = result["gnn_architecture"]
         best_results = result["best_results"]
-
+        
         # Initialize nested structure if needed for this dataset
         if dataset not in data:
             data[dataset] = {}
@@ -54,7 +54,7 @@ if USE_HYPERPARAMETER_TUNING_RESULTS:
             data[dataset]["ORIGINAL"] = {}
         if gnn_arch not in data[dataset]["ORIGINAL"]:
             data[dataset]["ORIGINAL"][gnn_arch] = {}
-
+        
         # Override the ORIGINAL method results with hyperparameter tuning results
         data[dataset]["ORIGINAL"][gnn_arch]["1"] = best_results
         data[dataset]["ORIGINAL"][gnn_arch]["2"] = best_results
@@ -100,20 +100,20 @@ for dataset in datasets:
     for gnn_arch in gnn_architectures:
         results[dataset][gnn_arch] = {}
         for method in methods:
-            if (dataset in data and
-                method in data[dataset] and
+            if (dataset in data and 
+                method in data[dataset] and 
                 gnn_arch in data[dataset][method]):
-
+                
                 runs = data[dataset][method][gnn_arch]
                 metric_values = []
-
+                
                 for run in runs.values():
                     if isinstance(run, dict) and run:  # Skip empty runs
                         # Get the appropriate metric for this dataset
                         metric_name = dataset_metrics.get(dataset, "mae")
                         if metric_name in run:
                             metric_values.append(run[metric_name])
-
+                
                 if metric_values:
                     mean_value, se_value = compute_mean_and_se(metric_values)
                     results[dataset][gnn_arch][method] = (mean_value, se_value)
@@ -179,19 +179,19 @@ available_methods = [method_rename[method] for method in method_order if method 
 dataset_global_best = {}
 for dataset in datasets:
     all_scores_for_dataset = []
-
+    
     for gnn_arch in gnn_architectures:
         for method in method_order:
             if method not in methods or method == "ORIGINAL":
                 continue
-
-            if (dataset in results and
-                gnn_arch in results[dataset] and
+                
+            if (dataset in results and 
+                gnn_arch in results[dataset] and 
                 method in results[dataset][gnn_arch]):
-
+                
                 mean, se = results[dataset][gnn_arch][method]
                 all_scores_for_dataset.append((mean, se, method, gnn_arch))
-
+    
     if all_scores_for_dataset:
         metric_type = dataset_metrics.get(dataset, "mae")
         if metric_type == "roc_auc":
@@ -200,7 +200,7 @@ for dataset in datasets:
         else:
             # For MAE, lower is better
             best_score = min(all_scores_for_dataset, key=lambda x: x[0])
-
+        
         best_mean, best_se, best_method, best_gnn_arch = best_score
         dataset_global_best[dataset] = {
             'method': method_rename[best_method],
@@ -221,17 +221,17 @@ latex_table += "\\midrule\n"
 for dataset_idx, dataset in enumerate(datasets):
     dataset_name = dataset_rename.get(dataset, dataset)
     score_type = score_types_with_arrow[dataset]
-
+    
     # Filter GNN architectures to only include those with data for this dataset
     available_gnn_archs = []
     for gnn_arch in gnn_architectures:
-        if (dataset in results and
-            gnn_arch in results[dataset] and
+        if (dataset in results and 
+            gnn_arch in results[dataset] and 
             any(method in results[dataset][gnn_arch] for method in method_order if method in methods)):
             available_gnn_archs.append(gnn_arch)
-
+    
     num_gnn_archs = len(available_gnn_archs)
-
+    
     for gnn_idx, gnn_arch in enumerate(available_gnn_archs):
         # Collect all scores for this dataset and GNN architecture to determine best and second best
         scores = []
@@ -239,8 +239,8 @@ for dataset_idx, dataset in enumerate(datasets):
             original_method = next(k for k, v in method_rename.items() if v == method)
             # Skip ORIGINAL in the comparison for best/worst determination
             if original_method not in ["ORIGINAL"]:
-                if (dataset in results and
-                    gnn_arch in results[dataset] and
+                if (dataset in results and 
+                    gnn_arch in results[dataset] and 
                     original_method in results[dataset][gnn_arch]):
                     mean, se = results[dataset][gnn_arch][original_method]
                     scores.append((mean, se, method))
@@ -281,17 +281,17 @@ for dataset_idx, dataset in enumerate(datasets):
 
         # Build table row
         row = []
-
+        
         # Dataset column (multirow for first entry)
         if gnn_idx == 0:
             row.append(f"\\multirow{{{num_gnn_archs}}}{{*}}{{{dataset_name}}}")
         else:
             row.append("")
-
+        
         # GNN Architecture column
         gnn_arch_display = gnn_arch_rename.get(gnn_arch, gnn_arch)
         row.append(gnn_arch_display)
-
+        
         # Score type column (multirow for first entry)
         if gnn_idx == 0:
             row.append(f"\\multirow{{{num_gnn_archs}}}{{*}}{{{score_type}}}")
@@ -301,10 +301,10 @@ for dataset_idx, dataset in enumerate(datasets):
         # Method columns
         for method in available_methods:
             original_method = next(k for k, v in method_rename.items() if v == method)
-            if (dataset in results and
-                gnn_arch in results[dataset] and
+            if (dataset in results and 
+                gnn_arch in results[dataset] and 
                 original_method in results[dataset][gnn_arch]):
-
+                
                 mean, se = results[dataset][gnn_arch][original_method]
 
                 mean_val_str = f"{mean:.2f}" if mean < 1 else f"{mean:.0f}"
@@ -318,10 +318,10 @@ for dataset_idx, dataset in enumerate(datasets):
                 # Format based on highlighting rules
                 if original_method not in ["ORIGINAL"]:
                     # Check if this is the global best for the dataset
-                    is_global_best = (dataset in dataset_global_best and
-                                    dataset_global_best[dataset]['method'] == method and
+                    is_global_best = (dataset in dataset_global_best and 
+                                    dataset_global_best[dataset]['method'] == method and 
                                     dataset_global_best[dataset]['gnn_arch'] == gnn_arch)
-
+                    
                     if method == best_method_name_for_bolding:
                         # Bold for best method (per architecture)
                         if is_global_best:
@@ -368,7 +368,7 @@ for dataset_idx, dataset in enumerate(datasets):
                 row.append("-")  # Placeholder for missing data
 
         latex_table += " & ".join(row) + " \\\\\n"
-
+    
     # Add midrule between datasets (except after last dataset)
     if dataset_idx < len(datasets) - 1:
         latex_table += "\\midrule\n"
@@ -376,4 +376,4 @@ for dataset_idx, dataset in enumerate(datasets):
 latex_table += "\\bottomrule\n\\end{tabular}\n\\caption{GNN Architecture Comparison: Mean metrics ± SE for each dataset, GNN architecture, and synthetic data method.}\n\\label{tab:gnn_results}\n\\end{table}"
 
 # Output the LaTeX table
-print(latex_table)
+print(latex_table) 
