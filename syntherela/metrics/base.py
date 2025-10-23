@@ -22,7 +22,7 @@ from sdmetrics.base import BaseMetric
 # FIXME: We should implement our own BaseMetric class or
 # we should be consistent with the sdmetrics API (run vs. compute)
 
-from syntherela.visualisations.utils import prettyify_feature_name
+from syntherela.visualisations.utils import prettify_feature_name
 from syntherela.utils import CustomHyperTransformer
 
 
@@ -788,7 +788,7 @@ class DetectionBaseMetric(BaseMetric):
         ax.set_xlim(0, xlim[1])
         ax.set_yticks(range(len(features)))
         pretty_feature_names = [
-            prettyify_feature_name(feature) for feature in features.keys()
+            prettify_feature_name(feature) for feature in features.keys()
         ][::-1]
         ax.set_yticklabels(pretty_feature_names)
         ax.set_xlabel("Feature importance", fontsize=lab_fontsize)
@@ -889,7 +889,7 @@ class DetectionBaseMetric(BaseMetric):
         if all([x_.is_integer() for x_ in x]):
             ax.set_xticks(x)
             ax.set_xticklabels(x.astype(int))
-        ax.set_xlabel(prettyify_feature_name(feature), fontsize=lab_fontsize)
+        ax.set_xlabel(prettify_feature_name(feature), fontsize=lab_fontsize)
         ax.set_ylabel("Partial dependence", fontsize=lab_fontsize)
         ax.legend(fontsize="xx-small", loc="lower left")
 
