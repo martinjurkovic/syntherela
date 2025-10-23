@@ -40,6 +40,12 @@ dev=[
 	"pre-commit",
 ]
 
+docs=[
+	"sphinx>=8.0.0",
+	"sphinx-rtd-theme>=3.0.0",
+	"sphinx-autodoc-typehints>=3.0.0",
+]
+
 rdl-utility=[
   "relbench[full,example]@git+https://github.com/snap-stanford/relbench.git@main",
   "torch_geometric==2.6.1",
