@@ -108,7 +108,7 @@ score_types = {
     "airbnb-simplified_subsampled": "AUC",
 }
 
-score_trypes_with_arrow = {
+score_types_with_arrow = {
     "f1_subsampled": "AUC ($\\uparrow$)",
     "Berka_subsampled": "AUC ($\\uparrow$)",
     "rossmann_subsampled": "MAE ($\\downarrow$)",
@@ -129,7 +129,7 @@ latex_table += "\\midrule\n"
 for dataset in datasets:
     # Use renamed dataset if available, otherwise use original name
     dataset_name = dataset_rename.get(dataset, dataset)
-    row = [dataset_name, score_trypes_with_arrow[dataset]]
+    row = [dataset_name, score_types_with_arrow[dataset]]
 
     # Collect all scores for this dataset to determine best and second best
     scores = []
