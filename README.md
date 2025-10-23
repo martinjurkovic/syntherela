@@ -12,9 +12,6 @@
       <a href="https://openreview.net/forum?id=ZfQofWYn6n">
         <img alt="Paper URL" src="https://img.shields.io/badge/OpenReview-ZfQofWYn6n-B31B1B.svg">
       </a>
-      <a href="https://pypi.org/pypi/syntherela/">
-        <img src="https://img.shields.io/pypi/pyversions/syntherela" alt="PyPI pyversions">
-      </a>
       <a href="https://huggingface.co/spaces/SyntheRela/leaderboard">
         <img src="https://img.shields.io/badge/🤗-Leaderboard-yellow.svg" alt="Hugging Face Leaderboard">
       </a>
@@ -45,23 +42,9 @@ For detailed instructions on how to replicate the paper's results, please refer 
 ## Adding a new metric
 The documentation for adding a new metric can be found in [docs/ADDING_A_METRIC.md](/docs/ADDING_A_METRIC.md).
 
-## Synthetic Data Methods
-### Open Source Methods
-- SDV: [The Synthetic Data Vault](https://ieeexplore.ieee.org/document/7796926)
-- RCTGAN: [Row Conditional-TGAN for Generating Synthetic Relational Databases](https://ieeexplore.ieee.org/abstract/document/10096001)
-- REaLTabFormer: [Generating Realistic Relational and Tabular Data using Transformers](https://arxiv.org/abs/2302.02041)
-- ClavaDDPM: [Multi-relational Data Synthesis with Cluster-guided Diffusion Models](https://arxiv.org/html/2405.17724v1)
-- IRG: [Generating Synthetic Relational Databases using GANs](https://arxiv.org/abs/2312.15187)
-- RGCLD: [Relational Data Generation with Graph Neural Networks and Latent Diffusion Models](https://openreview.net/forum?id=MNLR2NYN2Z#discussion)
-- [Generating Realistic Synthetic Relational Data through Graph Variational Autoencoders](https://arxiv.org/abs/2211.16889)*
-- [Generative Modeling of Complex Data](https://arxiv.org/abs/2202.02145)*
-- BayesM2M & NeuralM2M: [Synthetic Data Generation of Many-to-Many Datasets via Random Graph Generation](https://iclr.cc/virtual/2023/poster/10982)*
 
 
 \* Denotes the method does not have a public implementation available.
-
-### Commercial Providers
-A list of commercial synthetic relational data providers is available in [docs/SYNTHETIC_DATA_TOOLS.md](/docs/SYNTHETIC_DATA_TOOLS.md).
 
 ## Conflicts of Interest
 The authors declare no conflict of interest and are not associated with any of the evaluated commercial synthetic data providers.

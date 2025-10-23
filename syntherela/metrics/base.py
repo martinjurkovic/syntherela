@@ -22,6 +22,7 @@ from sdmetrics.base import BaseMetric
 # FIXME: We should implement our own BaseMetric class or
 # we should be consistent with the sdmetrics API (run vs. compute)
 
+from syntherela.visualisations.utils import prettify_feature_name
 from syntherela.utils import CustomHyperTransformer
 
 
@@ -722,21 +723,6 @@ class DetectionBaseMetric(BaseMetric):
             combine_categorical=combine_categorical, combine_datetime=combine_datetime
         )
 
-        def prettyify_feature_name(feature_name):
-            split_name = feature_name.split("_")
-            if len(split_name) > 1:
-                return " ".join(
-                    [
-                        (
-                            word.capitalize().replace("Nunique", "\#Unique")
-                            if "id" not in word
-                            else ""
-                        )
-                        for word in split_name
-                    ]
-                )
-            return feature_name[0].upper() + feature_name[1:]
-
         def find_column_type(feature_name, column_info):
             for column, values in column_info.items():
                 if values["sdtype"] == "id":
@@ -757,6 +743,7 @@ class DetectionBaseMetric(BaseMetric):
                 return "aggregate"
 
             feature_type = None
+            # FIXME: check if the object is SingleTableMetadata or MultiTableMetadata
             if isinstance(metadata, dict):
                 return find_column_type(feature_name, metadata["columns"])
             else:
@@ -764,7 +751,7 @@ class DetectionBaseMetric(BaseMetric):
                     feature_type = find_column_type(feature_name, table_data["columns"])
                     if feature_type is not None:
                         break
-            return feature_type
+            return str(feature_type)
 
         colors = {
             "aggregate": "#d7191c",
@@ -772,6 +759,7 @@ class DetectionBaseMetric(BaseMetric):
             "datetime": "#e3d36b",
             "boolean": "#abd9e9",
             "categorical": "#2c7bb6",
+            "None": "#000000",
         }
 
         if ax is None:
@@ -800,7 +788,7 @@ class DetectionBaseMetric(BaseMetric):
         ax.set_xlim(0, xlim[1])
         ax.set_yticks(range(len(features)))
         pretty_feature_names = [
-            prettyify_feature_name(feature) for feature in features.keys()
+            prettify_feature_name(feature) for feature in features.keys()
         ][::-1]
         ax.set_yticklabels(pretty_feature_names)
         ax.set_xlabel("Feature importance", fontsize=lab_fontsize)
@@ -846,22 +834,6 @@ class DetectionBaseMetric(BaseMetric):
         rc("font", **{"family": "serif", "serif": ["Times"], "size": lab_fontsize})
         rc("text", usetex=True)
         from sklearn.inspection import PartialDependenceDisplay
-
-        # TODO: move these functions to some utility module
-        def prettyify_feature_name(feature_name):
-            split_name = feature_name.split("_")
-            if len(split_name) > 1:
-                return " ".join(
-                    [
-                        (
-                            word.capitalize().replace("Nunique", "\#Unique")
-                            if "id" not in word
-                            else ""
-                        )
-                        for word in split_name
-                    ]
-                )
-            return feature_name[0].upper() + feature_name[1:]
 
         def get_average_pds(feature, seed=0, num_ice=30, subsample_avg=0.5):
             with plt.ioff():
@@ -917,7 +889,7 @@ class DetectionBaseMetric(BaseMetric):
         if all([x_.is_integer() for x_ in x]):
             ax.set_xticks(x)
             ax.set_xticklabels(x.astype(int))
-        ax.set_xlabel(prettyify_feature_name(feature), fontsize=lab_fontsize)
+        ax.set_xlabel(prettify_feature_name(feature), fontsize=lab_fontsize)
         ax.set_ylabel("Partial dependence", fontsize=lab_fontsize)
         ax.legend(fontsize="xx-small", loc="lower left")
 

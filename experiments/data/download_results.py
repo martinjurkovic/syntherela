@@ -11,7 +11,7 @@ PROJECT_PATH = os.getenv("PROJECT_PATH")
 
 def download_and_extract(url, filename):
     # Path to the directory where the file will be extracted
-    extract_dir = os.path.join(PROJECT_PATH)
+    extract_dir = os.path.join(PROJECT_PATH, "results")
 
     # Create the download directory if it doesn't exist
     os.makedirs(extract_dir, exist_ok=True)
@@ -28,7 +28,7 @@ def download_and_extract(url, filename):
 
 
 # URL of the file to download
-results_url = "https://drive.google.com/uc?id=1FprsHPYWDrE2AJKscRIVET_fvh0LoJX1"
+results_url = "https://drive.google.com/uc?id=1mrY4o6xFZZ-DW9jKwBGEq56tTC3AcVvW"
 
 download_and_extract(results_url, "results.zip")
 

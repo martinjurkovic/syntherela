@@ -1,700 +1,339 @@
 import os
-import re
 import json
-import warnings
-from pathlib import Path
+
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 
-warnings.filterwarnings("ignore")
 
 datasets = [
-    "airbnb-simplified_subsampled",
-    "rossmann_subsampled",
-    "walmart_subsampled",
-    "Biodegradability_v1",
-    "imdb_MovieLens_v1",
-    "CORA_v1",
+    'airbnb-simplified_subsampled',
+    'rossmann_subsampled',
+    'walmart_subsampled',
+    "Berka_subsampled",
+    "f1_subsampled",
+    'imdb_MovieLens_v1',
+    'Biodegradability_v1',
+    'CORA_v1',
+
 ]
 
-dataset_names_dict = {
-    "airbnb-simplified_subsampled": "AirBnB",
+
+dataset_names = {
+    "airbnb-simplified_subsampled": "Airbnb",
+    "Berka_subsampled": "Berka",
+    "Biodegradability_v1": "Biodegradability",
+    "CORA_v1": "Cora",
+    "imdb_MovieLens_v1": "IMDB",
     "rossmann_subsampled": "Rossmann",
     "walmart_subsampled": "Walmart",
-    "Biodegradability_v1": "Biodeg.",
-    "imdb_MovieLens_v1": "MovieLens",
-    "CORA_v1": "CORA",
+    "f1_subsampled": "F1",
 }
 
-single_table_methods = [
-    "bayesian_network",
-    "ddpm",
-    "ctgan",
-    "nflow",
-    "tvae",
+methods = [
+    'MOSTLYAI',
+    'RGCLD',
+    'CLAVADDPM',
+    'RCTGAN',
+    'REALTABFORMER',
+    'SDV',
+    'MARE',
 ]
 
-all_methods = [
-    "SDV",
-    "RCTGAN",
-    "REALTABFORMER",
-    "MOSTLYAI",
-    "GRETEL_ACTGAN",
-    "GRETEL_LSTM",
-    "CLAVADDPM",
-] + single_table_methods
-
-method_names_dict = {
-    "SDV": "SDV",
-    "RCTGAN": "RCTGAN",
-    "REALTABFORMER": "REALTABF.",
-    "MOSTLYAI": "MOSTLYAI",
-    "GRETEL_ACTGAN": "G-ACTGAN",
-    "GRETEL_LSTM": "G-LSTM",
-    "CLAVADDPM": "CLAVADDPM",
-    "ddpm": "DDPM",
-    "ctgan": "CTGAN",
-    "nflow": "NFLOW",
-    "tvae": "TVAE",
-    "bayesian_network": "BN",
+model_names = {
+    'CLAVADDPM': "ClavaDDPM",
+    'RGCLD': "RGCLD",
+    'MOSTLYAI': "TabularARGN",
+    'RCTGAN': "RCTGAN",
+    'REALTABFORMER': "REALTABF.",
+    'SDV': "SDV",
+    'MARE': "MARE",
 }
 
-dataset_method_dict = {
-    "airbnb-simplified_subsampled": [
-        "SDV",
-        "RCTGAN",
-        "REALTABFORMER",
-        "MOSTLYAI",
-        "GRETEL_ACTGAN",
-        "GRETEL_LSTM",
-        "CLAVADDPM",
-        "bayesian_network",
-        "ctgan",
-        "ddpm",
-        "nflow",
-        "tvae",
-    ],
-    "rossmann_subsampled": [
-        "SDV",
-        "RCTGAN",
-        "REALTABFORMER",
-        "MOSTLYAI",
-        "GRETEL_ACTGAN",
-        "GRETEL_LSTM",
-        "CLAVADDPM",
-        "bayesian_network",
-        "ctgan",
-        "ddpm",
-        "nflow",
-        "tvae",
-    ],
-    "walmart_subsampled": [
-        "SDV",
-        "RCTGAN",
-        "REALTABFORMER",
-        "MOSTLYAI",
-        "GRETEL_ACTGAN",
-        "GRETEL_LSTM",
-        "CLAVADDPM",
-        "bayesian_network",
-        "ctgan",
-        "ddpm",
-        "nflow",
-        "tvae",
-    ],
-    "Biodegradability_v1": [
-        "SDV",
-        "RCTGAN",
-        "MOSTLYAI",
-        "GRETEL_ACTGAN",
-        "GRETEL_LSTM",
-        "bayesian_network",
-        "ctgan",
-        "ddpm",
-        "nflow",
-        "tvae",
-    ],
-    "imdb_MovieLens_v1": ["RCTGAN", "MOSTLYAI", "GRETEL_ACTGAN", "CLAVADDPM", "ddpm"],
-    "CORA_v1": [
-        "SDV",
-        "RCTGAN",
-        "GRETEL_ACTGAN",
-        "GRETEL_LSTM",
-        "bayesian_network",
-        "ctgan",
-        "ddpm",
-        "nflow",
-        "tvae",
-    ],
-}
+defaultmethod = 'RCTGAN'
+method_order = methods
+method_names = [model_names[method] for method in method_order]
 
-RESULTS_PATH = Path("./results")
-RUNS = ["1", "2", "3"]
+def add_row(df, results, dataset, metric=None):
+    new_row = pd.DataFrame.from_dict({len(df):{model_names[methods[i]]: score for i, score in enumerate(results)}}, orient='index')
+    new_row['Dataset'] = dataset
+    new_row['Metric'] = metric
+    return pd.concat([df, new_row])
 
-ALPHA_STATISTICAL = 0.05
-ALPHA_DETECTION = 0.05
+def compute(dfs, idx, col, metric, factor=100.0):
+    return metric([df.loc[idx, col] * factor for df in dfs])
 
-INCLUDE_SINGLE_TABLE = True
+def bold(s, math=False):
+    if math:
+        split = s.split('$')
+        split[1] = '\\mathbf{' + split[1] + '}'
+        return '$'.join(split)
+        # return "$\\mathbf{" + s.replace('$', '') + "}$"
+    return "\\textbf{" + s + "}"
 
+def underline(s, math=False):
+    if math:
+        split = s.split('$')
+        split[1] = '\\underline{' + split[1] + '}'
+        return '$'.join(split)
+    return "\\underline{" + s + "}"
 
-def get_methods(dataset, metric_type):
-    methods = dataset_method_dict[dataset]
-    if metric_type == "multi_table_metrics" or not INCLUDE_SINGLE_TABLE:
-        methods = [method for method in methods if method not in single_table_methods]
-    return methods
+def multirow(s, n_rows=2):
+    return "\\multirow{" +str(n_rows) +"}{*}{" + s + "}"
 
+def estimate_uncertainty(dfs, factor=100.0):
+    master_df = dfs[0] + dfs[1] + dfs[2]
+    master_df['Dataset'] = dfs[0]['Dataset']
+    master_df['Metric'] = dfs[0]['Metric']
 
-def create_table(metric_type, table_name="table1"):
-    all_results = {}
-    for run_id in RUNS:
-        all_results[run_id] = {}
-        for dataset in datasets:
-            all_results[run_id][dataset] = {}
-            methods = get_methods(dataset, metric_type)
-            # take only methods that are in all_methods
-            methods = [method for method in methods if method in all_methods]
-            for method in methods:
-                for file in os.listdir(f"{RESULTS_PATH}/{run_id}"):
-                    if file.startswith(f"{dataset}_{method}"):
-                        with open(RESULTS_PATH / run_id / file, "r") as f:
-                            all_results[run_id][dataset][method] = json.load(f)
+    for method in method_names:
+        master_df[method] = master_df[method].astype(str)
 
-    base_metrics = []
-
-    if metric_type == "single_column_metrics":
-        base_metrics = [
-            "ChiSquareTest",
-            "KolmogorovSmirnovTest",
-            "HellingerDistance",
-            "JensenShannonDistance",
-            "TotalVariationDistance",
-            "WassersteinDistance",
-            "SingleColumnDetection-LogisticRegression",
-            "SingleColumnDetection-XGBClassifier",
-        ]
-
-    if metric_type == "single_table_metrics":
-        base_metrics = [
-            "MaximumMeanDiscrepancy",
-            "PairwiseCorrelationDifference",
-            "SingleTableDetection-LogisticRegression",
-            "SingleTableDetection-XGBClassifier",
-        ]
-
-    if metric_type == "multi_table_metrics":
-        base_metrics = [
-            "CardinalityShapeSimilarity",
-            "AggregationDetection-LogisticRegression",
-            "AggregationDetection-XGBClassifier",
-        ]
-
-    df_run_list = []
-    df_copy_list = []
-    df_how_many_runs = pd.DataFrame(columns=["dataset", "methods"] + base_metrics)
-    for run_id in RUNS:
-        df = pd.DataFrame(columns=["dataset", "methods"] + base_metrics)
-        df_latex = df.copy()
-        for idx, dataset in enumerate(datasets):
-            cnt = True
-            methods = get_methods(dataset, metric_type)
-            for method in methods:
-                # append row with dataset, method and empty values for all metrics
-                df = pd.concat(
-                    [
-                        df,
-                        pd.DataFrame(
-                            [[dataset, method] + [""] * len(base_metrics)],
-                            columns=["dataset", "methods"] + base_metrics,
-                        ),
-                    ],
-                    ignore_index=True,
-                )
-                df_how_many_runs = pd.concat(
-                    [
-                        df_how_many_runs,
-                        pd.DataFrame(
-                            [[dataset, method] + [""] * len(base_metrics)],
-                            columns=["dataset", "methods"] + base_metrics,
-                        ),
-                    ],
-                    ignore_index=True,
-                )
-                dataset_latex_text = f"\\multirow{{{len(dataset_method_dict[dataset])}}}{{*}}{{{dataset_names_dict[dataset]}}}"
-                df_latex = pd.concat(
-                    [
-                        df_latex,
-                        pd.DataFrame(
-                            [
-                                [
-                                    dataset_latex_text if cnt else "",
-                                    method_names_dict[method],
-                                ]
-                                + [""] * len(base_metrics)
-                            ],
-                            columns=["dataset", "methods"] + base_metrics,
-                        ),
-                    ],
-                    ignore_index=True,
-                )
-                cnt = False
-
-        df["AGG"] = 0
-        df_how_many_runs["AGG"] = 0
-
-        df_copy = df.copy()
-
-        for dataset in datasets:
-            detection_dict = {
-                "SDV": {},
-                "RCTGAN": {},
-                "REALTABFORMER": {},
-                "MOSTLYAI": {},
-                "GRETEL_ACTGAN": {},
-                "GRETEL_LSTM": {},
-                "CLAVADDPM": {},
-                "bayesian_network": {},
-                "ddpm": {},
-                "ctgan": {},
-                "nflow": {},
-                "tvae": {},
-            }
-            if metric_type == "single_column_metrics":
-                for metric in base_metrics:
-                    methods = get_methods(dataset, metric_type)
-                    for method in methods:
-                        if (
-                            metric
-                            not in all_results[run_id][dataset][method][metric_type]
-                        ):
-                            continue
-                        for table in all_results[run_id][dataset][method][metric_type][
-                            metric
-                        ]:
-                            for column in all_results[run_id][dataset][method][
-                                metric_type
-                            ][metric][table]:
-                                detection_dict[method].setdefault(metric, {})
-                                detection_dict[method][metric].setdefault("detected", 0)
-                                detection_dict[method][metric].setdefault("all", 0)
-                                detection_dict[method][metric].setdefault("copied", 0)
-                                detection_dict[method][metric]["all"] += 1
-
-                                if (
-                                    "p_value"
-                                    in all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]
-                                ):
-                                    metric_value = all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]["p_value"]
-                                    if metric_value <= ALPHA_STATISTICAL:
-                                        detection_dict[method][metric]["detected"] += 1
-                                if (
-                                    "p_val"
-                                    in all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]
-                                ):
-                                    metric_value = all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]["p_val"]
-                                    if metric_value <= ALPHA_STATISTICAL:
-                                        detection_dict[method][metric]["detected"] += 1
-                                if (
-                                    "pval"
-                                    in all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]
-                                ):
-                                    metric_value = all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]["pval"]
-                                    if metric_value <= ALPHA_STATISTICAL:
-                                        detection_dict[method][metric]["detected"] += 1
-                                if (
-                                    "value"
-                                    in all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]
-                                ):
-                                    metric_value = all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]["value"]
-                                    lower_bound = all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]["reference_ci"][0]
-                                    upper_bound = all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]["reference_ci"][1]
-                                    if (
-                                        metric_value < lower_bound
-                                        or metric_value > upper_bound
-                                    ):
-                                        detection_dict[method][metric]["detected"] += 1
-                                if (
-                                    "bin_test_p_val"
-                                    in all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]
-                                ):
-                                    metric_value = all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]["bin_test_p_val"]
-                                    if metric_value <= ALPHA_DETECTION:
-                                        detection_dict[method][metric]["detected"] += 1
-                                if (
-                                    "copying_p_val"
-                                    in all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]
-                                ):
-                                    metric_value = all_results[run_id][dataset][method][
-                                        metric_type
-                                    ][metric][table][column]["copying_p_val"]
-                                    if metric_value <= ALPHA_DETECTION:
-                                        detection_dict[method][metric]["copied"] += 1
-
-            if metric_type == "single_table_metrics":
-                for metric in base_metrics:
-                    methods = get_methods(dataset, metric_type)
-                    for method in methods:
-                        if (
-                            metric
-                            not in all_results[run_id][dataset][method][metric_type]
-                        ):
-                            continue
-                        for table in all_results[run_id][dataset][method][metric_type][
-                            metric
-                        ]:
-                            detection_dict[method].setdefault(metric, {})
-                            detection_dict[method][metric].setdefault("detected", 0)
-                            detection_dict[method][metric].setdefault("all", 0)
-                            detection_dict[method][metric].setdefault("copied", 0)
-                            detection_dict[method][metric]["all"] += 1
-                            if (
-                                "p_value"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["p_value"]
-                                if metric_value <= ALPHA_STATISTICAL:
-                                    detection_dict[method][metric]["detected"] += 1
-                            if (
-                                "p_val"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["p_val"]
-                                if metric_value <= ALPHA_STATISTICAL:
-                                    detection_dict[method][metric]["detected"] += 1
-                            if (
-                                "pval"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["pval"]
-                                if metric_value <= ALPHA_STATISTICAL:
-                                    detection_dict[method][metric]["detected"] += 1
-                            if (
-                                "value"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["value"]
-                                lower_bound = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["reference_ci"][0]
-                                upper_bound = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["reference_ci"][1]
-                                if (
-                                    metric_value < lower_bound
-                                    or metric_value > upper_bound
-                                ):
-                                    detection_dict[method][metric]["detected"] += 1
-                            if (
-                                "bin_test_p_val"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["bin_test_p_val"]
-                                if metric_value <= ALPHA_DETECTION:
-                                    detection_dict[method][metric]["detected"] += 1
-                            if (
-                                "copying_p_val"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["copying_p_val"]
-                                if metric_value <= ALPHA_DETECTION:
-                                    detection_dict[method][metric]["copied"] += 1
-
-            if metric_type == "multi_table_metrics":
-                for metric in base_metrics:
-                    methods = get_methods(dataset, metric_type)
-                    for method in methods:
-                        if (
-                            metric
-                            not in all_results[run_id][dataset][method][metric_type]
-                        ):
-                            continue
-                        for table in all_results[run_id][dataset][method][metric_type][
-                            metric
-                        ]:
-                            detection_dict[method].setdefault(metric, {})
-                            detection_dict[method][metric].setdefault("detected", 0)
-                            detection_dict[method][metric].setdefault("all", 0)
-                            detection_dict[method][metric].setdefault("copied", 0)
-                            detection_dict[method][metric]["all"] += 1
-                            if (
-                                "p_value"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["p_value"]
-                                if metric_value <= ALPHA_STATISTICAL:
-                                    detection_dict[method][metric]["detected"] += 1
-                            if (
-                                "p_val"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["p_val"]
-                                if metric_value <= ALPHA_STATISTICAL:
-                                    detection_dict[method][metric]["detected"] += 1
-                            if (
-                                "pval"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["pval"]
-                                if metric_value <= ALPHA_STATISTICAL:
-                                    detection_dict[method][metric]["detected"] += 1
-                            if (
-                                "value"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["value"]
-                                lower_bound = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["reference_ci"][0]
-                                upper_bound = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["reference_ci"][1]
-                                if (
-                                    metric_value < lower_bound
-                                    or metric_value > upper_bound
-                                ):
-                                    detection_dict[method][metric]["detected"] += 1
-                            if (
-                                "bin_test_p_val"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["bin_test_p_val"]
-                                if metric_value <= ALPHA_DETECTION:
-                                    detection_dict[method][metric]["detected"] += 1
-                            if (
-                                "copying_p_val"
-                                in all_results[run_id][dataset][method][metric_type][
-                                    metric
-                                ][table]
-                            ):
-                                metric_value = all_results[run_id][dataset][method][
-                                    metric_type
-                                ][metric][table]["copying_p_val"]
-                                if metric_value <= ALPHA_DETECTION:
-                                    detection_dict[method][metric]["copied"] += 1
-
-            for method in dataset_method_dict[dataset]:
-                for metric in base_metrics:
-                    if metric not in detection_dict[method]:
-                        continue
-                    df.loc[
-                        (df["methods"] == method) & (df["dataset"] == dataset), metric
-                    ] = detection_dict[method][metric]["detected"]
-                    df_copy.loc[
-                        (df_copy["methods"] == method)
-                        & (df_copy["dataset"] == dataset),
-                        metric,
-                    ] = detection_dict[method][metric]["copied"]
-                    df_how_many_runs.loc[
-                        (df_how_many_runs["methods"] == method)
-                        & (df_how_many_runs["dataset"] == dataset),
-                        metric,
-                    ] = detection_dict[method][metric]["all"]
-                    df.loc[
-                        (df["methods"] == method) & (df["dataset"] == dataset), "AGG"
-                    ] += detection_dict[method][metric]["detected"]
-                    df_how_many_runs.loc[
-                        (df_how_many_runs["methods"] == method)
-                        & (df_how_many_runs["dataset"] == dataset),
-                        "AGG",
-                    ] += detection_dict[method][metric]["all"]
-
-        # set all columns except dataset and methods to be float
-        # fill empty values with nan
-        for col in df.columns[2:]:
-            df[col] = df[col].replace("", np.nan)
-            df[col] = df[col].astype(float)
-        df_run_list.append(df.copy())
-        df_copy_list.append(df_copy.copy())
-
-    df_average = (
-        pd.concat(df_run_list)
-        .groupby(["dataset", "methods"], sort=False)
-        .mean()
-        .reset_index()
-    )
-    df_sum = (
-        pd.concat(df_run_list)
-        .groupby(["dataset", "methods"], sort=False)
-        .sum()
-        .reset_index()
-    )
-
-    def assign_multicolumn_string(average, se):
-        return f"\\multicolumn {{1}}{{c}}{{${average:.2f}\\pm{se:.3f}$}}"
-
-    # iterate all rows and columns
-    for i in range(df_latex.shape[0]):
-        for j in range(df_latex.shape[1]):
-            if j < 2:
-                continue
-
-            if df_average.iloc[i, j] != df_average.iloc[i, j]:
-                df_latex.iloc[i, j] = "\multicolumn {1}{c}{-}"
-                continue
-            temp_result_string = ""
-            for idx_, df_temp in enumerate(df_run_list):
-                temp_result_string += f"{int(df_temp.iloc[i, j])}"
-                temp_result_string += ", "
-
-            temp_result_string = temp_result_string[:-2]
-
-            temp_result_latex = f"{temp_result_string} ({df_how_many_runs.iloc[i, j]})"
-
-            df_latex.iloc[i, j] = f"\\multicolumn {{1}}{{c}}{{{temp_result_latex}}}"
-
-    for dataset in datasets:
-        for metric in base_metrics:
-            metric_results = df_average.loc[(df_average["dataset"] == dataset), metric]
-            # get the lowest number of column [0]
-            metric_results = metric_results.apply(pd.to_numeric)
-
-            min_indexes = []
-
-            # Iterate over columns
-            min_val = metric_results.min()
-            for idx, value in metric_results.items():
-                if metric_results[idx] == min_val:
-                    min_indexes.append(idx)
-
-            min_indexes
-            if len(min_indexes) == len(dataset_method_dict[dataset]):
-                continue
-            for idx in min_indexes:
-                temp_result_list = []
-                for df_temp in df_run_list:
-                    temp_result_list.append(int(df_temp.loc[idx, metric]))
-
-                temp_result_string = ""
-                for idx_, df_temp in enumerate(df_run_list):
-                    temp_result_string += f"{int(df_temp.loc[idx, metric])}"
-                    temp_result_string += ", "
-
-                temp_result_string = temp_result_string[:-2]
-                temp_result_latex = (
-                    f"{temp_result_string} ({df_how_many_runs.loc[idx, metric]})"
-                )
-
-                df_latex.loc[idx, metric] = (
-                    f"\\multicolumn {{1}}{{c}}{{\\textbf{{{temp_result_latex}}}}}"
-                )
-
-    for dataset in datasets:
-        agg_res = df_sum.loc[(df_sum["dataset"] == dataset), ["AGG"]]
-
-        min_indexes = []
-
-        min_val = agg_res["AGG"].min()
-        for idx, row in agg_res.iterrows():
-            if agg_res["AGG"][idx] == min_val:
-                min_indexes.append(idx)
-
-        min_indexes
-        if len(min_indexes) == len(dataset_method_dict[dataset]):
+    for i, row in master_df.iterrows():
+        if (row[method_names] == 'nan').all():
             continue
-        for idx in min_indexes:
-            df_latex.loc[idx, "methods"] = (
-                f"\\multirow{{1}}{{*}}{{\\textbf{{{method_names_dict[df_sum.loc[idx, 'methods']]}}}}}"
-            )
+        if (row['Metric'].startswith('C2ST') or
+            row['Metric'].startswith('JS') or
+            row['Metric'].startswith('Wass')):
+            order = row[method_names].astype(float).fillna(float('inf')).values.argsort()
+            maximize = False
+        else:
+            order = row[method_names].astype(float).fillna(-float('inf')).values.argsort()[::-1]
+            maximize = True
+        best_method = method_names[order[0]]
+        for method in method_names:
+            if master_df.loc[i, method] == 'nan':
+                continue
+            mean = compute(dfs, i, method, np.nanmean, factor=factor)
+            std = compute(dfs, i, method, np.nanstd, factor=factor) / np.sqrt(len(dfs))
+            if method == best_method:
+                best_mean = mean
+                best_std = std
 
-    latex_table = df_latex.to_latex(header=False, index=False, escape=False)
-    cline = f"\\ \cline{{2-{len(base_metrics) + 2}}}\n"
-    latex_table = latex_table.replace("\\\n", cline)
-
-    # iterate latex_table string row by row
-    latex_table = latex_table.split("\n")
-
-    for idx, row in enumerate(latex_table):
-        # if row starts with multirow
-        if row.lstrip().startswith("\multirow"):
-            # remove cline from previous row
-            latex_table[idx - 1] = latex_table[idx - 1].replace(cline[:-1], "\\ \hline")
-            # add \n to previous row
-            latex_table[idx - 1] += "\n"
-
-    latex_table[-4] = latex_table[-4].replace(cline[:-1], "\\ \hline") + "\n"
-
-    # join all rows back to one string
-    latex_table = "\n".join(latex_table)
-
-    latex_table = latex_table.replace("\\textbackslash ", "\\")
-
-    table_latex = re.sub(" +", " ", latex_table)
-    # save the latex table to file
-    print(f"Saving Table {table_name}.")
-    with open(f"results/tables/table{table_name}.tex", "w") as f:
-        f.write(table_latex)
+            if std == 0:
+                master_df.loc[i, method] = f"${mean:.2f}$"
+            elif mean.round(2) == factor:
+                master_df.loc[i, method] = f"${mean:.2f}$"
+            elif std.round(2) == 0.0:
+                master_df.loc[i, method] = f"${mean:.2f}$" + "{\\tiny $\\pm " + f"{std:.0e}$" + "}"
+            else:
+                master_df.loc[i, method] = f"${mean:.2f}$" + "{\\tiny $\\pm " + f"{std:.2f}$" + "}"
+        master_df.loc[i, best_method] = bold(master_df.loc[i, best_method], math=True)
+        values = row[method_names].astype(float) / len(dfs) * factor
+        if maximize:
+            within_std = best_mean - best_std
+            competitors = values.index[values > within_std].to_list()
+        else:
+            within_std = best_mean + best_std
+            competitors = values.index[values < within_std].to_list()
+        for method in competitors:
+            if method == best_method:
+                continue
+            else:
+                master_df.loc[i, method] = underline(master_df.loc[i, method], math=True)
+        master_df.loc[i] = master_df.loc[i].replace('nan', '-')
+    return master_df
 
 
-create_table("multi_table_metrics", "1")
-create_table("single_column_metrics", "9")
-create_table("single_table_metrics", "10")
+def get_latex_table(df, factor=100.0, bold_headers=True):
+    if bold_headers:
+        df.columns = [bold(col) for col in df.columns]
+    format = 'c' * len(df.columns)
+    df_latex = df.to_latex(column_format=format, index=False)
+    df_latex = df_latex.replace('nan', '')
+    df_latex = df_latex.replace(f'{factor:.2f}', f'\\approx {factor:.1f}')
+    df_latex = df_latex.replace("\\\\\n\\multirow", "\\\\\n\\midrule\n\\multirow")
+    df_latex = df_latex.replace("e-1", "\\text{e-}1")
+    df_latex = df_latex.replace("e-0", "\\text{e-}")
+    rows_ = df_latex.split("\n")
+    rows = []
+    for i, row in enumerate(rows_):
+        if row.startswith("\\multirow"):
+            num_rows = row.split("{")[1].split("}")[0]
+            row = row.replace(" - ", "\\multirow{" + num_rows + "}{*}{-}")
+        rows.append(row)
+    df_latex = "\n".join(rows)
+    df_latex = df_latex.replace(" - ", "")
+
+    return df_latex
+
+
+def create_single_column_df(results, single_column_results):
+    DETECTION = "C2ST \\ \\ ($\\downarrow$)"
+    SHAPES = "Shapes ($\\uparrow$)"
+    df = pd.DataFrame(data=[['', ''] + [np.nan] * len(methods)], columns=['Dataset', 'Metric'] + [model_names[method] for method in methods])
+    for dataset in datasets:
+        dataset_name = dataset_names[dataset]
+        dataset_results = single_column_results[dataset_name]
+        detection_scores = []
+        shapes_scores = []
+        for method in method_order:
+            method_results = dataset_results[method]
+
+            if len(method_results) == 0:
+                detection_score = np.nan
+                shapes_score = np.nan
+            else:
+                detection_score = np.mean(method_results)
+                # print(dataset, method)
+                trend_results = results[dataset][method]['single_column_metrics']['Trends']
+                shapes_score = trend_results['shapes']['mean']
+            detection_scores.append(detection_score)
+            shapes_scores.append(shapes_score)
+        n_rows = 2
+        df = add_row(df, results=detection_scores, dataset=multirow(dataset_name, n_rows=n_rows), metric=DETECTION)
+        df = add_row(df, results=shapes_scores, dataset='', metric=SHAPES)
+
+    # Drop the first row
+    return df[1:]
+
+
+def create_single_table_df(results, single_table_results):
+    DETECTION = "C2ST \\ ($\\downarrow$)"
+    PAIRS = "Pairs ($\\uparrow$)"
+    df = pd.DataFrame(data=[['', ''] + [np.nan] * len(methods)], columns=['Dataset', 'Metric'] + [model_names[method] for method in methods])
+    for dataset in datasets:
+        dataset_name = dataset_names[dataset]
+        dataset_results = single_table_results[dataset_name]
+        detection_scores = []
+        trend_scores = []
+        for method in method_order:
+            method_results = dataset_results[method]
+            if len(method_results) == 0:
+                detection_score = np.nan
+                trend_score = np.nan
+            else:
+                detection_score = np.mean(method_results)
+                if 'Trends' not in results[dataset][method]['single_table_metrics']:
+                    trend_score = np.nan
+                else:
+                    trend_results = results[dataset][method]['single_table_metrics']['Trends']
+                    trend_score = trend_results['pairs']['mean']
+            detection_scores.append(detection_score)
+            trend_scores.append(trend_score)
+        n_rows = 2
+        df = add_row(df, results=detection_scores, dataset=multirow(dataset_name, n_rows=n_rows), metric=DETECTION)
+        df = add_row(df, results=trend_scores, dataset='', metric=PAIRS)
+
+    # Drop the first row
+    return df[1:]
+
+
+def create_multi_table_df(results, multi_table_results):
+    DETECTION = "C2ST-Agg ($\\downarrow$)"
+    CARDINALITY = "Cardinality ($\\uparrow$)"
+    df = pd.DataFrame(data=[['', ''] + [np.nan] * len(methods)], columns=['Dataset', 'Metric'] + [model_names[method] for method in methods])
+    for dataset in datasets:
+        dataset_name = dataset_names[dataset]
+        dataset_results = multi_table_results[dataset_name]
+        detection_scores = []
+        cardinality_scores = []
+        k_hops = defaultdict(list)
+        default_hops = results[dataset][defaultmethod]['multi_table_metrics']['Trends']['k_hop_similarity']
+        for method in method_order:
+            method_results = dataset_results[method]
+            if len(method_results) == 0 or method == 'baseline':
+                detection_score = np.nan
+                cardinality = np.nan
+                for hop, hop_results in default_hops.items():
+                    k_hops[hop].append(np.nan)
+            else:
+                detection_score = np.mean(method_results)
+                trend_results = results[dataset][method]['multi_table_metrics']['Trends']
+                cardinality = trend_results['cardinality']
+                hop_results = trend_results['k_hop_similarity']
+                for hop, hop_results in hop_results.items():
+                    k_hops[hop].append(hop_results['mean'])
+            detection_scores.append(detection_score)
+            cardinality_scores.append(cardinality)
+        n_rows = 2 + len(k_hops)
+        df = add_row(df, results=detection_scores, dataset=multirow(dataset_name, n_rows=n_rows), metric=DETECTION)
+        df = add_row(df, results=cardinality_scores, dataset='', metric=CARDINALITY)
+        for hop, scores in k_hops.items():
+            df = add_row(df, results=scores, dataset='', metric=f"{hop}-HOP ($\\uparrow$)")
+
+
+    # Drop the first row
+    return df[1:]
+
+
+def save_latex_table(df, filename, factor=100.0):
+    latex_df = get_latex_table(df, factor=factor)
+    with open(filename, 'w') as f:
+        f.write(latex_df)
+
+
+runs = [1, 2, 3]
+results = {}
+multi_table_results = {}
+single_table_results = {}
+single_column_results = {}
+
+for run in runs:
+    results[run] = {}
+    run_results = results[run]
+    for dataset in datasets:
+        run_results[dataset] = {}
+        for method in methods:
+            try:
+                with open(f'results/{run}/{dataset}_{method}_{run}_sample1.json') as f:
+                    run_results[dataset][method] = json.load(f)
+            except FileNotFoundError:
+                continue
+
+
+    multi_table_results[run] = {}
+    single_table_results[run] = {}
+    single_column_results[run] = {}
+    for dataset in datasets:
+        dataset_name = dataset_names[dataset]
+        multi_table_results[run].setdefault(dataset_name, {})
+        single_table_results[run].setdefault(dataset_name, {})
+        single_column_results[run].setdefault(dataset_name, {})
+        multi_run = multi_table_results[run]
+        single_run = single_table_results[run]
+        column_run = single_column_results[run]
+        for method in methods:
+            multi_run[dataset_name].setdefault(method, [])
+            single_run[dataset_name].setdefault(method, [])
+            column_run[dataset_name].setdefault(method, [])
+            if method not in results[run][dataset]:
+                continue
+            for table, single_results in results[run][dataset][method]['single_table_metrics']['SingleTableDetection-XGBClassifier'].items():
+                multi_results = results[run][dataset][method]['multi_table_metrics']['AggregationDetection-XGBClassifier']
+                if table in multi_results:
+                    multi_run[dataset_name][method].append(multi_results[table]['accuracy'])
+                single_run[dataset_name][method].append(single_results['accuracy'])
+                for column, column_results in results[run][dataset][method]['single_column_metrics']['SingleColumnDetection-XGBClassifier'][table].items():
+                    column_run[dataset_name][method].append(column_results['accuracy'])
+
+os.makedirs('results/tables', exist_ok=True)
+# Single-table
+dfs = []
+for run in runs:
+    table_results = single_table_results[run]
+    df = create_single_table_df(results[run], table_results)
+    dfs.append(df)
+
+df = estimate_uncertainty(dfs)
+save_latex_table(df, 'results/tables/table2.tex')
+
+# Multi-table
+dfs = []
+for run in runs:
+    multi_results = multi_table_results[run]
+    df = create_multi_table_df(results[run], multi_results)
+    dfs.append(df)
+
+df = estimate_uncertainty(dfs)
+save_latex_table(df, 'results/tables/table3.tex')
+
+# Single-column
+dfs = []
+for run in runs:
+    col_results = single_column_results[run]
+    df = create_single_column_df(results[run], col_results)
+    dfs.append(df)
+df = estimate_uncertainty(dfs)
+save_latex_table(df, 'results/tables/table7.tex')

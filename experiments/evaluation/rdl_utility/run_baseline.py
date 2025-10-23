@@ -7,31 +7,55 @@ import torch
 from scipy.stats import mode
 from torch_geometric.seed import seed_everything
 
-from relbench.base import Dataset, Table, TaskType, PredictColumnTask
-from gnn_datasets import RossmannDataset, WalmartDataset
+from relbench.base import (
+    Dataset,
+    Table,
+    TaskType,
+    AutoCompleteTask,
+    EntityTask,
+    BaseTask,
+)
+from relbench.tasks import get_task
+from relbench.tasks.f1 import DriverPositionTask, DriverTop3Task, DriverDNFTask
+from gnn_datasets import (
+    RossmannDataset,
+    WalmartDataset,
+    F1Dataset,
+    AirbnbDataset,
+    BerkaDataset,
+)
+from relbench.datasets import get_dataset
 
 DATASETS = {
     RossmannDataset.name: RossmannDataset,
     WalmartDataset.name: WalmartDataset,
+    F1Dataset.name: F1Dataset,
+    AirbnbDataset.name: AirbnbDataset,
+    BerkaDataset.name: BerkaDataset,
+}
+
+TASKS = {
+    "driver-position": DriverPositionTask,
+    "driver-top3": DriverTop3Task,
+    "driver-dnft": DriverDNFTask,
+    "autocomplete": AutoCompleteTask,
 }
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--dataset", type=str, default="rossmann_subsampled")
-parser.add_argument("--task", type=str, default="predict-column")
+parser.add_argument("--dataset", type=str, default="f1_subsampled")
+parser.add_argument("--task", type=str, default="driver-top3")
 parser.add_argument("--run_id", type=str, default="1")
 parser.add_argument("--method", type=str, default="ORIGINAL")
 
 parser.add_argument(
     "--task_type",
     type=str,
-    default="REGRESSION",
+    default="BINARY_CLASSIFICATION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--entity_table", type=str, default="historical")
-parser.add_argument("--entity_col", type=str, default="Id")
-parser.add_argument("--time_col", type=str, default="Date")
-parser.add_argument("--target_col", type=str, default="Customers")
+parser.add_argument("--entity_table", type=str, default="users")
+parser.add_argument("--target_col", type=str, default="country_destination")
 
 parser.add_argument("--seed", type=int, default=42)
 
@@ -43,24 +67,40 @@ seed_everything(args.seed)
 predict_column_task_config = {
     "task_type": TaskType[args.task_type],
     "entity_table": args.entity_table,
-    "entity_col": args.entity_col if args.entity_col else None,
-    "time_col": args.time_col,
     "target_col": args.target_col,
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
 dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id)
-dataset.target_col = args.target_col
-dataset.entity_table = args.entity_table
+dataset_test: Dataset = DATASETS[args.dataset](
+    method=args.method, run_id=args.run_id, type="test"
+)
 
-task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
+# task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
+if args.task == "autocomplete":
+    dataset.target_col = args.target_col
+    dataset.entity_table = args.entity_table
+    dataset_test.target_col = args.target_col
+    dataset_test.entity_table = args.entity_table
+    task: AutoCompleteTask = TASKS[args.task](
+        dataset=dataset, **predict_column_task_config
+    )
+    task_test: AutoCompleteTask = TASKS[args.task](
+        dataset=dataset_test, **predict_column_task_config
+    )
+else:
+    task: BaseTask = TASKS[args.task](dataset=dataset)
+    # task_test: BaseTask = TASKS[args.task](dataset=dataset_test)
+    task_test: EntityTask = get_task("rel-f1", args.task, download=False)
+    dataset_test = task_test.dataset
+
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")
-test_table = task.get_table("test")
+test_table = task_test.get_table("test")
 
 
-def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, float]:
+def evaluate(task: BaseTask, train_table: Table, pred_table: Table, name: str) -> Dict[str, float]:
     is_test = task.target_col not in pred_table.df
     if name == "global_zero":
         pred = np.zeros(len(pred_table))
@@ -118,9 +158,9 @@ if task.task_type == TaskType.REGRESSION:
     ]
 
     for name in eval_name_list:
-        train_metrics = evaluate(train_table, train_table, name=name)
-        val_metrics = evaluate(train_table, val_table, name=name)
-        test_metrics = evaluate(trainval_table, test_table, name=name)
+        train_metrics = evaluate(task, train_table, train_table, name=name)
+        val_metrics = evaluate(task, train_table, val_table, name=name)
+        test_metrics = evaluate(task_test, trainval_table, test_table, name=name)
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
@@ -130,9 +170,9 @@ if task.task_type == TaskType.REGRESSION:
 elif task.task_type == TaskType.BINARY_CLASSIFICATION:
     eval_name_list = ["random", "majority"]
     for name in eval_name_list:
-        train_metrics = evaluate(train_table, train_table, name=name)
-        val_metrics = evaluate(train_table, val_table, name=name)
-        test_metrics = evaluate(trainval_table, test_table, name=name)
+        train_metrics = evaluate(task, train_table, train_table, name=name)
+        val_metrics = evaluate(task, train_table, val_table, name=name)
+        test_metrics = evaluate(task_test, trainval_table, test_table, name=name)
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
@@ -142,9 +182,9 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     eval_name_list = ["random_multilabel", "majority_multilabel"]
     for name in eval_name_list:
-        train_metrics = evaluate(train_table, train_table, name=name)
-        val_metrics = evaluate(train_table, val_table, name=name)
-        test_metrics = evaluate(trainval_table, test_table, name=name)
+        train_metrics = evaluate(task, train_table, train_table, name=name)
+        val_metrics = evaluate(task, train_table, val_table, name=name)
+        test_metrics = evaluate(task_test, trainval_table, test_table, name=name)
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
