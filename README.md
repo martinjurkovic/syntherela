@@ -35,6 +35,12 @@ To install only the benchmark package, run the following command:
 pip install syntherela
 ```
 
+## Examples
+
+We provide example notebooks to help you get started with `syntherela` in the [examples/](examples/) directory.
+
+- [Evaluating Rossmann Subsampled Dataset](examples/evaluate_rossmann_subsampled.ipynb): A step-by-step guide to evaluating a subsampled version of the Rossmann dataset using various metrics.
+
 ## Replicating the paper's results
 
 For detailed instructions on how to replicate the paper's results, please refer to [docs/REPLICATING_RESULTS.md](/docs/REPLICATING_RESULTS.md).
