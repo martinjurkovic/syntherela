@@ -168,12 +168,8 @@ class Benchmark:
         # Try to read existing results during initialization
         try:
             self.read_results()
-        except Exception as e:
-            # FIXME: Running the benchmark for the first time should
-            # be expected and not raise a warning
-            warnings.warn(
-                f"No existing results found or could not read them: {str(e)}. This is expected if running the benchmark for the first time."
-            )
+        except FileNotFoundError:
+            pass
 
     def load_data(self, dataset_name, method_name):
         """Load real and synthetic data for a specific dataset and method.
