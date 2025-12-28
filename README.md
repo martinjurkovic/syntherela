@@ -34,6 +34,36 @@ To install only the benchmark package, run the following command:
 ```bash
 pip install syntherela
 ```
+## Using SyntheRela
+
+To evaluate your synthetic relational data, configure the `Benchmark` class with your desired metrics and run the evaluation pipeline:
+
+```python
+from syntherela.benchmark import Benchmark
+from syntherela.metrics.single_column.statistical import ChiSquareTest
+from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
+from syntherela.metrics.multi_table.statistical import CardinalityShapeSimilarity
+from syntherela.metrics.multi_table.detection import AggregationDetection
+from xgboost import XGBClassifier
+
+# Initialize the benchmark with specific metrics
+benchmark = Benchmark(
+    real_data_dir="path/to/real_data",
+    synthetic_data_dir="path/to/synthetic_data",
+    results_dir="results",
+    single_column_metrics=[ChiSquareTest()],
+    single_table_metrics=[MaximumMeanDiscrepancy()],
+    multi_table_metrics=[
+        CardinalityShapeSimilarity(),
+        AggregationDetection(classifier_cls=XGBClassifier, random_state=42)
+    ],
+    datasets=["your_dataset_name"],
+    methods=["your_method_name"]
+)
+
+# Execute evaluation
+benchmark.run()
+```
 
 ## Examples
 
