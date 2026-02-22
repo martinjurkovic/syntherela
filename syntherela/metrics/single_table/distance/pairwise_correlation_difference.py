@@ -17,10 +17,9 @@ from syntherela.metrics.base import DistanceBaseMetric, SingleTableMetric
 class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
     """Pairwise correlation difference metric."""
 
-    def __init__(self,
-                 norm_order="fro",
-                 correlation_method="pearson",
-                 **kwargs):
+    def __init__(
+        self, norm_order="fro", correlation_method="pearson", **kwargs
+    ):
         super().__init__(**kwargs)
         self.name = "PairwiseCorrelationDifference"
         self.goal = Goal.MINIMIZE
@@ -34,8 +33,10 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         """Check if the table contains at least one non-id column."""
         numeric_count = 0
         for column_name in metadata["columns"].keys():
-            if (metadata["columns"][column_name]["sdtype"] == "numerical" or
-                    metadata["columns"][column_name]["sdtype"] == "datetime"):
+            if (
+                metadata["columns"][column_name]["sdtype"] == "numerical"
+                or metadata["columns"][column_name]["sdtype"] == "datetime"
+            ):
                 numeric_count += 1
         return numeric_count > 1
 
@@ -56,7 +57,7 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         metadata : dict
             Table metadata.
 
-        Returns
+        Returns:
         -------
         float
             The pairwise correlation difference between the original and synthetic data.
@@ -75,12 +76,12 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
                 synth.drop(col, axis=1, inplace=True)
                 continue
             elif is_datetime(orig[col]):
-                orig[col] = pd.to_numeric(orig[col],
-                                          errors="coerce",
-                                          downcast="integer")
-                synth[col] = pd.to_numeric(synth[col],
-                                           errors="coerce",
-                                           downcast="integer")
+                orig[col] = pd.to_numeric(
+                    orig[col], errors="coerce", downcast="integer"
+                )
+                synth[col] = pd.to_numeric(
+                    synth[col], errors="coerce", downcast="integer"
+                )
 
         # drop nan values
         orig.dropna(inplace=True)
@@ -91,12 +92,13 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         zero_variance_columns = std_orig[std_orig == 0].index.tolist()
         orig.drop(columns=zero_variance_columns, inplace=True)
         synth.drop(columns=zero_variance_columns, inplace=True)
-        assert (synth.std() > 0).all(), (
-            "Synthetic data includes invalid columns with zero variance.")
+        assert (synth.std() > 0).all(
+        ), ("Synthetic data includes invalid columns with zero variance.")
 
         # compute the correlation matrix
         orig_corr = orig.corr(method=self.correlation_method)
         synth_corr = synth.corr(method=self.correlation_method)
 
-        return np.linalg.norm(orig_corr - synth_corr,
-                              ord=self.norm_order).astype(float)
+        return np.linalg.norm(
+            orig_corr - synth_corr, ord=self.norm_order
+        ).astype(float)

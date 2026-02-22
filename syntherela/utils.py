@@ -26,7 +26,7 @@ class NpEncoder(json.JSONEncoder):
         obj: object
             The object to encode.
 
-        Returns
+        Returns:
         -------
         object
             The encoded object.
@@ -40,7 +40,7 @@ class NpEncoder(json.JSONEncoder):
             return obj.tolist()
         if isinstance(obj, np.bool_):
             return bool(obj)
-        return super(NpEncoder, self).default(obj)
+        return super().default(obj)
 
 
 class CustomHyperTransformer(HyperTransformer):
@@ -71,11 +71,10 @@ class CustomHyperTransformer(HyperTransformer):
                 self.column_transforms[field] = {"mean": data[field].mean()}
             elif kind == "b":
                 # Boolean column.
-                numeric = pd.to_numeric(data[field],
-                                        errors="coerce").astype(float)
-                self.column_transforms[field] = {
-                    "mode": numeric.mode().iloc[0]
-                }
+                numeric = pd.to_numeric(
+                    data[field], errors="coerce"
+                ).astype(float)
+                self.column_transforms[field] = {"mode": numeric.mode().iloc[0]}
             elif kind == "O":
                 # Categorical column.
                 col_data = pd.DataFrame({"field": data[field]})
@@ -105,7 +104,7 @@ class CustomHyperTransformer(HyperTransformer):
         data: pandas.DataFrame
             The data to transform.
 
-        Returns
+        Returns:
         -------
         pandas.DataFrame
             The transformed data.
@@ -123,20 +122,23 @@ class CustomHyperTransformer(HyperTransformer):
                 data[field] = data[field].fillna(transform_info["mean"])
             elif kind == "b":
                 # Boolean column.
-                data[field] = pd.to_numeric(data[field],
-                                            errors="coerce").astype(float)
+                data[field] = pd.to_numeric(
+                    data[field], errors="coerce"
+                ).astype(float)
                 data[field] = data[field].fillna(transform_info["mode"])
             elif kind == "O":
                 # Categorical column.
                 col_data = pd.DataFrame({"field": data[field]})
-                out = transform_info["one_hot_encoder"].transform(
-                    col_data).toarray()
+                out = transform_info["one_hot_encoder"].transform(col_data
+                                                                  ).toarray()
                 transformed = pd.DataFrame(
                     out,
-                    columns=[f"{field}_{i}" for i in range(np.shape(out)[1])])
+                    columns=[f"{field}_{i}" for i in range(np.shape(out)[1])]
+                )
                 data = data.drop(columns=[field])
                 data = pd.concat(
-                    [data, transformed.set_index(data.index)], axis=1)
+                    [data, transformed.set_index(data.index)], axis=1
+                )
             elif kind == "M":
                 # Datetime column.
                 nulls = data[field].isnull()

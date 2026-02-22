@@ -4,26 +4,25 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 import torch
-from scipy.stats import mode
-from torch_geometric.seed import seed_everything
-
-from relbench.base import (
-    Dataset,
-    Table,
-    TaskType,
-    AutoCompleteTask,
-    EntityTask,
-    BaseTask,
-)
-from relbench.tasks import get_task
-from relbench.tasks.f1 import DriverPositionTask, DriverTop3Task, DriverDNFTask
 from gnn_datasets import (
-    RossmannDataset,
-    WalmartDataset,
-    F1Dataset,
     AirbnbDataset,
     BerkaDataset,
+    F1Dataset,
+    RossmannDataset,
+    WalmartDataset,
 )
+from relbench.base import (
+    AutoCompleteTask,
+    BaseTask,
+    Dataset,
+    EntityTask,
+    Table,
+    TaskType,
+)
+from relbench.tasks import get_task
+from relbench.tasks.f1 import DriverDNFTask, DriverPositionTask, DriverTop3Task
+from scipy.stats import mode
+from torch_geometric.seed import seed_everything
 
 DATASETS = {
     RossmannDataset.name: RossmannDataset,
@@ -72,11 +71,11 @@ predict_column_task_config = {
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = DATASETS[args.dataset](method=args.method,
-                                          run_id=args.run_id)
-dataset_test: Dataset = DATASETS[args.dataset](method=args.method,
-                                               run_id=args.run_id,
-                                               type="test")
+dataset: Dataset = DATASETS[args.dataset
+                            ](method=args.method, run_id=args.run_id)
+dataset_test: Dataset = DATASETS[args.dataset](
+    method=args.method, run_id=args.run_id, type="test"
+)
 
 # task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
 if args.task == "autocomplete":
@@ -84,10 +83,12 @@ if args.task == "autocomplete":
     dataset.entity_table = args.entity_table
     dataset_test.target_col = args.target_col
     dataset_test.entity_table = args.entity_table
-    task: AutoCompleteTask = TASKS[args.task](dataset=dataset,
-                                              **predict_column_task_config)
+    task: AutoCompleteTask = TASKS[args.task](
+        dataset=dataset, **predict_column_task_config
+    )
     task_test: AutoCompleteTask = TASKS[args.task](
-        dataset=dataset_test, **predict_column_task_config)
+        dataset=dataset_test, **predict_column_task_config
+    )
 else:
     task: BaseTask = TASKS[args.task](dataset=dataset)
     # task_test: BaseTask = TASKS[args.task](dataset=dataset_test)
@@ -108,8 +109,7 @@ def evaluate(task: BaseTask, train_table: Table, pred_table: Table,
         mean = train_table.df[task.target_col].astype(float).values.mean()
         pred = np.ones(len(pred_table)) * mean
     elif name == "global_median":
-        median = np.median(
-            train_table.df[task.target_col].astype(float).values)
+        median = np.median(train_table.df[task.target_col].astype(float).values)
         pred = np.ones(len(pred_table)) * median
     elif name == "entity_mean":
         fkey = list(train_table.fkey_col_to_pkey_table.keys())[0]
@@ -161,10 +161,9 @@ if task.task_type == TaskType.REGRESSION:
     for name in eval_name_list:
         train_metrics = evaluate(task, train_table, train_table, name=name)
         val_metrics = evaluate(task, train_table, val_table, name=name)
-        test_metrics = evaluate(task_test,
-                                trainval_table,
-                                test_table,
-                                name=name)
+        test_metrics = evaluate(
+            task_test, trainval_table, test_table, name=name
+        )
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
@@ -175,10 +174,9 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
     for name in eval_name_list:
         train_metrics = evaluate(task, train_table, train_table, name=name)
         val_metrics = evaluate(task, train_table, val_table, name=name)
-        test_metrics = evaluate(task_test,
-                                trainval_table,
-                                test_table,
-                                name=name)
+        test_metrics = evaluate(
+            task_test, trainval_table, test_table, name=name
+        )
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
@@ -189,10 +187,9 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     for name in eval_name_list:
         train_metrics = evaluate(task, train_table, train_table, name=name)
         val_metrics = evaluate(task, train_table, val_table, name=name)
-        test_metrics = evaluate(task_test,
-                                trainval_table,
-                                test_table,
-                                name=name)
+        test_metrics = evaluate(
+            task_test, trainval_table, test_table, name=name
+        )
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")

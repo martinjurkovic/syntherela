@@ -4,19 +4,18 @@ This module provides tools for benchmarking synthetic data generation methods
 across multiple datasets and metrics.
 """
 
-import os
 import json
+import os
 import warnings
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from syntherela.report import Report
-from syntherela.metadata import Metadata
 from syntherela.data import load_tables, remove_sdv_columns
-from syntherela.metrics.single_column.statistical import ChiSquareTest
-from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
+from syntherela.metadata import Metadata
+from syntherela.report import Report
 from syntherela.visualisations.multi_table_visualisations import (
-    visualize_multi_table, )
+    visualize_multi_table,
+)
 from syntherela.visualisations.single_column_visualisations import (
     visualize_single_column_detection_metrics,
     visualize_single_column_distance_metrics,
@@ -72,13 +71,9 @@ class Benchmark:
         synthetic_data_dir,
         results_dir,
         benchmark_name,
-        single_column_metrics=[
-            ChiSquareTest(),
-        ],
-        single_table_metrics=[
-            MaximumMeanDiscrepancy(),
-        ],
-        multi_table_metrics=[],
+        single_column_metrics=None,
+        single_table_metrics=None,
+        multi_table_metrics=None,
         methods=None,
         datasets=None,
         run_id=None,
@@ -131,6 +126,13 @@ class Benchmark:
         self.synthetic_data_dir = Path(synthetic_data_dir)
         self.results_dir = Path(results_dir)
 
+        if single_column_metrics is None:
+            single_column_metrics = []
+        if single_table_metrics is None:
+            single_table_metrics = []
+        if multi_table_metrics is None:
+            multi_table_metrics = []
+
         if self.datasets is None:
             self.datasets = [
                 d for d in os.listdir(self.synthetic_data_dir)
@@ -150,11 +152,12 @@ class Benchmark:
             for dataset_name in self.datasets:
                 if dataset_name not in self.methods:
                     self.methods[dataset_name] = [
-                        d for d in os.listdir(self.synthetic_data_dir /
-                                              dataset_name)
+                        d for d in
+                        os.listdir(self.synthetic_data_dir / dataset_name)
                         if os.path.isdir(
-                            os.path.join(
-                                self.synthetic_data_dir / dataset_name, d))
+                            os.path.
+                            join(self.synthetic_data_dir / dataset_name, d)
+                        )
                     ]
 
         self.single_column_metrics = single_column_metrics
@@ -182,7 +185,7 @@ class Benchmark:
         method_name : str
             Name of the synthetic data generation method.
 
-        Returns
+        Returns:
         -------
         tuple
             Tuple containing:
@@ -205,7 +208,8 @@ class Benchmark:
         synthetic_data = load_tables(synthetic_data_path, metadata)
 
         real_data, metadata = remove_sdv_columns(
-            real_data, metadata, validate=self.validate_metadata)
+            real_data, metadata, validate=self.validate_metadata
+        )
         synthetic_data, metadata = remove_sdv_columns(
             synthetic_data,
             metadata,
@@ -227,15 +231,17 @@ class Benchmark:
         new_results : dict
             New results to merge.
 
-        Returns
+        Returns:
         -------
         dict
             Merged results.
 
         """
         existing_results = None
-        if (dataset_name in self.all_results
-                and method_name in self.all_results[dataset_name]):
+        if (
+            dataset_name in self.all_results
+            and method_name in self.all_results[dataset_name]
+        ):
             existing_results = self.all_results[dataset_name][method_name]
 
         if existing_results:
@@ -265,12 +271,12 @@ class Benchmark:
         method_name : str
             Name of the synthetic data generation method.
 
-        Returns
+        Returns:
         -------
         dict
             Results loaded from the benchmark JSON file.
 
-        Raises
+        Raises:
         ------
         FileNotFoundError
             If the result file does not exist.
@@ -278,7 +284,7 @@ class Benchmark:
         """
         file_name = self.build_file_name(dataset_name, method_name)
         file_path = self.results_dir / file_name
-        with open(file_path, "r") as file:
+        with open(file_path) as file:
             return json.load(file)
 
     def _get_or_load_results(self, dataset_name, method_name):
@@ -291,24 +297,25 @@ class Benchmark:
         method_name : str
             Name of the synthetic data generation method.
 
-        Returns
+        Returns:
         -------
         dict
             Full benchmark results for the provided dataset and method.
 
         """
-        if (dataset_name in self.all_results
-                and method_name in self.all_results[dataset_name]):
+        if (
+            dataset_name in self.all_results
+            and method_name in self.all_results[dataset_name]
+        ):
             return self.all_results[dataset_name][method_name]
 
         results = self._load_result_file(dataset_name, method_name)
         self.all_results.setdefault(dataset_name, {})[method_name] = results
         return results
 
-    def get_single_column_results(self,
-                                  dataset_name,
-                                  method_name,
-                                  metric_name=None):
+    def get_single_column_results(
+        self, dataset_name, method_name, metric_name=None
+    ):
         """Get single-column results for a dataset and method.
 
         Parameters
@@ -321,7 +328,7 @@ class Benchmark:
             Name of a specific single-column metric.
             If None, all single-column metrics are returned.
 
-        Returns
+        Returns:
         -------
         dict
             Single-column results for all metrics or one metric.
@@ -333,10 +340,9 @@ class Benchmark:
             return metric_results.get(metric_name, {})
         return metric_results
 
-    def get_single_table_results(self,
-                                 dataset_name,
-                                 method_name,
-                                 metric_name=None):
+    def get_single_table_results(
+        self, dataset_name, method_name, metric_name=None
+    ):
         """Get single-table results for a dataset and method.
 
         Parameters
@@ -349,7 +355,7 @@ class Benchmark:
             Name of a specific single-table metric.
             If None, all single-table metrics are returned.
 
-        Returns
+        Returns:
         -------
         dict
             Single-table results for all metrics or one metric.
@@ -361,10 +367,9 @@ class Benchmark:
             return metric_results.get(metric_name, {})
         return metric_results
 
-    def get_multi_table_results(self,
-                                dataset_name,
-                                method_name,
-                                metric_name=None):
+    def get_multi_table_results(
+        self, dataset_name, method_name, metric_name=None
+    ):
         """Get multi-table results for a dataset and method.
 
         Parameters
@@ -377,7 +382,7 @@ class Benchmark:
             Name of a specific multi-table metric.
             If None, all multi-table metrics are returned.
 
-        Returns
+        Returns:
         -------
         dict
             Multi-table results for all metrics or one metric.
@@ -395,7 +400,7 @@ class Benchmark:
         This method evaluates all specified datasets and methods using the configured metrics.
         Results are saved to the results directory.
 
-        Returns
+        Returns:
         -------
         dict
             Dictionary containing all benchmark results.
@@ -405,7 +410,8 @@ class Benchmark:
             for method_name in self.methods[dataset_name]:
                 try:
                     real_data, synthetic_data, metadata = self.load_data(
-                        dataset_name, method_name)
+                        dataset_name, method_name
+                    )
 
                     print(
                         f"Starting benchmark for {dataset_name}, method_name {method_name}"
@@ -434,9 +440,12 @@ class Benchmark:
                     # Generate and merge new results
                     new_results = report.generate()
                     merged_results = self.merge_results(
-                        dataset_name, method_name, new_results)
-                    self.all_results.setdefault(
-                        dataset_name, {})[method_name] = (merged_results)
+                        dataset_name, method_name, new_results
+                    )
+                    self.all_results.setdefault(dataset_name,
+                                                {})[method_name] = (
+                                                    merged_results
+                                                )
 
                     # Update report results with merged results before saving
                     report.results = merged_results
@@ -452,7 +461,7 @@ class Benchmark:
     def read_results(self):
         """Read benchmark results from the results directory.
 
-        Returns
+        Returns:
         -------
         dict
             Dictionary containing all benchmark results.
@@ -463,10 +472,12 @@ class Benchmark:
                 file_name = self.build_file_name(dataset_name, method_name)
                 try:
                     real_data, synthetic_data, metadata = self.load_data(
-                        dataset_name, method_name)
+                        dataset_name, method_name
+                    )
                 except FileNotFoundError:
                     warnings.warn(
-                        f"Results for {dataset_name}, method {method_name} not found."
+                        f"Results for {dataset_name}, method {method_name} not found.",
+                        stacklevel=2
                     )
                     continue
                 temp_report = Report(
@@ -482,10 +493,11 @@ class Benchmark:
                 ).load_from_json(self.results_dir / file_name)
                 self.reports.setdefault(dataset_name,
                                         {})[method_name] = temp_report
-                self.all_results.setdefault(
-                    dataset_name, {})[method_name] = (temp_report.results)
+                self.all_results.setdefault(dataset_name, {})[method_name] = (
+                    temp_report.results
+                )
         if not self.all_results:
-            warnings.warn("No results found.")
+            warnings.warn("No results found.", stacklevel=2)
 
     def build_file_name(self, dataset_name, method_name):
         """Build a file name for saving results.
@@ -497,7 +509,7 @@ class Benchmark:
         method_name : str
             Name of the synthetic data generation method.
 
-        Returns
+        Returns:
         -------
         str
             File name for saving results.
@@ -511,10 +523,9 @@ class Benchmark:
         file_name += ".json"
         return file_name
 
-    def visualize_single_table_metrics(self,
-                                       distance=True,
-                                       detection=True,
-                                       **kwargs):
+    def visualize_single_table_metrics(
+        self, distance=True, detection=True, **kwargs
+    ):
         """Visualize single table metrics.
 
         Parameters
@@ -550,10 +561,9 @@ class Benchmark:
                 **kwargs,
             )
 
-    def visualize_single_column_metrics(self,
-                                        distance=True,
-                                        detection=True,
-                                        **kwargs):
+    def visualize_single_column_metrics(
+        self, distance=True, detection=True, **kwargs
+    ):
         """Visualize single column metrics.
 
         Parameters

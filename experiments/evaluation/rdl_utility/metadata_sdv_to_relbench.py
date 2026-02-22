@@ -1,3 +1,7 @@
+import json
+import os
+from pathlib import Path
+
 DATASETS = [
     "rossmann_subsampled",
     "walmart_subsampled",
@@ -6,14 +10,10 @@ DATASETS = [
     "Berka_subsampled",
 ]
 
-import json
-import os
-from pathlib import Path
 
-
-def convert_sdv_to_relbench_type(sdtype,
-                                 column_name,
-                                 computer_representation=None):
+def convert_sdv_to_relbench_type(
+    sdtype, column_name, computer_representation=None
+):
     """Convert SDV data type to relbench data type."""
     # Basic mapping rules based on SDV types
     if sdtype == "datetime":
@@ -40,11 +40,11 @@ def convert_metadata(sdv_metadata):
 
         for column_name, column_info in table_info["columns"].items():
             sdtype = column_info["sdtype"]
-            computer_representation = column_info.get(
-                "computer_representation")
+            computer_representation = column_info.get("computer_representation")
 
             relbench_type = convert_sdv_to_relbench_type(
-                sdtype, column_name, computer_representation)
+                sdtype, column_name, computer_representation
+            )
             relbench_metadata[table_name][column_name] = relbench_type
 
     return relbench_metadata
@@ -62,7 +62,7 @@ def main():
             print(f"Warning: {sdv_metadata_path} not found, skipping...")
             continue
 
-        with open(sdv_metadata_path, 'r') as f:
+        with open(sdv_metadata_path) as f:
             sdv_metadata = json.load(f)
 
         # Convert to relbench format

@@ -1,11 +1,11 @@
 """Maximum Mean Discrepancy (MMD) metric for single tables."""
 
 import pandas as pd
-from sklearn import metrics
-from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler
 from sdmetrics.goal import Goal
+from sklearn import metrics
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from syntherela.metadata import drop_ids
 from syntherela.metrics.base import DistanceBaseMetric, SingleTableMetric
@@ -24,7 +24,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Name of the metric.
@@ -35,7 +35,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
     max_value : float
         Maximum value of the metric (infinity).
 
-    References
+    References:
     ----------
     .. [1] Gretton, A., Borgwardt, K. M., Rasch, M. J., Schölkopf, B., & Smola, A. (2012).
            A kernel two-sample test. Journal of Machine Learning Research, 13(1), 723-773.
@@ -58,11 +58,9 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
         return False
 
     @staticmethod
-    def compute(original_table,
-                sythetic_table,
-                metadata,
-                kernel="linear",
-                **kwargs):
+    def compute(
+        original_table, sythetic_table, metadata, kernel="linear", **kwargs
+    ):
         """Compute the Maximum Mean Discrepancy (MMD) between two tables.
 
         Code for MaximumMeanDiscrepancy metric modified from:
@@ -85,10 +83,12 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
                 synth[col] = pd.to_numeric(synth[col])
 
         # standardize the values
-        pipe = Pipeline([
-            ("imputer", SimpleImputer(strategy="mean")),
-            ("scaler", StandardScaler()),
-        ])
+        pipe = Pipeline(
+            [
+                ("imputer", SimpleImputer(strategy="mean")),
+                ("scaler", StandardScaler()),
+            ]
+        )
 
         combined = pd.concat([orig, synth])
         pipe.fit(combined)

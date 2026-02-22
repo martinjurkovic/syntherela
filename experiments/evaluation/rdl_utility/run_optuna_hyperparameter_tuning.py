@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-
-import argparse
-import ast
-import json
-import os
-import subprocess
-from typing import Dict
-
-import optuna
-"""
-Optuna-based Hyperparameter Tuning for GNNs
+"""Optuna-based Hyperparameter Tuning for GNNs.
 
 This script performs hyperparameter optimization for a specific GNN architecture
 on a specific dataset using Optuna.
@@ -20,10 +10,16 @@ The search space includes:
 - Number of neighbors: -1 (all), 128
 - Weight decay: 0.0 to 0.01 (log uniform)
 - MLP layers: 1, 2, 3
-
-Usage:
-    python run_optuna_hyperparameter_tuning.py --gnn_architecture hetero-graphsage --dataset rossmann_subsampled --torch_device cuda:9
 """
+
+import argparse
+import ast
+import json
+import os
+import subprocess
+from typing import Dict
+
+import optuna
 
 PROJECT_PATH = __file__.split("experiments")[0]
 
@@ -62,48 +58,56 @@ DATASET_CONFIGS = {
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Run Optuna hyperparameter tuning for GNNs')
-    parser.add_argument('--gnn_architecture',
-                        type=str,
-                        required=True,
-                        choices=[
-                            "hetero-graphsage", "hetero-gin",
-                            "hetero-graphconv", "hetero-gat", "hetero-gatv2",
-                            "relgnn"
-                        ],
-                        help='GNN architecture to tune')
-    parser.add_argument('--dataset',
-                        type=str,
-                        required=True,
-                        choices=list(DATASET_CONFIGS.keys()),
-                        help='Dataset to tune on')
-    parser.add_argument('--torch_device',
-                        type=str,
-                        default='cuda:9',
-                        help='GPU device to use (e.g., cuda:7)')
-    parser.add_argument('--n_trials',
-                        type=int,
-                        default=100,
-                        help='Number of Optuna trials')
-    parser.add_argument('--timeout',
-                        type=int,
-                        default=3600,
-                        help='Timeout per trial in seconds (default: 1 hour)')
+        description='Run Optuna hyperparameter tuning for GNNs'
+    )
+    parser.add_argument(
+        '--gnn_architecture',
+        type=str,
+        required=True,
+        choices=[
+            "hetero-graphsage", "hetero-gin", "hetero-graphconv", "hetero-gat",
+            "hetero-gatv2", "relgnn"
+        ],
+        help='GNN architecture to tune'
+    )
+    parser.add_argument(
+        '--dataset',
+        type=str,
+        required=True,
+        choices=list(DATASET_CONFIGS.keys()),
+        help='Dataset to tune on'
+    )
+    parser.add_argument(
+        '--torch_device',
+        type=str,
+        default='cuda:9',
+        help='GPU device to use (e.g., cuda:7)'
+    )
+    parser.add_argument(
+        '--n_trials', type=int, default=100, help='Number of Optuna trials'
+    )
+    parser.add_argument(
+        '--timeout',
+        type=int,
+        default=3600,
+        help='Timeout per trial in seconds (default: 1 hour)'
+    )
     return parser.parse_args()
 
 
-def run_gnn_experiment(dataset: str,
-                       gnn_architecture: str,
-                       torch_device: str,
-                       lr: float,
-                       num_layers: int,
-                       num_neighbors: int,
-                       weight_decay: float,
-                       mlp_layers: int,
-                       aggr: str,
-                       run_id: int = 1) -> Dict[str, float]:
-    """Run a single GNN experiment and return metrics"""
-
+def run_gnn_experiment(
+    dataset: str,
+    gnn_architecture: str,
+    torch_device: str,
+    lr: float,
+    num_layers: int,
+    num_neighbors: int,
+    weight_decay: float,
+    mlp_layers: int,
+    aggr: str,
+    run_id: int = 1
+) -> Dict[str, float]:
+    """Run a single GNN experiment and return metrics."""
     config = DATASET_CONFIGS[dataset]
 
     # Base command arguments
@@ -150,10 +154,9 @@ def run_gnn_experiment(dataset: str,
 
     try:
         # Run the experiment
-        result = subprocess.run(cmd_args,
-                                capture_output=True,
-                                text=True,
-                                timeout=3600)
+        result = subprocess.run(
+            cmd_args, capture_output=True, text=True, timeout=3600
+        )
 
         # Clean up temporary torch_geometric files (same as utility benchmark)
         subprocess.run(["rm", "-f", "torch_geometric.*"])
@@ -187,10 +190,10 @@ def run_gnn_experiment(dataset: str,
         return {"error": str(e)}
 
 
-def objective(trial, gnn_architecture: str, dataset: str,
-              torch_device: str) -> float:
-    """Optuna objective function"""
-
+def objective(
+    trial, gnn_architecture: str, dataset: str, torch_device: str
+) -> float:
+    """Optuna objective function."""
     # Define hyperparameter search space
     lr = trial.suggest_categorical('lr', [0.0001, 0.001, 0.01, 0.1, 0.5, 1.0])
     num_layers = trial.suggest_categorical('num_layers', [1, 2, 3])
@@ -207,24 +210,26 @@ def objective(trial, gnn_architecture: str, dataset: str,
             'weight_decay': weight_decay,
             'mlp_layers': mlp_layers,
             'aggr': aggr
-        })
+        }
+    )
 
-    print(
-        f"Running trial {trial.number} for {dataset} with {gnn_architecture}")
+    print(f"Running trial {trial.number} for {dataset} with {gnn_architecture}")
     print(
         f"Hyperparameters: lr={lr:.4f}, layers={num_layers}, neighbors={num_neighbors}, decay={weight_decay:.6f}, mlp_layers={mlp_layers}, aggr={aggr}"
     )
 
     # Run experiment on the specific dataset
-    metrics = run_gnn_experiment(dataset=dataset,
-                                 gnn_architecture=gnn_architecture,
-                                 torch_device=torch_device,
-                                 lr=lr,
-                                 num_layers=num_layers,
-                                 num_neighbors=num_neighbors,
-                                 weight_decay=weight_decay,
-                                 mlp_layers=mlp_layers,
-                                 aggr=aggr)
+    metrics = run_gnn_experiment(
+        dataset=dataset,
+        gnn_architecture=gnn_architecture,
+        torch_device=torch_device,
+        lr=lr,
+        num_layers=num_layers,
+        num_neighbors=num_neighbors,
+        weight_decay=weight_decay,
+        mlp_layers=mlp_layers,
+        aggr=aggr
+    )
 
     # Store results in trial for later analysis
     trial.set_user_attr('results', metrics)
@@ -260,13 +265,14 @@ def objective(trial, gnn_architecture: str, dataset: str,
         elif "test_auc" in metrics:
             score = -metrics["test_auc"]  # Negative because Optuna minimizes
         elif "test_accuracy" in metrics:
-            score = -metrics[
-                "test_accuracy"]  # Negative because Optuna minimizes
+            score = -metrics["test_accuracy"
+                             ]  # Negative because Optuna minimizes
         elif "test_f1" in metrics:
             score = -metrics["test_f1"]  # Negative because Optuna minimizes
         else:
             print(
-                f"Warning: No classification metric found in {metrics.keys()}")
+                f"Warning: No classification metric found in {metrics.keys()}"
+            )
             score = float('inf')  # No valid metric found
 
     print(f"Trial {trial.number} completed. Score: {score:.4f}")
@@ -277,7 +283,7 @@ def objective(trial, gnn_architecture: str, dataset: str,
 def main():
     args = parse_args()
 
-    print(f"=== Optuna Hyperparameter Tuning ===")
+    print("=== Optuna Hyperparameter Tuning ===")
     print(f"Architecture: {args.gnn_architecture}")
     print(f"Dataset: {args.dataset}")
     print(f"Device: {args.torch_device}")
@@ -286,19 +292,20 @@ def main():
     print("=" * 50)
 
     # Create results directory
-    results_dir = os.path.join(PROJECT_PATH, "results",
-                               "hyperparameter_tuning")
+    results_dir = os.path.join(PROJECT_PATH, "results", "hyperparameter_tuning")
     os.makedirs(results_dir, exist_ok=True)
 
     # Create Optuna study with unique name for architecture + dataset combination
     study_name = f"gnn_study_{args.gnn_architecture.replace('-', '_')}_{args.dataset.replace('-', '_')}_categorical_lr"
     storage_url = f"sqlite:///{os.path.join(results_dir, 'optuna_studies.db')}"
 
-    study = optuna.create_study(study_name=study_name,
-                                storage=storage_url,
-                                direction='minimize',
-                                load_if_exists=True,
-                                sampler=optuna.samplers.TPESampler(seed=42))
+    study = optuna.create_study(
+        study_name=study_name,
+        storage=storage_url,
+        direction='minimize',
+        load_if_exists=True,
+        sampler=optuna.samplers.TPESampler(seed=42)
+    )
 
     print(f"Created/loaded study: {study_name}")
     print(f"Storage: {storage_url}")
@@ -306,11 +313,13 @@ def main():
     # Run optimization
     try:
         study.optimize(
-            lambda trial: objective(trial, args.gnn_architecture, args.dataset,
-                                    args.torch_device),
+            lambda trial: objective(
+                trial, args.gnn_architecture, args.dataset, args.torch_device
+            ),
             n_trials=args.n_trials,
             timeout=args.timeout * args.n_trials,  # Total timeout
-            show_progress_bar=True)
+            show_progress_bar=True
+        )
     except KeyboardInterrupt:
         print("Optimization interrupted by user")
 
@@ -347,12 +356,12 @@ def main():
 
     print(f"\nResults saved to: {results_file}")
     print(f"Optuna database: {storage_url}")
-    print(f"\nTo analyze results later:")
-    print(f"  import optuna")
+    print("\nTo analyze results later:")
+    print("  import optuna")
     print(
         f"  study = optuna.load_study(study_name='{study_name}', storage='{storage_url}')"
     )
-    print(f"  print(study.best_trial)")
+    print("  print(study.best_trial)")
 
 
 if __name__ == "__main__":

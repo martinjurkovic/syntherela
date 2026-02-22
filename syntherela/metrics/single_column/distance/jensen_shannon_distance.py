@@ -6,7 +6,7 @@ from scipy.spatial.distance import jensenshannon
 from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 
-from syntherela.metrics.base import SingleColumnMetric, DistanceBaseMetric
+from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
 from syntherela.metrics.single_column.distance.utils import get_histograms
 
 
@@ -24,7 +24,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Name of the metric.
@@ -54,7 +54,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         column_type : str
             The type of the column.
 
-        Returns
+        Returns:
         -------
         bool
             True if the metric is applicable to the column type, False otherwise.
@@ -65,12 +65,14 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         ]
 
     @staticmethod
-    def compute(orig_col,
-                synth_col,
-                bins,
-                normalize_histograms=True,
-                base=np.e,
-                **kwargs):
+    def compute(
+        orig_col,
+        synth_col,
+        bins,
+        normalize_histograms=True,
+        base=np.e,
+        **kwargs
+    ):
         """Compute the Jensen-Shannon distance between two columns.
 
         Parameters
@@ -88,16 +90,15 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns
+        Returns:
         -------
         float
             The Jensen-Shannon distance between the two columns.
 
         """
-        gt_freq, synth_freq = get_histograms(orig_col,
-                                             synth_col,
-                                             normalize=normalize_histograms,
-                                             bins=bins)
+        gt_freq, synth_freq = get_histograms(
+            orig_col, synth_col, normalize=normalize_histograms, bins=bins
+        )
         return jensenshannon(gt_freq, synth_freq, base=base)
 
     def run(self, real_data, synthetic_data, **kwargs):
@@ -112,7 +113,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns
+        Returns:
         -------
         dict
             Dictionary containing the metric results, including:
@@ -131,12 +132,12 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
             }
         # check for datetime
         if is_datetime(real_data):
-            real_data = pd.to_numeric(real_data,
-                                      errors="coerce",
-                                      downcast="integer")
-            synthetic_data = pd.to_numeric(synthetic_data,
-                                           errors="coerce",
-                                           downcast="integer")
+            real_data = pd.to_numeric(
+                real_data, errors="coerce", downcast="integer"
+            )
+            synthetic_data = pd.to_numeric(
+                synthetic_data, errors="coerce", downcast="integer"
+            )
         # compute bin values on the original data
         if real_data.dtype.name in ("object", "category", "bool"):
             bins = None
@@ -144,8 +145,6 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
             real_data = real_data.dropna()
             synthetic_data = synthetic_data.dropna()
             bins = np.histogram_bin_edges(real_data)
-        return super().run(real_data,
-                           synthetic_data,
-                           bins=bins,
-                           base=self.base,
-                           **kwargs)
+        return super().run(
+            real_data, synthetic_data, bins=bins, base=self.base, **kwargs
+        )

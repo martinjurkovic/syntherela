@@ -1,16 +1,18 @@
-import sys
-import logging
 import argparse
+import logging
+import sys
 
 from xgboost import XGBClassifier
 
 from syntherela.benchmark import Benchmark
-from syntherela.metrics.multi_table.detection import AggregationDetection, ParentChildDetection
+from syntherela.metrics.multi_table.detection import (
+    AggregationDetection,
+    ParentChildDetection,
+)
 
 
 class AggregationDetectionWithoutChildCounts(AggregationDetection):
-    """
-    A subclass of AggregationDetection that does not add child counts.
+    """A subclass of AggregationDetection that does not add child counts.
     This is useful for comparing aggregation detection with and without child counts.
     """
 

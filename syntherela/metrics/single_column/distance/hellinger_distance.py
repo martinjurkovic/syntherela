@@ -5,7 +5,7 @@ import pandas as pd
 from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 
-from syntherela.metrics.base import SingleColumnMetric, DistanceBaseMetric
+from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
 from syntherela.metrics.single_column.distance.utils import get_histograms
 
 _SQRT2 = np.sqrt(2)
@@ -34,12 +34,9 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
         return np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q))**2)) / _SQRT2
 
     @classmethod
-    def compute(cls,
-                orig_col,
-                synth_col,
-                bins,
-                normalize_histograms=True,
-                **kwargs):
+    def compute(
+        cls, orig_col, synth_col, bins, normalize_histograms=True, **kwargs
+    ):
         """Compute Hellinger distance between two histograms.
 
         Parameters
@@ -54,16 +51,15 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
             Whether to normalize the histograms.
 
 
-        Returns
+        Returns:
         -------
             Union[float, tuple[float]]:
                 Metric output or outputs.
 
         """
-        gt_freq, synth_freq = get_histograms(orig_col,
-                                             synth_col,
-                                             normalize=normalize_histograms,
-                                             bins=bins)
+        gt_freq, synth_freq = get_histograms(
+            orig_col, synth_col, normalize=normalize_histograms, bins=bins
+        )
         return cls.hellinger(gt_freq, synth_freq)
 
     def run(self, real_data, synthetic_data, **kwargs):
@@ -77,12 +73,12 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
             }
         # check for datetime
         if is_datetime(real_data):
-            real_data = pd.to_numeric(real_data,
-                                      errors="coerce",
-                                      downcast="integer")
-            synthetic_data = pd.to_numeric(synthetic_data,
-                                           errors="coerce",
-                                           downcast="integer")
+            real_data = pd.to_numeric(
+                real_data, errors="coerce", downcast="integer"
+            )
+            synthetic_data = pd.to_numeric(
+                synthetic_data, errors="coerce", downcast="integer"
+            )
         # compute bin values on the original data
         if real_data.dtype.name in ("object", "category", "bool"):
             bins = None

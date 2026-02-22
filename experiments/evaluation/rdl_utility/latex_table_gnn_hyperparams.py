@@ -1,7 +1,6 @@
-"""
-Generate LaTeX table for RDL Utility GNN Hyperparameters
+"""Generate LaTeX table for RDL Utility GNN Hyperparameters
 Uses actual hyperparameters from hyperparameter tuning results
-Creates separate tables for each GNN architecture
+Creates separate tables for each GNN architecture.
 """
 
 import json
@@ -9,8 +8,7 @@ import os
 
 
 def load_hyperparameters():
-    """Load hyperparameters from JSON files organized by GNN architecture and dataset"""
-
+    """Load hyperparameters from JSON files organized by GNN architecture and dataset."""
     # Path to hyperparameter results
     results_dir = "/lfs/hyperturing1/0/martinj1/syntherela/results/hyperparameter_tuning_100"
 
@@ -39,7 +37,7 @@ def load_hyperparameters():
 
             if os.path.exists(filepath):
                 try:
-                    with open(filepath, 'r') as f:
+                    with open(filepath) as f:
                         data = json.load(f)
                         hyperparams[gnn_arch][dataset] = data[
                             'best_hyperparameters']
@@ -50,8 +48,7 @@ def load_hyperparameters():
 
 
 def generate_gnn_hyperparameter_table(gnn_arch, hyperparams):
-    """Generate LaTeX table for a specific GNN architecture"""
-
+    """Generate LaTeX table for a specific GNN architecture."""
     # Dataset renaming for cleaner display
     dataset_rename = {
         "f1_subsampled": "F1",
@@ -123,8 +120,9 @@ def generate_gnn_hyperparameter_table(gnn_arch, hyperparams):
 
     for dataset in datasets_order:
         if dataset in dataset_params:
-            dataset_display = dataset_rename.get(dataset,
-                                                 dataset.replace("_", "\\_"))
+            dataset_display = dataset_rename.get(
+                dataset, dataset.replace("_", "\\_")
+            )
 
             row_values = [dataset_display]
 
@@ -136,8 +134,9 @@ def generate_gnn_hyperparameter_table(gnn_arch, hyperparams):
                         if value < 0.001:
                             formatted_value = f"{value:.2e}"
                         else:
-                            formatted_value = f"{value:.3f}".rstrip(
-                                '0').rstrip('.')
+                            formatted_value = f"{value:.3f}".rstrip('0').rstrip(
+                                '.'
+                            )
                     else:
                         formatted_value = str(value)
                     row_values.append(formatted_value)
@@ -155,7 +154,7 @@ def generate_gnn_hyperparameter_table(gnn_arch, hyperparams):
 
 
 def generate_latex_table():
-    """Generate all GNN hyperparameter tables"""
+    """Generate all GNN hyperparameter tables."""
     hyperparams = load_hyperparameters()
 
     all_tables = []
@@ -173,7 +172,7 @@ def generate_latex_table():
 
 
 def generate_detailed_latex_table():
-    """Generate a detailed combined table showing hyperparameters for all GNN architectures"""
+    """Generate a detailed combined table showing hyperparameters for all GNN architectures."""
     hyperparams = load_hyperparameters()
 
     # Dataset renaming for cleaner display
@@ -223,7 +222,8 @@ def generate_detailed_latex_table():
             for i, dataset in enumerate(datasets_order):
                 if dataset in hyperparams[gnn_arch]:
                     dataset_display = dataset_rename.get(
-                        dataset, dataset.replace("_", "\\_"))
+                        dataset, dataset.replace("_", "\\_")
+                    )
                     params = hyperparams[gnn_arch][dataset]
 
                     # Show GNN name only for first dataset
@@ -238,12 +238,12 @@ def generate_detailed_latex_table():
                     aggr = params.get("aggr", "-")
 
                     # Format weight decay in scientific notation if very small
-                    if isinstance(weight_decay,
-                                  float) and weight_decay < 0.001:
+                    if isinstance(weight_decay, float) and weight_decay < 0.001:
                         weight_decay = f"{weight_decay:.1e}"
                     elif isinstance(weight_decay, float):
-                        weight_decay = f"{weight_decay:.5f}".rstrip(
-                            '0').rstrip('.')
+                        weight_decay = f"{weight_decay:.5f}".rstrip('0').rstrip(
+                            '.'
+                        )
 
                     latex_table += f"{gnn_cell} & {dataset_display} & {lr} & {num_layers} & {num_neighbors} & {weight_decay} & {mlp_layers} & {aggr} \\\\\n"
 

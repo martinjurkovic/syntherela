@@ -1,18 +1,20 @@
+import argparse
+import ast
+import json
 import os
 import subprocess
-import json
-import ast
-import argparse
 
 PROJECT_PATH = __file__.split("experiments")[0]
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Run GNN utility benchmark')
-parser.add_argument('--singletable_model',
-                    type=str,
-                    default=None,
-                    help='singletable model to use',
-                    choices=["singletable", "singletable_dfs"])
+parser.add_argument(
+    '--singletable_model',
+    type=str,
+    default=None,
+    help='singletable model to use',
+    choices=["singletable", "singletable_dfs"]
+)
 args = parser.parse_args()
 
 RUN_DATASETS = [
@@ -134,14 +136,15 @@ UTILITY_TASKS = [
 results_dir = os.path.join(PROJECT_PATH, "results")
 os.makedirs(results_dir, exist_ok=True)
 
-results_file = os.path.join(results_dir,
-                            f"{args.singletable_model}_utility_results.json")
+results_file = os.path.join(
+    results_dir, f"{args.singletable_model}_utility_results.json"
+)
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
         json.dump({}, f)
 
-with open(results_file, "r") as f:
+with open(results_file) as f:
     existing_results = json.load(f)
 
 # print(existing_results)
@@ -193,9 +196,7 @@ for task in UTILITY_TASKS:
                     command.extend(["--entity_table", task["entity_table"]])
                 if "target_col" in task:
                     command.extend(["--target_col", task["target_col"]])
-                result = subprocess.run(command,
-                                        capture_output=True,
-                                        text=True)
+                result = subprocess.run(command, capture_output=True, text=True)
 
                 best_test_metrics = None
                 try:
@@ -214,8 +215,8 @@ for task in UTILITY_TASKS:
                 # convert string to dictionary
                 best_test_metrics = ast.literal_eval(best_test_metrics)
                 # print(f"JSON TEST METRICS: {best_test_metrics}")
-                existing_results[dataset][method][str(
-                    run_id)] = best_test_metrics
+                existing_results[dataset][method][str(run_id)
+                                                  ] = best_test_metrics
 
                 with open(results_file, "w") as f:
                     json.dump(existing_results, f, indent=4)

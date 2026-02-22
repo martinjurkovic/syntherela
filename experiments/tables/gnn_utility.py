@@ -1,5 +1,6 @@
-import os
 import json
+import os
+
 import numpy as np
 
 PROJECT_PATH = __file__.split("experiments")[0]
@@ -14,10 +15,9 @@ dataset_metrics = {
 }
 
 results_dir = os.path.join(PROJECT_PATH, "results")
-results_file = os.path.join(results_dir,
-                            "singletable_dfs_utility_results.json")
+results_file = os.path.join(results_dir, "singletable_dfs_utility_results.json")
 
-with open(results_file, "r") as f:
+with open(results_file) as f:
     data = json.load(f)
 
 
@@ -118,8 +118,10 @@ methods = [
 ]
 
 # Generate LaTeX table
-latex_table = ("\\begin{table}[ht]\n\\centering\n\\begin{tabular}{c" + "c" *
-               (len(methods) + 1) + "}\n")
+latex_table = (
+    "\\begin{table}[ht]\n\\centering\n\\begin{tabular}{c" + "c" *
+    (len(methods) + 1) + "}\n"
+)
 latex_table += "\\toprule\n"
 latex_table += "Dataset & & " + " & ".join(methods) + " \\\\\n"
 latex_table += "\\midrule\n"
@@ -132,8 +134,9 @@ for dataset in datasets:
     # Collect all scores for this dataset to determine best and second best
     scores = []
     for method in methods:
-        original_method = next(k for k, v in method_rename.items()
-                               if v == method)
+        original_method = next(
+            k for k, v in method_rename.items() if v == method
+        )
         # Skip ORIGINAL and BASELINE in the comparison
         if original_method not in ["ORIGINAL", "BASELINE"]:
             if original_method in results[dataset]:
@@ -143,8 +146,9 @@ for dataset in datasets:
                 scores.append((float("inf"), 0, method))
 
     # Sort scores to find best and second best
-    metric_type = dataset_metrics.get(dataset,
-                                      "mae")  # Default to mae if not specified
+    metric_type = dataset_metrics.get(
+        dataset, "mae"
+    )  # Default to mae if not specified
     if metric_type == "roc_auc":
         # For ROC AUC, higher is better
         sorted_scores = sorted(
@@ -154,8 +158,9 @@ for dataset in datasets:
         )
     else:
         # For MAE, lower is better
-        sorted_scores = sorted((s for s in scores if s[0] != float("inf")),
-                               key=lambda x: x[0])
+        sorted_scores = sorted(
+            (s for s in scores if s[0] != float("inf")), key=lambda x: x[0]
+        )
 
     best_method_tuple = sorted_scores[0] if sorted_scores else None
     underlined_methods = []
@@ -184,8 +189,9 @@ for dataset in datasets:
 
     # Generate row entries
     for method in methods:
-        original_method = next(k for k, v in method_rename.items()
-                               if v == method)
+        original_method = next(
+            k for k, v in method_rename.items() if v == method
+        )
         if original_method in results[dataset]:
             mean, se = results[dataset][original_method]
 

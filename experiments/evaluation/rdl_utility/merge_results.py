@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
-
-import os
-import json
-import glob
-"""
-Merge Results Script
+"""This script merges RDL Utility results.
 
 Merges individual dataset result files into a single combined results file.
 Run this after the tmux benchmark completes.
 """
 
+import glob
+import json
+import os
+
 PROJECT_PATH = __file__.split("experiments")[0]
 
 
 def merge_results():
-    """Merge all dataset-specific result files into a single file"""
+    """Merge all dataset-specific result files into a single file."""
     results_dir = os.path.join(PROJECT_PATH, "results", "rdl_utility")
 
     # Find all dataset-specific result files
-    pattern = os.path.join(results_dir,
-                           "gnn_utility_results_*_subsampled.json")
+    pattern = os.path.join(results_dir, "gnn_utility_results_*_subsampled.json")
     result_files = glob.glob(pattern)
 
     if not result_files:
@@ -35,7 +33,7 @@ def merge_results():
 
     for result_file in result_files:
         try:
-            with open(result_file, "r") as f:
+            with open(result_file) as f:
                 dataset_results = json.load(f)
 
             # Merge into main results
@@ -64,8 +62,8 @@ def merge_results():
             for method in merged_results[dataset]:
                 for gnn_arch in merged_results[dataset][method]:
                     for run_id in merged_results[dataset][method][gnn_arch]:
-                        if merged_results[dataset][method][gnn_arch][
-                                run_id] != {}:
+                        if merged_results[dataset][method][gnn_arch][run_id
+                                                                     ] != {}:
                             total_experiments += 1
 
         print(f"✓ Total experiments in merged file: {total_experiments}")

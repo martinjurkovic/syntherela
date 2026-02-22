@@ -5,7 +5,7 @@ import pandas as pd
 from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 
-from syntherela.metrics.base import SingleColumnMetric, DistanceBaseMetric
+from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
 from syntherela.metrics.single_column.distance.utils import get_histograms
 
 
@@ -21,7 +21,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Name of the metric.
@@ -50,7 +50,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         column_type : str
             The type of the column.
 
-        Returns
+        Returns:
         -------
         bool
             True if the metric is applicable to the column type, False otherwise.
@@ -75,16 +75,15 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns
+        Returns:
         -------
         float
             The Total Variation Distance between the two columns.
 
         """
-        f_exp, f_obs = get_histograms(real_data,
-                                      synthetic_data,
-                                      normalize=True,
-                                      bins=bins)
+        f_exp, f_obs = get_histograms(
+            real_data, synthetic_data, normalize=True, bins=bins
+        )
         total_variation = 0
         for i in range(len(f_obs)):
             total_variation += abs(f_obs[i] - f_exp[i])
@@ -103,7 +102,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns
+        Returns:
         -------
         dict
             Dictionary containing the metric results, including:
@@ -122,12 +121,12 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
             }
         # check for datetime
         if is_datetime(real_data):
-            real_data = pd.to_numeric(real_data,
-                                      errors="coerce",
-                                      downcast="integer")
-            synthetic_data = pd.to_numeric(synthetic_data,
-                                           errors="coerce",
-                                           downcast="integer")
+            real_data = pd.to_numeric(
+                real_data, errors="coerce", downcast="integer"
+            )
+            synthetic_data = pd.to_numeric(
+                synthetic_data, errors="coerce", downcast="integer"
+            )
         if real_data.dtype.name in ("object", "category", "bool"):
             bins = None
         else:

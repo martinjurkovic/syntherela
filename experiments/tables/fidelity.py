@@ -1,6 +1,5 @@
-import os
 import json
-
+import os
 from collections import defaultdict
 
 import numpy as np
@@ -61,7 +60,8 @@ def add_row(df, results, dataset, metric=None):
                 for i, score in enumerate(results)
             }
         },
-        orient='index')
+        orient='index'
+    )
     new_row['Dataset'] = dataset
     new_row['Metric'] = metric
     return pd.concat([df, new_row])
@@ -103,22 +103,26 @@ def estimate_uncertainty(dfs, factor=100.0):
     for i, row in master_df.iterrows():
         if (row[method_names] == 'nan').all():
             continue
-        if (row['Metric'].startswith('C2ST') or row['Metric'].startswith('JS')
-                or row['Metric'].startswith('Wass')):
-            order = row[method_names].astype(float).fillna(
-                float('inf')).values.argsort()
+        if (
+            row['Metric'].startswith('C2ST') or row['Metric'].startswith('JS')
+            or row['Metric'].startswith('Wass')
+        ):
+            order = row[method_names].astype(float).fillna(float('inf')
+                                                           ).values.argsort()
             maximize = False
         else:
             order = row[method_names].astype(float).fillna(
-                -float('inf')).values.argsort()[::-1]
+                -float('inf')
+            ).values.argsort()[::-1]
             maximize = True
         best_method = method_names[order[0]]
         for method in method_names:
             if master_df.loc[i, method] == 'nan':
                 continue
             mean = compute(dfs, i, method, np.nanmean, factor=factor)
-            std = compute(dfs, i, method, np.nanstd, factor=factor) / np.sqrt(
-                len(dfs))
+            std = compute(
+                dfs, i, method, np.nanstd, factor=factor
+            ) / np.sqrt(len(dfs))
             if method == best_method:
                 best_mean = mean
                 best_std = std
@@ -129,14 +133,15 @@ def estimate_uncertainty(dfs, factor=100.0):
                 master_df.loc[i, method] = f"${mean:.2f}$"
             elif std.round(2) == 0.0:
                 master_df.loc[
-                    i,
-                    method] = f"${mean:.2f}$" + "{\\tiny $\\pm " + f"{std:.0e}$" + "}"
+                    i, method
+                ] = f"${mean:.2f}$" + "{\\tiny $\\pm " + f"{std:.0e}$" + "}"
             else:
                 master_df.loc[
-                    i,
-                    method] = f"${mean:.2f}$" + "{\\tiny $\\pm " + f"{std:.2f}$" + "}"
-        master_df.loc[i, best_method] = bold(master_df.loc[i, best_method],
-                                             math=True)
+                    i, method
+                ] = f"${mean:.2f}$" + "{\\tiny $\\pm " + f"{std:.2f}$" + "}"
+        master_df.loc[i, best_method] = bold(
+            master_df.loc[i, best_method], math=True
+        )
         values = row[method_names].astype(float) / len(dfs) * factor
         if maximize:
             within_std = best_mean - best_std
@@ -148,8 +153,9 @@ def estimate_uncertainty(dfs, factor=100.0):
             if method == best_method:
                 continue
             else:
-                master_df.loc[i, method] = underline(master_df.loc[i, method],
-                                                     math=True)
+                master_df.loc[i, method] = underline(
+                    master_df.loc[i, method], math=True
+                )
         master_df.loc[i] = master_df.loc[i].replace('nan', '-')
     return master_df
 
@@ -161,13 +167,14 @@ def get_latex_table(df, factor=100.0, bold_headers=True):
     df_latex = df.to_latex(column_format=format, index=False)
     df_latex = df_latex.replace('nan', '')
     df_latex = df_latex.replace(f'{factor:.2f}', f'\\approx {factor:.1f}')
-    df_latex = df_latex.replace("\\\\\n\\multirow",
-                                "\\\\\n\\midrule\n\\multirow")
+    df_latex = df_latex.replace(
+        "\\\\\n\\multirow", "\\\\\n\\midrule\n\\multirow"
+    )
     df_latex = df_latex.replace("e-1", "\\text{e-}1")
     df_latex = df_latex.replace("e-0", "\\text{e-}")
     rows_ = df_latex.split("\n")
     rows = []
-    for i, row in enumerate(rows_):
+    for _, row in enumerate(rows_):
         if row.startswith("\\multirow"):
             num_rows = row.split("{")[1].split("}")[0]
             row = row.replace(" - ", "\\multirow{" + num_rows + "}{*}{-}")
@@ -181,9 +188,11 @@ def get_latex_table(df, factor=100.0, bold_headers=True):
 def create_single_column_df(results, single_column_results):
     DETECTION = "C2ST \\ \\ ($\\downarrow$)"
     SHAPES = "Shapes ($\\uparrow$)"
-    df = pd.DataFrame(data=[['', ''] + [np.nan] * len(methods)],
-                      columns=['Dataset', 'Metric'] +
-                      [model_names[method] for method in methods])
+    df = pd.DataFrame(
+        data=[['', ''] + [np.nan] * len(methods)],
+        columns=['Dataset', 'Metric'] +
+        [model_names[method] for method in methods]
+    )
     for dataset in datasets:
         dataset_name = dataset_names[dataset]
         dataset_results = single_column_results[dataset_name]
@@ -198,16 +207,18 @@ def create_single_column_df(results, single_column_results):
             else:
                 detection_score = np.mean(method_results)
                 # print(dataset, method)
-                trend_results = results[dataset][method][
-                    'single_column_metrics']['Trends']
+                trend_results = results[dataset][method]['single_column_metrics'
+                                                         ]['Trends']
                 shapes_score = trend_results['shapes']['mean']
             detection_scores.append(detection_score)
             shapes_scores.append(shapes_score)
         n_rows = 2
-        df = add_row(df,
-                     results=detection_scores,
-                     dataset=multirow(dataset_name, n_rows=n_rows),
-                     metric=DETECTION)
+        df = add_row(
+            df,
+            results=detection_scores,
+            dataset=multirow(dataset_name, n_rows=n_rows),
+            metric=DETECTION
+        )
         df = add_row(df, results=shapes_scores, dataset='', metric=SHAPES)
 
     # Drop the first row
@@ -217,9 +228,11 @@ def create_single_column_df(results, single_column_results):
 def create_single_table_df(results, single_table_results):
     DETECTION = "C2ST \\ ($\\downarrow$)"
     PAIRS = "Pairs ($\\uparrow$)"
-    df = pd.DataFrame(data=[['', ''] + [np.nan] * len(methods)],
-                      columns=['Dataset', 'Metric'] +
-                      [model_names[method] for method in methods])
+    df = pd.DataFrame(
+        data=[['', ''] + [np.nan] * len(methods)],
+        columns=['Dataset', 'Metric'] +
+        [model_names[method] for method in methods]
+    )
     for dataset in datasets:
         dataset_name = dataset_names[dataset]
         dataset_results = single_table_results[dataset_name]
@@ -233,7 +246,7 @@ def create_single_table_df(results, single_table_results):
             else:
                 detection_score = np.mean(method_results)
                 if 'Trends' not in results[dataset][method][
-                        'single_table_metrics']:
+                    'single_table_metrics']:
                     trend_score = np.nan
                 else:
                     trend_results = results[dataset][method][
@@ -242,10 +255,12 @@ def create_single_table_df(results, single_table_results):
             detection_scores.append(detection_score)
             trend_scores.append(trend_score)
         n_rows = 2
-        df = add_row(df,
-                     results=detection_scores,
-                     dataset=multirow(dataset_name, n_rows=n_rows),
-                     metric=DETECTION)
+        df = add_row(
+            df,
+            results=detection_scores,
+            dataset=multirow(dataset_name, n_rows=n_rows),
+            metric=DETECTION
+        )
         df = add_row(df, results=trend_scores, dataset='', metric=PAIRS)
 
     # Drop the first row
@@ -255,9 +270,11 @@ def create_single_table_df(results, single_table_results):
 def create_multi_table_df(results, multi_table_results):
     DETECTION = "C2ST-Agg ($\\downarrow$)"
     CARDINALITY = "Cardinality ($\\uparrow$)"
-    df = pd.DataFrame(data=[['', ''] + [np.nan] * len(methods)],
-                      columns=['Dataset', 'Metric'] +
-                      [model_names[method] for method in methods])
+    df = pd.DataFrame(
+        data=[['', ''] + [np.nan] * len(methods)],
+        columns=['Dataset', 'Metric'] +
+        [model_names[method] for method in methods]
+    )
     for dataset in datasets:
         dataset_name = dataset_names[dataset]
         dataset_results = multi_table_results[dataset_name]
@@ -271,32 +288,35 @@ def create_multi_table_df(results, multi_table_results):
             if len(method_results) == 0 or method == 'baseline':
                 detection_score = np.nan
                 cardinality = np.nan
-                for hop, hop_results in default_hops.items():
+                for hop, _hop_results in default_hops.items():
                     k_hops[hop].append(np.nan)
             else:
                 detection_score = np.mean(method_results)
-                trend_results = results[dataset][method][
-                    'multi_table_metrics']['Trends']
+                trend_results = results[dataset][method]['multi_table_metrics'][
+                    'Trends']
                 cardinality = trend_results['cardinality']
-                hop_results = trend_results['k_hop_similarity']
-                for hop, hop_results in hop_results.items():
+                for hop, hop_results in trend_results['k_hop_similarity'].items(
+                ):
                     k_hops[hop].append(hop_results['mean'])
             detection_scores.append(detection_score)
             cardinality_scores.append(cardinality)
         n_rows = 2 + len(k_hops)
-        df = add_row(df,
-                     results=detection_scores,
-                     dataset=multirow(dataset_name, n_rows=n_rows),
-                     metric=DETECTION)
-        df = add_row(df,
-                     results=cardinality_scores,
-                     dataset='',
-                     metric=CARDINALITY)
+        df = add_row(
+            df,
+            results=detection_scores,
+            dataset=multirow(dataset_name, n_rows=n_rows),
+            metric=DETECTION
+        )
+        df = add_row(
+            df, results=cardinality_scores, dataset='', metric=CARDINALITY
+        )
         for hop, scores in k_hops.items():
-            df = add_row(df,
-                         results=scores,
-                         dataset='',
-                         metric=f"{hop}-HOP ($\\uparrow$)")
+            df = add_row(
+                df,
+                results=scores,
+                dataset='',
+                metric=f"{hop}-HOP ($\\uparrow$)"
+            )
 
     # Drop the first row
     return df[1:]
@@ -322,7 +342,7 @@ for run in runs:
         for method in methods:
             try:
                 with open(
-                        f'results/{run}/{dataset}_{method}_{run}_sample1.json'
+                    f'results/{run}/{dataset}_{method}_{run}_sample1.json'
                 ) as f:
                     run_results[dataset][method] = json.load(f)
             except FileNotFoundError:
@@ -346,22 +366,23 @@ for run in runs:
             if method not in results[run][dataset]:
                 continue
             for table, single_results in results[run][dataset][method][
-                    'single_table_metrics'][
-                        'SingleTableDetection-XGBClassifier'].items():
+                'single_table_metrics']['SingleTableDetection-XGBClassifier'
+                                        ].items():
                 multi_results = results[run][dataset][method][
-                    'multi_table_metrics'][
-                        'AggregationDetection-XGBClassifier']
+                    'multi_table_metrics']['AggregationDetection-XGBClassifier']
                 if table in multi_results:
                     multi_run[dataset_name][method].append(
-                        multi_results[table]['accuracy'])
+                        multi_results[table]['accuracy']
+                    )
                 single_run[dataset_name][method].append(
-                    single_results['accuracy'])
-                for column, column_results in results[run][dataset][method][
-                        'single_column_metrics'][
-                            'SingleColumnDetection-XGBClassifier'][
-                                table].items():
+                    single_results['accuracy']
+                )
+                for _column, column_results in results[run][dataset][method][
+                    'single_column_metrics'][
+                        'SingleColumnDetection-XGBClassifier'][table].items():
                     column_run[dataset_name][method].append(
-                        column_results['accuracy'])
+                        column_results['accuracy']
+                    )
 
 os.makedirs('results/tables', exist_ok=True)
 # Single-table

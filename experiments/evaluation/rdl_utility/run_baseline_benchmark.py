@@ -1,7 +1,7 @@
+import ast
+import json
 import os
 import subprocess
-import json
-import ast
 
 PROJECT_PATH = __file__.split("experiments")[0]
 
@@ -126,7 +126,7 @@ if not os.path.exists(results_file):
     with open(results_file, "w") as f:
         json.dump({}, f)
 
-with open(results_file, "r") as f:
+with open(results_file) as f:
     existing_results = json.load(f)
 
 # print(existing_results)
@@ -181,9 +181,7 @@ for task in UTILITY_TASKS:
                 if "target_col" in task:
                     command.extend(["--target_col", task["target_col"]])
 
-                result = subprocess.run(command,
-                                        capture_output=True,
-                                        text=True)
+                result = subprocess.run(command, capture_output=True, text=True)
 
                 # Parse the baseline results from the output
                 baseline_results = None
@@ -198,8 +196,10 @@ for task in UTILITY_TASKS:
                     for i, line in enumerate(lines):
                         line = line.strip()
                         if line and line.endswith(':') and not line.startswith(
-                                'Train:') and not line.startswith(
-                                    'Val:') and not line.startswith('Test:'):
+                            'Train:'
+                        ) and not line.startswith(
+                            'Val:'
+                        ) and not line.startswith('Test:'):
                             current_method = line[:-1]  # Remove the ':'
                             baseline_results[current_method] = {}
 
@@ -209,22 +209,28 @@ for task in UTILITY_TASKS:
                                     result_line = lines[j].strip()
                                     if result_line.startswith('Train:'):
                                         metrics_str = result_line.split(
-                                            'Train: ')[1]
+                                            'Train: '
+                                        )[1]
                                         baseline_results[current_method][
                                             'Train'] = ast.literal_eval(
-                                                metrics_str)
+                                                metrics_str
+                                            )
                                     elif result_line.startswith('Val:'):
                                         metrics_str = result_line.split(
-                                            'Val: ')[1]
+                                            'Val: '
+                                        )[1]
                                         baseline_results[current_method][
                                             'Val'] = ast.literal_eval(
-                                                metrics_str)
+                                                metrics_str
+                                            )
                                     elif result_line.startswith('Test:'):
                                         metrics_str = result_line.split(
-                                            'Test: ')[1]
+                                            'Test: '
+                                        )[1]
                                         baseline_results[current_method][
                                             'Test'] = ast.literal_eval(
-                                                metrics_str)
+                                                metrics_str
+                                            )
 
                     print(f"BASELINE RESULTS: {baseline_results}")
                 except Exception as e:
@@ -235,8 +241,8 @@ for task in UTILITY_TASKS:
                     continue
 
                 # Store the results
-                existing_results[dataset][method][str(
-                    run_id)] = baseline_results
+                existing_results[dataset][method][str(run_id)
+                                                  ] = baseline_results
 
                 # Save results to file after each run
                 with open(results_file, "w") as f:

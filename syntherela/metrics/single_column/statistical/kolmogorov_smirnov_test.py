@@ -3,8 +3,8 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import ks_2samp
-from sdmetrics.utils import is_datetime
 from sdmetrics.goal import Goal
+from sdmetrics.utils import is_datetime
 
 from syntherela.metrics.base import SingleColumnMetric, StatisticalBaseMetric
 
@@ -20,7 +20,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Name of the metric.
@@ -43,7 +43,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         column_type : str
             The type of the column.
 
-        Returns
+        Returns:
         -------
         bool
             True if the metric is applicable to the column type, False otherwise.
@@ -59,15 +59,15 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         column : pandas.Series
             The column to validate.
 
-        Raises
+        Raises:
         ------
         ValueError
             If the column is not numerical or datetime.
 
         """
         column_dtype = column.dtypes
-        if np.issubdtype(column_dtype, np.number) or np.issubdtype(
-                column_dtype, np.datetime64):
+        if np.issubdtype(column_dtype, np.number
+                         ) or np.issubdtype(column_dtype, np.datetime64):
             return
 
         raise ValueError(
@@ -85,7 +85,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         synthetic_data : pandas.Series
             The synthetic data column.
 
-        Returns
+        Returns:
         -------
         dict
             Dictionary containing:

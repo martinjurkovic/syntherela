@@ -1,17 +1,16 @@
 import json
 
 import pandas as pd
-
 import seaborn as sns
-
-sns.set(style="whitegrid")
 
 from syntherela.metadata import Metadata
 
-metadata = Metadata().load_from_json(
-    "data/original/airbnb-simplified_subsampled/metadata.json")
+sns.set(style="whitegrid")
 
-with open("results/dcr/all_results.json", "r") as f:
+metadata = Metadata(
+).load_from_json("data/original/airbnb-simplified_subsampled/metadata.json")
+
+with open("results/dcr/all_results.json") as f:
     all_results = json.load(f)
 
 results = pd.DataFrame(all_results).T
@@ -20,9 +19,10 @@ results[METHOD] = results.index
 for column in results.columns:
     if column == METHOD:
         continue
-    results["\\textbf{" + column.title() + "}"] = results.pop(
-        column).apply(lambda x: f"${x['score'] * 100: .2f}$" + " {\\tiny" +
-                      f"$\pm{x['se'] * 100 : .2f}$" + "}")
+    results["\\textbf{" + column.title() + "}"] = results.pop(column).apply(
+        lambda x: f"${x['score'] * 100: .2f}$" + " {\\tiny" +
+        fr"$\pm{x['se'] * 100 : .2f}$" + "}"
+    )
 
 results.reset_index(drop=True, inplace=True)
 

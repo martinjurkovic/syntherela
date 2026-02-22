@@ -1,8 +1,8 @@
-import os
-import sys
-import pickle
-import logging
 import argparse
+import logging
+import os
+import pickle
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -12,9 +12,9 @@ from rctgan.relational import RCTGAN
 MODEL_NAME = "RCTGAN"
 
 args = argparse.ArgumentParser()
-args.add_argument("--dataset-name",
-                  type=str,
-                  default="airbnb-simplified_subsampled")
+args.add_argument(
+    "--dataset-name", type=str, default="airbnb-simplified_subsampled"
+)
 args.add_argument("--real-data-path", type=str, default="data/original")
 args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
 args.add_argument("--model-save-path", type=str, default="checkpoints")
@@ -69,14 +69,15 @@ def load_tables(data_path, metadata):
 
 
 def remove_sdv_columns(tables, metadata, update_metadata=True):
-    """
-    "_v1" Versions of the relational demo datasets in SDV have some columns that are not present in the original datasets.
+    """"_v1" Versions of the relational demo datasets in SDV have some columns that are not present in the original datasets.
     We created this function to remove these columns from the tables and the metadata.
     """
     for table_name, table in tables.items():
         for column in table.columns:
-            if any(prefix in column for prefix in
-                   ["add_numerical", "nb_rows_in", "min(", "max(", "sum("]):
+            if any(
+                prefix in column for prefix in
+                ["add_numerical", "nb_rows_in", "min(", "max(", "sum("]
+            ):
                 table = table.drop(columns=column, axis=1)
 
                 if not update_metadata:
@@ -98,7 +99,8 @@ def save_tables(tables, path):
 # GENERATE SYNTHETIC DATA ---------------------------------
 logger.debug(f"Loading real data... for {dataset_name}")
 metadata = Metadata(
-    metadata=str(Path(real_data_path) / f"{dataset_name}/metadata_v0.json"))
+    metadata=str(Path(real_data_path) / f"{dataset_name}/metadata_v0.json")
+)
 real_data = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
 real_data, metadata = remove_sdv_columns(real_data, metadata)
 logger.debug("Real data loaded")
@@ -122,8 +124,10 @@ logger.info("Sampling and saving synthetic data...")
 for i in range(1, 4):
     model.seed = i
     synthetic_data = model.sample()
-    save_data_path = (Path(synthetic_data_path) / dataset_name / MODEL_NAME /
-                      run_id / f"sample{i}")
+    save_data_path = (
+        Path(synthetic_data_path) / dataset_name / MODEL_NAME / run_id /
+        f"sample{i}"
+    )
     save_tables(synthetic_data, save_data_path)
 
 logger.info("COMPLETE GENERATION DONE.")

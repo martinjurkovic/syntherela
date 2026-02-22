@@ -1,10 +1,11 @@
-import os
 import json
+import os
+
 import pandas as pd
+from syntheval import SynthEval
+
 from syntherela.data import load_tables
 from syntherela.metadata import Metadata
-
-from syntheval import SynthEval
 
 
 def eval_mia(
@@ -13,8 +14,8 @@ def eval_mia(
     test_data,
     metadata,
 ):
-    """
-    Adapted from https://github.com/jacobyhsi/TabRep/blob/main/eval/eval_privacy.py
+    """Adapted from
+    https://github.com/jacobyhsi/TabRep/blob/main/eval/eval_privacy.py.
     """
     id_columns = metadata.get_column_names(sdtype="id")
     datetime_columns = metadata.get_column_names(sdtype="datetime")
@@ -39,12 +40,13 @@ def eval_mia(
         test_data = test_data.sample(n=len(syn_data), random_state=42)
     S = SynthEval(real_data, holdout_dataframe=test_data)
     eval_df = S.evaluate(
-        syn_data, None,
-        "mia")  # set the target column to the primary key of the table
+        syn_data, None, "mia"
+    )  # set the target column to the primary key of the table
 
     # Filter for rows with 'mia_recall' and 'mia_precision'
     filtered_rows = eval_df[eval_df['metric'].isin(
-        ['mia_recall', 'mia_precision'])]
+        ['mia_recall', 'mia_precision']
+    )]
 
     # Extract values into variables
     mia_recall_val = filtered_rows.loc[filtered_rows['metric'] == 'mia_recall',
@@ -83,7 +85,7 @@ if __name__ == "__main__":
     metadata.validate_data(tables_test)
 
     if os.path.exists("results/mia/all_results.json"):
-        with open("results/mia/all_results.json", "r") as f:
+        with open("results/mia/all_results.json") as f:
             all_results = json.load(f)
     else:
         all_results = {}
@@ -96,7 +98,8 @@ if __name__ == "__main__":
     for method in methods:
         tables_syn = load_tables(
             f"data/synthetic/airbnb-simplified_subsampled/{method}/1/sample1",
-            metadata)
+            metadata
+        )
         metadata.validate_data(tables_syn)
         if method not in all_results:
             all_results[method] = {}

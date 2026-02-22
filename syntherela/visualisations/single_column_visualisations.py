@@ -2,19 +2,22 @@
 
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
-import matplotlib.pyplot as plt
 
-from syntherela.visualisations.utils import get_x_tick_width_coef, get_dataset_info
+from syntherela.visualisations.utils import (
+    get_dataset_info,
+    get_x_tick_width_coef,
+)
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=True)
 
 
-def visualize_single_column_distance_metrics(granularity_level, metric_type,
-                                             all_results, datasets, methods,
-                                             **kwargs):
+def visualize_single_column_distance_metrics(
+    granularity_level, metric_type, all_results, datasets, methods, **kwargs
+):
     """Visualize distance metrics for single columns across datasets and methods.
 
     This function creates bar charts comparing distance metrics for single columns
@@ -42,19 +45,25 @@ def visualize_single_column_distance_metrics(granularity_level, metric_type,
     """
     for dataset in datasets:
         base_metrics, base_metric_names, save_figs, save_figs_path, methods = (
-            get_dataset_info(granularity_level, metric_type, all_results,
-                             dataset, methods, **kwargs))
+            get_dataset_info(
+                granularity_level, metric_type, all_results, dataset, methods,
+                **kwargs
+            )
+        )
 
-        for base_metric, base_metric_name in zip(base_metrics,
-                                                 base_metric_names):
-            for table in all_results[dataset][list(all_results[dataset].keys(
-            ))[0]]["single_column_metrics"][base_metric].keys():
+        for base_metric, base_metric_name in zip(
+            base_metrics, base_metric_names
+        ):
+            for table in all_results[dataset][list(
+                all_results[dataset].keys()
+            )[0]]["single_column_metrics"][base_metric].keys():
                 try:
                     N = len(methods)  # number of methods
-                    M = len(all_results[dataset][list(
-                        all_results[dataset].keys())
-                                                 [0]]["single_column_metrics"]
-                            [base_metric][table].keys())  # number of columns
+                    M = len(
+                        all_results[dataset][list(all_results[dataset].keys()
+                                                  )[0]]["single_column_metrics"]
+                        [base_metric][table].keys()
+                    )  # number of columns
 
                     ind = np.arange(M)
                     width = 0.15
@@ -63,8 +72,9 @@ def visualize_single_column_distance_metrics(granularity_level, metric_type,
                     # set dpi
                     fig.dpi = 300
 
-                    colors = plt.cm.viridis(np.linspace(
-                        0.5, 1, N))  # create a color map
+                    colors = plt.cm.viridis(
+                        np.linspace(0.5, 1, N)
+                    )  # create a color map
 
                     columns = all_results[dataset][list(
                         all_results[dataset].keys()
@@ -119,11 +129,13 @@ def visualize_single_column_distance_metrics(granularity_level, metric_type,
                         Line2D([0], [0], color=colors[i], lw=4)
                         for i in range(N)
                     ]
-                    ax.legend(custom_lines,
-                              methods,
-                              loc="upper center",
-                              ncol=N,
-                              fontsize=11)
+                    ax.legend(
+                        custom_lines,
+                        methods,
+                        loc="upper center",
+                        ncol=N,
+                        fontsize=11
+                    )
 
                     for j, column in enumerate(columns):
                         ci95 = all_results[dataset][method][
@@ -166,9 +178,9 @@ def visualize_single_column_distance_metrics(granularity_level, metric_type,
                     print(e)
 
 
-def visualize_single_column_detection_metrics(granularity_level, metric_type,
-                                              all_results, datasets, methods,
-                                              **kwargs):
+def visualize_single_column_detection_metrics(
+    granularity_level, metric_type, all_results, datasets, methods, **kwargs
+):
     """Visualize detection metrics for single columns across datasets and methods.
 
     This function creates bar charts comparing detection metrics for single columns
@@ -196,17 +208,24 @@ def visualize_single_column_detection_metrics(granularity_level, metric_type,
     """
     for dataset in datasets:
         base_metrics, base_metric_names, save_figs, save_figs_path, methods = (
-            get_dataset_info(granularity_level, metric_type, all_results,
-                             dataset, methods, **kwargs))
+            get_dataset_info(
+                granularity_level, metric_type, all_results, dataset, methods,
+                **kwargs
+            )
+        )
 
-        for base_metric, base_metric_name in zip(base_metrics,
-                                                 base_metric_names):
-            for table in all_results[dataset][list(all_results[dataset].keys(
-            ))[0]]["single_column_metrics"][base_metric].keys():
+        for base_metric, base_metric_name in zip(
+            base_metrics, base_metric_names
+        ):
+            for table in all_results[dataset][list(
+                all_results[dataset].keys()
+            )[0]]["single_column_metrics"][base_metric].keys():
                 N = len(methods)  # number of methods
-                M = len(all_results[dataset][list(
-                    all_results[dataset].keys())[0]]["single_column_metrics"]
-                        [base_metric][table].keys())  # number of columns
+                M = len(
+                    all_results[dataset][list(
+                        all_results[dataset].keys()
+                    )[0]]["single_column_metrics"][base_metric][table].keys()
+                )  # number of columns
 
                 ind = np.arange(M)
                 width = 0.15
@@ -215,8 +234,9 @@ def visualize_single_column_detection_metrics(granularity_level, metric_type,
                 # set dpi
                 fig.dpi = 300
 
-                colors = plt.cm.viridis(np.linspace(0.5, 1,
-                                                    N))  # create a color map
+                colors = plt.cm.viridis(
+                    np.linspace(0.5, 1, N)
+                )  # create a color map
 
                 min_mean = 1
 
@@ -233,8 +253,7 @@ def visualize_single_column_detection_metrics(granularity_level, metric_type,
                     min_mean = min(min_mean, min(method_means))
                     method_ses = [
                         all_results[dataset][method]["single_column_metrics"]
-                        [base_metric][table][column]["SE"]
-                        for column in columns
+                        [base_metric][table][column]["SE"] for column in columns
                     ]
                     baseline_means = np.array([0.5 for column in columns])
                     baseline_ses = np.array([0 for column in columns])
@@ -272,7 +291,8 @@ def visualize_single_column_detection_metrics(granularity_level, metric_type,
                 rotation = 20 if len(columns) > 6 else 0
                 ax.set_xticklabels(columns, fontsize=10, rotation=rotation)
                 y_min = 0.4 if min_mean > 0.4 else np.floor(
-                    (min_mean - 0.1) * 10) / 10
+                    (min_mean - 0.1) * 10
+                ) / 10
 
                 ax.set_ylim(y_min, 1.1)
                 ax.set_ylabel("Metric Value")
@@ -283,21 +303,25 @@ def visualize_single_column_detection_metrics(granularity_level, metric_type,
                 custom_lines = [
                     Line2D([0], [0], color=colors[i], lw=4) for i in range(N)
                 ]
-                ax.legend(custom_lines,
-                          methods,
-                          loc="upper center",
-                          ncol=N,
-                          fontsize=11)
+                ax.legend(
+                    custom_lines,
+                    methods,
+                    loc="upper center",
+                    ncol=N,
+                    fontsize=11
+                )
 
                 ax.axhline(y=0.5, color="red", linestyle="--", linewidth=1)
 
                 # set title
                 plt.title(
-                    f"{base_metric_name} for dataset {dataset}, table {table}")
+                    f"{base_metric_name} for dataset {dataset}, table {table}"
+                )
 
                 if save_figs:
                     os.makedirs(save_figs_path, exist_ok=True)
 
                     plt.savefig(
                         f"{save_figs_path}/{dataset}_{table}_{base_metric}.png",
-                        dpi=300)
+                        dpi=300
+                    )

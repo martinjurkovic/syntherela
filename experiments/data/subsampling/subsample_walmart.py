@@ -1,12 +1,14 @@
 import os
+
 from syntherela.data import load_tables, save_tables
 from syntherela.metadata import Metadata
 
 PROJECT_PATH = __file__.split("experiments")[0]
 
 path = os.path.join(PROJECT_PATH, "data/original/walmart/")
-metadata_path = os.path.join(PROJECT_PATH, "data", "original", "walmart",
-                             "metadata.json")
+metadata_path = os.path.join(
+    PROJECT_PATH, "data", "original", "walmart", "metadata.json"
+)
 metadata = Metadata.load_from_json(metadata_path)
 
 tables = load_tables(path, metadata)

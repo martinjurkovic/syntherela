@@ -4,9 +4,9 @@ import os
 from syntherela.metadata import Metadata, convert_and_save_metadata_v0
 
 args = argparse.ArgumentParser()
-args.add_argument("--dataset-name",
-                  type=str,
-                  default="airbnb-simplified_subsampled")
+args.add_argument(
+    "--dataset-name", type=str, default="airbnb-simplified_subsampled"
+)
 args.add_argument("--real-data-path", type=str, default="data/original")
 args = args.parse_args()
 

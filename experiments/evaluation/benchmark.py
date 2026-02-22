@@ -1,35 +1,37 @@
-import sys
-import logging
 import argparse
+import logging
+import sys
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
 
 from syntherela.benchmark import Benchmark
+from syntherela.metrics.multi_table.detection import AggregationDetection
+from syntherela.metrics.multi_table.statistical import (
+    CardinalityShapeSimilarity,
+)
+from syntherela.metrics.single_column.detection import SingleColumnDetection
 from syntherela.metrics.single_column.distance import (
     HellingerDistance,
     JensenShannonDistance,
-    WassersteinDistance,
     TotalVariationDistance,
+    WassersteinDistance,
 )
 from syntherela.metrics.single_column.statistical import (
     ChiSquareTest,
     KolmogorovSmirnovTest,
 )
+from syntherela.metrics.single_table.detection import SingleTableDetection
 from syntherela.metrics.single_table.distance import (
     MaximumMeanDiscrepancy,
     PairwiseCorrelationDifference,
 )
-from syntherela.metrics.single_column.detection import SingleColumnDetection
-from syntherela.metrics.single_table.detection import SingleTableDetection
-from syntherela.metrics.multi_table.detection import AggregationDetection
-from syntherela.metrics.multi_table.statistical import CardinalityShapeSimilarity
 
 args = argparse.ArgumentParser()
-args.add_argument("--dataset-name",
-                  type=str,
-                  default="airbnb-simplified_subsampled")
+args.add_argument(
+    "--dataset-name", type=str, default="airbnb-simplified_subsampled"
+)
 args.add_argument("--methods", "-m", action="append", default=None)
 args.add_argument("--run-id", type=str, default="1")
 args = args.parse_args()
