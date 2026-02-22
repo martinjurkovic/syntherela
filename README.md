@@ -29,11 +29,13 @@ Our research on SyntheRela is presented in the paper **"SyntheRela: A Benchmark 
 We maintain a [public leaderboard on Hugging Face](https://huggingface.co/spaces/SyntheRela/leaderboard) where you can compare the performance of different synthetic data generation methods.
 
 ## Installation
+
 To install only the benchmark package, run the following command:
 
 ```bash
 pip install syntherela
 ```
+
 ## Using SyntheRela
 
 To evaluate your synthetic relational data, configure the `Benchmark` class with your desired metrics and run the evaluation pipeline:
@@ -76,9 +78,8 @@ We provide example notebooks to help you get started with `syntherela` in the [e
 For detailed instructions on how to replicate the paper's results, please refer to [docs/REPLICATING_RESULTS.md](/docs/REPLICATING_RESULTS.md).
 
 ## Adding a new metric
+
 The documentation for adding a new metric can be found in [docs/ADDING_A_METRIC.md](/docs/ADDING_A_METRIC.md).
-
-
 
 \* Denotes the method does not have a public implementation available.
 
@@ -87,24 +88,29 @@ The documentation for adding a new metric can be found in [docs/ADDING_A_METRIC.
 We maintain an official leaderboard to benchmark synthetic relational data generation methods. To ensure fairness and reproducibility, **all evaluations are performed by the SyntheRela maintainers** on standardized hardware.
 
 ### Evaluation Overview
-| Feature | Specification |
-| :--- | :--- |
-| **Compute** | Single NVIDIA H100 (80GB) |
-| **Time Limit** | 48 hours execution time **per dataset** |
-| **Submission Frequency** | 1 submission per 30-day period |
-| **Capacity** | Up to 2 model variants/checkpoints per submission |
+
+| Feature                  | Specification                                     |
+| :----------------------- | :------------------------------------------------ |
+| **Compute**              | Single NVIDIA H100 (80GB)                         |
+| **Time Limit**           | 48 hours execution time **per dataset**           |
+| **Submission Frequency** | 1 submission per 30-day period                    |
+| **Capacity**             | Up to 2 model variants/checkpoints per submission |
 
 ### How to Submit
+
 1. **Prepare your code:** Ensure your method is reproducible and includes a clear `README` and `requirements.txt`.
 2. **Open an Issue:** Create a new [GitHub Issue](https://github.com/martinjurkovic/syntherela/issues) using the title prefix `[Model Submission]`.
 
 For the complete requirements regarding environment setup, logging, and our privacy/confidentiality policy, please refer to our **[Full Submission Guidelines](https://docs.google.com/document/d/1ae16L_vvT5PFt2OeN7FJauA_ayd_A6xCkhVJFoYcx04)**.
 
 ## Conflicts of Interest
+
 The authors declare no conflict of interest and are not associated with any of the evaluated commercial synthetic data providers.
 
 ## Citation
+
 If you use SyntheRela in your work, please cite our paper:
+
 ```
 @inproceedings{
     iclrsyntheticdata2025syntherela,
@@ -117,4 +123,5 @@ If you use SyntheRela in your work, please cite our paper:
 ```
 
 ## License
+
 This project is licensed under the [MIT License](/LICENSE).

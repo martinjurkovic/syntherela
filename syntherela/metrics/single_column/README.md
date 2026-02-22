@@ -5,10 +5,10 @@ passed as two 1 dimensional arrays.
 
 Implemented metrics:
 
-* Statistical: Metrics that compare the arrays using statistical tests
-    * `CSTest`: Chi-Squared test to compare the distributions of two categorical columns.
-    * `KSComplement`: Complement to the Kolmogorov-Smirnov statistic to compare the distributions
-      of two numerical columns using their empirical CDF.
+- Statistical: Metrics that compare the arrays using statistical tests
+  - `CSTest`: Chi-Squared test to compare the distributions of two categorical columns.
+  - `KSComplement`: Complement to the Kolmogorov-Smirnov statistic to compare the distributions
+    of two numerical columns using their empirical CDF.
 
 ## SingleColumnMetric
 
@@ -28,8 +28,8 @@ Out[2]:
 
 All the single column metrics operate on just two inputs:
 
-* `real_data`: A 1d numpy array, coming from the real dataset.
-* `synthetic_data`: A 1d numpy array, coming from the synthetic dataset.
+- `real_data`: A 1d numpy array, coming from the real dataset.
+- `synthetic_data`: A 1d numpy array, coming from the synthetic dataset.
 
 For example, this how the KSComplement metric can be computed for the `age` column
 from the demo data:

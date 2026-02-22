@@ -55,15 +55,16 @@ repos:
         args: ["--ignore=D107,D203,D213"]
         files: ^syntherela/
 
-# - repo: https://github.com/executablebooks/mdformat
-#   rev: 1.0.0
-#   hooks:
-#     - id: mdformat
-#       name: Format Markdown
-#       additional_dependencies:
-#         - mdformat-gfm
-#         - mdformat-front-matters
-#         - mdformat-footnote
+- repo: https://github.com/executablebooks/mdformat
+  rev: 1.0.0
+  hooks:
+    - id: mdformat
+      name: Format Markdown
+      args: [--number]
+      additional_dependencies:
+        - mdformat-gfm
+        - mdformat-front-matters
+        - mdformat-footnote
 
 # - repo: https://github.com/sphinx-contrib/sphinx-lint
 #   rev: v1.0.2
