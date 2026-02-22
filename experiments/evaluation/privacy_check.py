@@ -145,7 +145,6 @@ def eval_dcr(
     print(f"DCR Score = {score} ± {std / np.sqrt(dcrs_real.shape[0])}")
 
     torch.save(dcrs_real.cpu(), f"{save_path}dcrs_real.pt")
-    torch.save(dcrs_real.cpu(), f"{save_path}dcrs_real.pt")
     torch.save(dcrs_test.cpu(), f"{save_path}dcrs_test.pt")
     return score, std / np.sqrt(dcrs_real.shape[0])
 
