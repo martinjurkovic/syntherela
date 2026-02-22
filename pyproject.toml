@@ -37,10 +37,13 @@ classifiers = [
     ]
 
 [project.optional-dependencies]
-gnn-utility=[
-  "relbench[full,example]",
-  "torch_geometric",
-  "shap",
+dev=[
+	"pre-commit",
+]
+
+rdl-utility=[
+  "relbench[full,example]@git+https://github.com/snap-stanford/relbench.git@main",
+  "torch_geometric==2.6.1",
   "tqdm",
   "lightgbm==4.6.0",
   "featuretools==1.31.0",
