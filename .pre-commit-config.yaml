@@ -9,6 +9,7 @@ repos:
     hooks:
     - id: no-commit-to-branch
       name: No commits to main
+      args: [--branch, main]
     - id: check-toml
       name: Check toml
     - id: end-of-file-fixer
