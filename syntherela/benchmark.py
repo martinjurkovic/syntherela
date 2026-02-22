@@ -5,6 +5,7 @@ across multiple datasets and metrics.
 """
 
 import os
+import json
 import warnings
 from pathlib import Path
 from datetime import datetime
@@ -168,12 +169,8 @@ class Benchmark:
         # Try to read existing results during initialization
         try:
             self.read_results()
-        except Exception as e:
-            # FIXME: Running the benchmark for the first time should
-            # be expected and not raise a warning
-            warnings.warn(
-                f"No existing results found or could not read them: {str(e)}. This is expected if running the benchmark for the first time."
-            )
+        except FileNotFoundError:
+            pass
 
     def load_data(self, dataset_name, method_name):
         """Load real and synthetic data for a specific dataset and method.
@@ -257,6 +254,140 @@ class Benchmark:
             return existing_results
         else:
             return new_results
+
+    def _load_result_file(self, dataset_name, method_name):
+        """Load a benchmark result file for a specific dataset and method.
+
+        Parameters
+        ----------
+        dataset_name : str
+            Name of the dataset.
+        method_name : str
+            Name of the synthetic data generation method.
+
+        Returns
+        -------
+        dict
+            Results loaded from the benchmark JSON file.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the result file does not exist.
+
+        """
+        file_name = self.build_file_name(dataset_name, method_name)
+        file_path = self.results_dir / file_name
+        with open(file_path, "r") as file:
+            return json.load(file)
+
+    def _get_or_load_results(self, dataset_name, method_name):
+        """Get cached benchmark results or load them from disk.
+
+        Parameters
+        ----------
+        dataset_name : str
+            Name of the dataset.
+        method_name : str
+            Name of the synthetic data generation method.
+
+        Returns
+        -------
+        dict
+            Full benchmark results for the provided dataset and method.
+
+        """
+        if (dataset_name in self.all_results
+                and method_name in self.all_results[dataset_name]):
+            return self.all_results[dataset_name][method_name]
+
+        results = self._load_result_file(dataset_name, method_name)
+        self.all_results.setdefault(dataset_name, {})[method_name] = results
+        return results
+
+    def get_single_column_results(self,
+                                  dataset_name,
+                                  method_name,
+                                  metric_name=None):
+        """Get single-column results for a dataset and method.
+
+        Parameters
+        ----------
+        dataset_name : str
+            Name of the dataset.
+        method_name : str
+            Name of the synthetic data generation method.
+        metric_name : str, default=None
+            Name of a specific single-column metric.
+            If None, all single-column metrics are returned.
+
+        Returns
+        -------
+        dict
+            Single-column results for all metrics or one metric.
+
+        """
+        results = self._get_or_load_results(dataset_name, method_name)
+        metric_results = results.get("single_column_metrics", {})
+        if metric_name is not None:
+            return metric_results.get(metric_name, {})
+        return metric_results
+
+    def get_single_table_results(self,
+                                 dataset_name,
+                                 method_name,
+                                 metric_name=None):
+        """Get single-table results for a dataset and method.
+
+        Parameters
+        ----------
+        dataset_name : str
+            Name of the dataset.
+        method_name : str
+            Name of the synthetic data generation method.
+        metric_name : str, default=None
+            Name of a specific single-table metric.
+            If None, all single-table metrics are returned.
+
+        Returns
+        -------
+        dict
+            Single-table results for all metrics or one metric.
+
+        """
+        results = self._get_or_load_results(dataset_name, method_name)
+        metric_results = results.get("single_table_metrics", {})
+        if metric_name is not None:
+            return metric_results.get(metric_name, {})
+        return metric_results
+
+    def get_multi_table_results(self,
+                                dataset_name,
+                                method_name,
+                                metric_name=None):
+        """Get multi-table results for a dataset and method.
+
+        Parameters
+        ----------
+        dataset_name : str
+            Name of the dataset.
+        method_name : str
+            Name of the synthetic data generation method.
+        metric_name : str, default=None
+            Name of a specific multi-table metric.
+            If None, all multi-table metrics are returned.
+
+        Returns
+        -------
+        dict
+            Multi-table results for all metrics or one metric.
+
+        """
+        results = self._get_or_load_results(dataset_name, method_name)
+        metric_results = results.get("multi_table_metrics", {})
+        if metric_name is not None:
+            return metric_results.get(metric_name, {})
+        return metric_results
 
     def run(self):
         """Run the benchmark evaluation.
