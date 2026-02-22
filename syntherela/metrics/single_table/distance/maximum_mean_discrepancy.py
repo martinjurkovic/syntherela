@@ -14,10 +14,12 @@ from syntherela.metrics.base import DistanceBaseMetric, SingleTableMetric
 class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
     """Maximum Mean Discrepancy metric for comparing single tables.
 
-    This metric computes the Maximum Mean Discrepancy (MMD) between the distributions
-    of real and synthetic data tables. It is applicable to tables containing numerical columns.
+    This metric computes the Maximum Mean Discrepancy (MMD) between the
+    distributions of real and synthetic data tables. It is applicable to tables
+    containing numerical columns.
 
-    The implementation is based on the work by Qian et al. (2023) in the Synthcity library.
+    The implementation is based on the work by Qian et al. (2023) in the
+    Synthcity library.
 
     Parameters
     ----------
@@ -37,8 +39,8 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
 
     References:
     ----------
-    .. [1] Gretton, A., Borgwardt, K. M., Rasch, M. J., Schölkopf, B., & Smola, A. (2012).
-           A kernel two-sample test. Journal of Machine Learning Research, 13(1), 723-773.
+    .. [1] Gretton, A., et al. (2012).
+           A kernel two-sample test. JMLR, 13(1), 723-773.
 
     """
 
@@ -65,7 +67,8 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
 
         Code for MaximumMeanDiscrepancy metric modified from:
         Qian, Z., Cebere, B.-C., & van der Schaar, M. (2023).
-        Synthcity: Facilitating innovative use cases of synthetic data in different data modalities.
+        Synthcity: Facilitating innovative use cases of synthetic data in
+        different data modalities.
         arXiv: https://arxiv.org/abs/2301.07573
         github: https://github.com/vanderschaarlab/synthcity/
         """
@@ -105,7 +108,8 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
             score = delta.dot(delta.T)
         elif kernel == "rbf":
             """
-            MMD using rbf (gaussian) kernel (i.e., k(x,y) = exp(-gamma * ||x-y||^2 / 2))
+            MMD using rbf (gaussian) kernel
+            (i.e., k(x,y) = exp(-gamma * ||x-y||^2 / 2))
             """
             gamma = 1.0
             XX = metrics.pairwise.rbf_kernel(
@@ -126,7 +130,8 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
             score = XX.mean() + YY.mean() - 2 * XY.mean()
         elif kernel == "polynomial":
             """
-            MMD using polynomial kernel (i.e., k(x,y) = (gamma <X, Y> + coef0)^degree)
+            MMD using polynomial kernel
+            (i.e., k(x,y) = (gamma <X, Y> + coef0)^degree)
             """
             degree = 2
             gamma = 1

@@ -29,8 +29,9 @@ from syntherela.visualisations.single_table_visualisations import (
 class Benchmark:
     """Benchmark class for evaluating synthetic data quality.
 
-    This class provides functionality to benchmark synthetic data against real data
-    using various metrics at different levels (single column, single table, multi table).
+    This class provides functionality to benchmark synthetic data against real
+    data using various metrics at different levels (single column, single
+    table, multi table).
 
     Parameters
     ----------
@@ -189,13 +190,17 @@ class Benchmark:
         -------
         tuple
             Tuple containing:
-            - real_data: Dictionary mapping table names to pandas DataFrames for real data.
-            - synthetic_data: Dictionary mapping table names to pandas DataFrames for synthetic data.
+                - real_data: Dictionary mapping table names to pandas
+                DataFrames for real data.
+                - synthetic_data: Dictionary mapping table names to pandas
+                DataFrames for synthetic data.
             - metadata: Metadata object for the dataset.
 
         """
         real_data_path = self.real_data_dir / dataset_name
-        synthetic_data_path = self.synthetic_data_dir / dataset_name / method_name
+        synthetic_data_path = (
+            self.synthetic_data_dir / dataset_name / method_name
+        )
 
         if self.run_id is not None:
             synthetic_data_path = synthetic_data_path / self.run_id
@@ -253,7 +258,7 @@ class Benchmark:
                                   dict) and isinstance(metrics, dict):
                         existing_results[metric_type].update(metrics)
                     else:
-                        # If either is not a dictionary, just replace with new value
+                        # If either is not a dictionary, replace it
                         existing_results[metric_type] = metrics
                 else:
                     existing_results[metric_type] = metrics
@@ -397,7 +402,8 @@ class Benchmark:
     def run(self):
         """Run the benchmark evaluation.
 
-        This method evaluates all specified datasets and methods using the configured metrics.
+        This method evaluates all specified datasets and methods using the
+        configured metrics.
         Results are saved to the results directory.
 
         Returns:
@@ -414,15 +420,17 @@ class Benchmark:
                     )
 
                     print(
-                        f"Starting benchmark for {dataset_name}, method_name {method_name}"
+                        "Starting benchmark for "
+                        f"{dataset_name}, method_name {method_name}"
                     )
-
                     report = Report(
                         real_data=real_data,
                         synthetic_data=synthetic_data,
                         metadata=metadata,
-                        report_name=
-                        f"{self.benchmark_name}_{dataset_name}_{method_name}",
+                        report_name=(
+                            f"{self.benchmark_name}_"
+                            f"{dataset_name}_{method_name}"
+                        ),
                         method_name=method_name,
                         dataset_name=dataset_name,
                         run_id=self.run_id,
@@ -442,10 +450,8 @@ class Benchmark:
                     merged_results = self.merge_results(
                         dataset_name, method_name, new_results
                     )
-                    self.all_results.setdefault(dataset_name,
-                                                {})[method_name] = (
-                                                    merged_results
-                                                )
+                    self.all_results.setdefault(dataset_name, {}
+                                                )[method_name] = merged_results
 
                     # Update report results with merged results before saving
                     report.results = merged_results
@@ -454,7 +460,8 @@ class Benchmark:
 
                 except Exception as e:
                     print(
-                        f"There was an error with dataset: {dataset_name}, method: {method_name}."
+                        f"There was an error with dataset: {dataset_name}, "
+                        f"method: {method_name}."
                     )
                     print(e)
 
@@ -476,8 +483,11 @@ class Benchmark:
                     )
                 except FileNotFoundError:
                     warnings.warn(
-                        f"Results for {dataset_name}, method {method_name} not found.",
-                        stacklevel=2
+                        (
+                            "Results for "
+                            f"{dataset_name}, method {method_name} not found."
+                        ),
+                        stacklevel=2,
                     )
                     continue
                 temp_report = Report(
@@ -535,7 +545,7 @@ class Benchmark:
         detection : bool, default=True
             Whether to visualize detection metrics.
         **kwargs
-            Additional keyword arguments to pass to the visualization functions.
+            Keyword arguments to pass to the visualization functions.
 
         """
         datasets = kwargs.pop("datasets", self.datasets)
@@ -551,7 +561,6 @@ class Benchmark:
             )
 
         if detection:
-            # visualize_single_table_detection_metrics_per_classifier(self.all_results, datasets, methods, **kwargs)
             visualize_single_table_detection_metrics_per_table(
                 granularity_level="single_table",
                 metric_type="detection",
@@ -573,7 +582,7 @@ class Benchmark:
         detection : bool, default=True
             Whether to visualize detection metrics.
         **kwargs
-            Additional keyword arguments to pass to the visualization functions.
+            Keyword arguments to pass to the visualization functions.
 
         """
         datasets = kwargs.get("datasets", self.datasets)
@@ -604,7 +613,7 @@ class Benchmark:
         Parameters
         ----------
         **kwargs
-            Additional keyword arguments to pass to the visualization functions.
+            Keyword arguments to pass to the visualization functions.
 
         """
         datasets = kwargs.get("datasets", self.datasets)

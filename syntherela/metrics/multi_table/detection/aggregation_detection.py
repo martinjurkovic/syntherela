@@ -1,7 +1,8 @@
 """Aggregation detection (C2ST-Agg) metrics for multi-table data.
 
-This module provides metrics for detecting synthetic data in aggregated relationships
-between tables by training classifiers to distinguish between real and synthetic tables with aggregations.
+This module provides metrics for detecting synthetic data in aggregated
+relationships between tables by training classifiers to distinguish between
+real and synthetic tables with aggregations.
 """
 
 from copy import deepcopy
@@ -37,7 +38,7 @@ class BaseAggregationDetection(DetectionBaseMetric):
         metadata : Metadata
             The metadata describing the database schema.
         update_metadata : bool, optional
-            Whether to update the metadata with the new columns, by default True.
+            Whether to update the metadata with the new columns.
         level : int, optional
             The level of aggregation to add, by default 0.
         add_child_counts : bool, optional
@@ -111,18 +112,15 @@ class BaseAggregationDetection(DetectionBaseMetric):
                 ]
                 categorical_df.columns = categorical_column_names + [child_fk]
 
-                aggregated_data[parent_table_name] = aggregated_data[
-                    parent_table_name].merge(
-                        categorical_df.groupby(child_fk).nunique(),
-                        how="left",
-                        left_on=parent_column,
-                        right_index=True,
-                        suffixes=("", "_nunique"),
-                    )
-                aggregated_data[parent_table_name][categorical_column_names] = (
-                    aggregated_data[parent_table_name]
-                    [categorical_column_names].fillna(0)
+                merged_data = aggregated_data[parent_table_name].merge(
+                    categorical_df.groupby(child_fk).nunique(),
+                    how="left",
+                    left_on=parent_column,
+                    right_index=True,
+                    suffixes=("", "_nunique"),
                 )
+                merged_data[categorical_column_names].fillna(0, inplace=True)
+                aggregated_data[parent_table_name] = merged_data
 
                 if update_metadata:
                     for column in categorical_column_names:
@@ -135,9 +133,11 @@ class BaseAggregationDetection(DetectionBaseMetric):
             for column_name in metadata.get_column_names(
                 child_table_name, sdtype="numerical"
             ):
-                # When level is greater than 0, skip columns that have already been aggregated
-                if level > 0 and column_name in aggregated_data[
-                    parent_table_name]:
+                # When level is greater than 0,
+                # skip columns that have already been aggregated
+                already_aggregated = column_name in aggregated_data[
+                    parent_table_name]
+                if level > 0 and already_aggregated:
                     continue
                 numerical_columns.append(column_name)
 
@@ -150,14 +150,15 @@ class BaseAggregationDetection(DetectionBaseMetric):
                 ]
                 numerical_df.columns = numerical_column_names + [child_fk]
 
-                aggregated_data[parent_table_name] = aggregated_data[
-                    parent_table_name].merge(
-                        numerical_df.groupby(child_fk).mean(),
-                        how="left",
-                        left_on=parent_column,
-                        right_index=True,
-                        suffixes=("", "_mean"),
-                    )
+                merged_data = aggregated_data[parent_table_name].merge(
+                    numerical_df.groupby(child_fk).mean(),
+                    how="left",
+                    left_on=parent_column,
+                    right_index=True,
+                    suffixes=("", "_mean"),
+                )
+
+                aggregated_data[parent_table_name] = merged_data
 
                 if update_metadata:
                     for column in numerical_column_names:
@@ -226,7 +227,7 @@ class AggregationDetection(
         metadata : Metadata
             The metadata.
         target_table : str, optional
-            The target table to evaluate, by default None (evaluate all tables).
+            The target table to evaluate, by default None (all tables).
         kwargs : dict
             Additional keyword arguments.
 
@@ -240,13 +241,13 @@ class AggregationDetection(
         for level in range(self.levels):
             # Add one level of aggregation
             if level == 0:
-                real_data_with_aggregations, updated_metadata = self.add_aggregations(
+                real_aggregated_data, updated_metadata = self.add_aggregations(
                     real_data,
                     updated_metadata,
                     level=level,
                     add_child_counts=self.add_child_counts,
                 )
-                synthetic_data_with_aggregations, _ = self.add_aggregations(
+                synthetic_aggregated_data, _ = self.add_aggregations(
                     synthetic_data,
                     metadata,
                     update_metadata=False,
@@ -254,14 +255,14 @@ class AggregationDetection(
                     add_child_counts=self.add_child_counts,
                 )
             else:
-                real_data_with_aggregations, metadata_level = self.add_aggregations(
-                    real_data_with_aggregations,
+                real_aggregated_data, metadata_level = self.add_aggregations(
+                    real_aggregated_data,
                     updated_metadata,
                     level=level,
                     add_child_counts=self.add_child_counts,
                 )
-                synthetic_data_with_aggregations, _ = self.add_aggregations(
-                    synthetic_data_with_aggregations,
+                synthetic_aggregated_data, _ = self.add_aggregations(
+                    synthetic_aggregated_data,
                     updated_metadata,
                     update_metadata=False,
                     level=level,
@@ -271,15 +272,15 @@ class AggregationDetection(
         results = {}
         if target_table is not None:
             table_metadata = metadata.tables[target_table].to_dict()
-            real_data_with_aggregations[target_table] = drop_ids(
-                real_data_with_aggregations[target_table], table_metadata
+            real_aggregated_data[target_table] = drop_ids(
+                real_aggregated_data[target_table], table_metadata
             )
-            synthetic_data_with_aggregations[target_table] = drop_ids(
-                synthetic_data_with_aggregations[target_table], table_metadata
+            synthetic_aggregated_data[target_table] = drop_ids(
+                synthetic_aggregated_data[target_table], table_metadata
             )
             return super().run(
-                real_data_with_aggregations[target_table],
-                synthetic_data_with_aggregations[target_table],
+                real_aggregated_data[target_table],
+                synthetic_aggregated_data[target_table],
                 metadata=updated_metadata,
                 **kwargs,
             )
@@ -288,16 +289,16 @@ class AggregationDetection(
             table_metadata = metadata.tables[table].to_dict()
             if not self.is_applicable(updated_metadata, table):
                 continue
-            real_data_with_aggregations[table] = drop_ids(
-                real_data_with_aggregations[table], table_metadata
+            real_aggregated_data[table] = drop_ids(
+                real_aggregated_data[table], table_metadata
             )
-            synthetic_data_with_aggregations[table] = drop_ids(
-                synthetic_data_with_aggregations[table], table_metadata
+            synthetic_aggregated_data[table] = drop_ids(
+                synthetic_aggregated_data[table], table_metadata
             )
 
             results[table] = super().run(
-                real_data_with_aggregations[table],
-                synthetic_data_with_aggregations[table],
+                real_aggregated_data[table],
+                synthetic_aggregated_data[table],
                 metadata=updated_metadata,
                 **kwargs,
             )

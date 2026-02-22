@@ -196,7 +196,7 @@ def get_dataset_info(
     Parameters
     ----------
     granularity_level : str
-        The granularity level of the metrics ('single_table' or 'single_column').
+        The granularity level for metrics ('single_table' or 'single_column').
     metric_type : str
         The type of metrics ('distance' or 'detection').
     all_results : dict
@@ -238,7 +238,8 @@ def get_dataset_info(
             ]
         else:
             raise ValueError(
-                f"Unknown metric type {metric_type}. Should be either 'distance' or 'detection'."
+                f"Unknown metric type {metric_type}. Should be either "
+                "'distance' or 'detection'."
             )
     elif granularity_level == "single_column":
         if metric_type == "distance":
@@ -257,11 +258,13 @@ def get_dataset_info(
             ]
         else:
             raise ValueError(
-                f"Unknown metric type {metric_type}. Should be either 'distance' or 'detection'."
+                f"Unknown metric type {metric_type}. Should be either "
+                "'distance' or 'detection'."
             )
     else:
         raise ValueError(
-            f"Unknown granularity level {granularity_level}. Should be either 'single_table' or 'single_column'."
+            f"Unknown granularity level {granularity_level}. Should be either "
+            "'single_table' or 'single_column'."
         )
 
     base_metric_names = [

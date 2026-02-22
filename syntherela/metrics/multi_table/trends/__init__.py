@@ -1,4 +1,6 @@
-"""Trend analysis metrics for evaluating relationships between columns in synthetic data."""
+"""Trend analysis metrics for evaluating relationships between columns in
+synthetic data.
+"""
 
 from .multi_table_trends import multi_table_trends
 

@@ -44,7 +44,7 @@ class NpEncoder(json.JSONEncoder):
 
 
 class CustomHyperTransformer(HyperTransformer):
-    """CustomHyperTransformer extends HyperTransformer to preserve feature names.
+    """Custom HyperTransformer to preserve feature names.
 
     This class overrides the transform method of HyperTransformer
     so that the feature names are preserved for one-hot-encoded columns.
@@ -74,7 +74,9 @@ class CustomHyperTransformer(HyperTransformer):
                 numeric = pd.to_numeric(
                     data[field], errors="coerce"
                 ).astype(float)
-                self.column_transforms[field] = {"mode": numeric.mode().iloc[0]}
+                self.column_transforms[field] = {
+                    "mode": numeric.mode().iloc[0],
+                }
             elif kind == "O":
                 # Categorical column.
                 col_data = pd.DataFrame({"field": data[field]})

@@ -18,10 +18,10 @@ rc("text", usetex=True)
 def visualize_single_column_distance_metrics(
     granularity_level, metric_type, all_results, datasets, methods, **kwargs
 ):
-    """Visualize distance metrics for single columns across datasets and methods.
+    """Visualize distance metrics for columns across datasets and methods.
 
-    This function creates bar charts comparing distance metrics for single columns
-    across different synthetic data generation methods.
+    This function creates bar charts comparing distance metrics for individual
+    columns across different synthetic data generation methods.
 
     Parameters
     ----------
@@ -39,12 +39,12 @@ def visualize_single_column_distance_metrics(
         Additional keyword arguments including:
         - save_figs : bool
             Whether to save the figures.
-        - save_figs_path : str
+        - save_path : str
             Path where to save the figures.
 
     """
     for dataset in datasets:
-        base_metrics, base_metric_names, save_figs, save_figs_path, methods = (
+        base_metrics, base_metric_names, save_figs, save_path, methods = (
             get_dataset_info(
                 granularity_level, metric_type, all_results, dataset, methods,
                 **kwargs
@@ -61,7 +61,8 @@ def visualize_single_column_distance_metrics(
                     N = len(methods)  # number of methods
                     M = len(
                         all_results[dataset][list(all_results[dataset].keys()
-                                                  )[0]]["single_column_metrics"]
+                                                  )[0]]["single_column_metrics"
+                                                        ]  # noqa: E501
                         [base_metric][table].keys()
                     )  # number of columns
 
@@ -114,10 +115,7 @@ def visualize_single_column_distance_metrics(
                     ax.set_xticks(ind + x_tick_width_coef * width)
                     rotation = 20 if len(columns) > 6 else 0
                     ax.set_xticklabels(columns, fontsize=10, rotation=rotation)
-                    # y_min = 0
 
-                    # max_value = max([all_results[dataset][method]['single_column_metrics'][base_metric][table][column]["value"] for column in columns])
-                    # y_max = max_value * 1.2
                     ax.set_ylim(0)
                     # ax.set_yticks(np.arange(y_min, 1.01, 0.1))
                     ax.set_ylabel("Metric Value")
@@ -150,9 +148,6 @@ def visualize_single_column_distance_metrics(
                             xmin=j / len(columns),
                             xmax=(j + 1) / len(columns),
                         )
-                        # ax.axhline(y=ci95[0], color='black', linestyle='--', linewidth=1,
-                        #         xmin=j/len(columns),
-                        #         xmax=(j+1)/len(columns))
 
                         if ci95[1] > ax.get_ylim()[1]:
                             y_max = ci95[1] * 1.1
@@ -160,20 +155,20 @@ def visualize_single_column_distance_metrics(
 
                     # set title
                     plt.title(
-                        f"{base_metric_name} for dataset {dataset}, table {table}"
+                        f"{base_metric_name} for dataset {dataset}, table {table}"  # noqa: E501
                     )
 
                     if save_figs:
-                        os.makedirs(save_figs_path, exist_ok=True)
+                        os.makedirs(save_path, exist_ok=True)
 
                         plt.savefig(
-                            f"{save_figs_path}/{dataset}_{table}_{base_metric}.png",
+                            f"{save_path}/{dataset}_{table}_{base_metric}.png",
                             dpi=300,
                         )
 
                 except Exception as e:
                     print(
-                        f"{base_metric_name} for dataset {dataset}, table {table}"
+                        f"{base_metric_name} for dataset {dataset}, table {table}"  # noqa: E501
                     )
                     print(e)
 
@@ -181,10 +176,10 @@ def visualize_single_column_distance_metrics(
 def visualize_single_column_detection_metrics(
     granularity_level, metric_type, all_results, datasets, methods, **kwargs
 ):
-    """Visualize detection metrics for single columns across datasets and methods.
+    """Visualize detection metrics for columns across datasets and methods.
 
-    This function creates bar charts comparing detection metrics for single columns
-    across different synthetic data generation methods.
+    This function creates bar charts comparing detection metrics for individual
+    columns across different synthetic data generation methods.
 
     Parameters
     ----------
@@ -202,12 +197,12 @@ def visualize_single_column_detection_metrics(
         Additional keyword arguments including:
         - save_figs : bool
             Whether to save the figures.
-        - save_figs_path : str
+        - save_path : str
             Path where to save the figures.
 
     """
     for dataset in datasets:
-        base_metrics, base_metric_names, save_figs, save_figs_path, methods = (
+        base_metrics, base_metric_names, save_figs, save_path, methods = (
             get_dataset_info(
                 granularity_level, metric_type, all_results, dataset, methods,
                 **kwargs
@@ -253,7 +248,8 @@ def visualize_single_column_detection_metrics(
                     min_mean = min(min_mean, min(method_means))
                     method_ses = [
                         all_results[dataset][method]["single_column_metrics"]
-                        [base_metric][table][column]["SE"] for column in columns
+                        [base_metric][table][column]["SE"]
+                        for column in columns  #
                     ]
                     baseline_means = np.array([0.5 for column in columns])
                     baseline_ses = np.array([0 for column in columns])
@@ -319,9 +315,9 @@ def visualize_single_column_detection_metrics(
                 )
 
                 if save_figs:
-                    os.makedirs(save_figs_path, exist_ok=True)
+                    os.makedirs(save_path, exist_ok=True)
 
                     plt.savefig(
-                        f"{save_figs_path}/{dataset}_{table}_{base_metric}.png",
+                        f"{save_path}/{dataset}_{table}_{base_metric}.png",
                         dpi=300
                     )

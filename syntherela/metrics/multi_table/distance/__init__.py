@@ -1,3 +1,3 @@
-"""Distance metrics for measuring similarity between real and synthetic multi-table relationships."""
+"""Distance metrics for measuring similarity between table relationships."""
 
 # NOTE: Currently no such metrics exists.

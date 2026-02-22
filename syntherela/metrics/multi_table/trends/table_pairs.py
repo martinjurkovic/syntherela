@@ -1,7 +1,5 @@
-"""Multi table trends (cardinality and intertable correlations) report.
-
-Based on https://github.com/sdv-dev/SDMetrics/blob/main/sdmetrics/reports/multi_table_report/quality_report.py
-"""
+"""Multi table trends (cardinality and intertable correlations) report."""
+# Based on https://github.com/sdv-dev/SDMetrics/blob/main/sdmetrics/reports/multi_table_report/quality_report.py # noqa: E501
 
 from sdmetrics.reports.multi_table._properties import (
     Cardinality,
@@ -15,8 +13,8 @@ from sdmetrics.reports.multi_table.base_multi_table_report import (
 class MultiTableTrendsReport(BaseMultiTableReport):
     """Multi table quality report.
 
-    This class creates a quality report for multi-table data. It calculates the quality
-    score along Intertable Trends, and Cardinality.
+    This class creates a quality report for multi-table data. It calculates the
+    quality score along Intertable Trends, and Cardinality.
     """
 
     def __init__(self):

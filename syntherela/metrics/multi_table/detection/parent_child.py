@@ -17,8 +17,9 @@ from syntherela.utils import CustomHyperTransformer
 class ParentChildDetection(DetectionBaseMetric):
     """Detection metric for parent-child relationships in multi-table datasets.
 
-    This class implements a denormalization based detection metric that uses a classifier
-    to distinguish between denormalization real and synthetic data across parent-child table pairs.
+    This class implements a denormalization based detection metric that uses a
+    classifier to distinguish between denormalization real and synthetic data
+    across parent-child table pairs.
 
     Parameters
     ----------
@@ -48,8 +49,8 @@ class ParentChildDetection(DetectionBaseMetric):
     def is_applicable(metadata: Metadata, table1: str, table2: str):
         """Check if the tables are applicable for this metric.
 
-        This method checks if both tables contain at least one column that is not an ID
-        and if the tables have a relationship with each other.
+        This method checks if both tables contain at least one column that is
+        not an ID and if the tables have a relationship with each other.
 
         Parameters
         ----------
@@ -89,7 +90,7 @@ class ParentChildDetection(DetectionBaseMetric):
         child_table,
         pair_metadata,
     ):
-        """Prepare the data for the classifier by denormalizing the parent-child table pairs.
+        """Prepare the data for the classifier by denormalizing PC table pairs.
 
         Parameters
         ----------
@@ -184,14 +185,12 @@ class ParentChildDetection(DetectionBaseMetric):
                 replace=False
             )
             mask_train_real = real_ids.isin(ids_train_real).values
-            mask_train_synthetic = synthetic_ids.isin(
-                ids_train_synthetic
-            ).values
+            mask_train_syn = synthetic_ids.isin(ids_train_synthetic).values
 
             X_train_real = transformed_real_data[mask_train_real]
-            X_train_synthetic = transformed_synthetic_data[mask_train_synthetic]
+            X_train_synthetic = transformed_synthetic_data[mask_train_syn]
             X_test_real = transformed_real_data[~mask_train_real]
-            X_test_synthetic = transformed_synthetic_data[~mask_train_synthetic]
+            X_test_synthetic = transformed_synthetic_data[~mask_train_syn]
 
             X_train = pd.concat([X_train_real, X_train_synthetic])
             X_test = pd.concat([X_test_real, X_test_synthetic])
@@ -209,7 +208,7 @@ class ParentChildDetection(DetectionBaseMetric):
         self, real_data: dict, synthetic_data: dict, metadata: Metadata,
         **kwargs
     ):
-        """Run the parent-child detection metric on all parent-child relationships.
+        """Run the parent-child detection metric on all PC relationships.
 
         Parameters
         ----------

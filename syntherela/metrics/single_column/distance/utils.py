@@ -16,8 +16,8 @@ def get_histograms(
 ) -> tuple:
     """Compute histograms for the given data.
 
-    Discretize numerical data into bins and compute the frequencies of each bin or
-    compute the frequencies of each category in categorical data.
+    Discretize numerical data into bins and compute the frequencies of each bin
+    or compute the frequencies of each category in categorical data.
 
     Parameters
     ----------
@@ -34,7 +34,7 @@ def get_histograms(
 
     Returns:
     -------
-        The observed and expected frequencies and the keys if return_keys is True.
+        The observed and expected frequencies, and keys if return_keys is True.
 
     """
     if is_datetime(original):

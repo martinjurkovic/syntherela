@@ -28,7 +28,7 @@ class CardinalityShapeSimilarity(StatisticalBaseMetric):
 
     @staticmethod
     def compute(real_data, synthetic_data, metadata, **kwargs):
-        """Compute the cardinality shape similarity between real and synthetic data."""
+        """Compute the cardinality metric."""
         results = {}
         for rel in metadata.relationships:
             cardinality_real = get_cardinality_distribution(
@@ -38,11 +38,13 @@ class CardinalityShapeSimilarity(StatisticalBaseMetric):
             cardinality_synthetic = get_cardinality_distribution(
                 synthetic_data[rel["parent_table_name"]][
                     rel["parent_primary_key"]],
-                synthetic_data[rel["child_table_name"]][rel["child_foreign_key"]
+                synthetic_data[rel["child_table_name"]][rel["child_foreign_key"
+                                                            ]  #
                                                         ],
             )
             statistic, pval = ks_2samp(cardinality_real, cardinality_synthetic)
-            results[f"{rel['parent_table_name']}_{rel['child_table_name']}"] = {
+            key = f"{rel['parent_table_name']}_{rel['child_table_name']}"
+            results[key] = {
                 "statistic": statistic,
                 "pval": pval,
             }
