@@ -25,8 +25,8 @@ from collections import defaultdict
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import MLP
 
-
 from relbench.modeling.nn import HeteroEncoder, HeteroTemporalEncoder
+
 
 def get_atomic_routes(edge_type_list):
 
@@ -45,20 +45,22 @@ def get_atomic_routes(edge_type_list):
         if len(tuples) == 1:
             _, rel, dst = tuples[0]
             edge = (src, rel, dst)
-            atomic_routes_list.append(('dim-dim',) + edge)
-            atomic_routes_list.append(('dim-dim',) + get_rev_edge(edge))
+            atomic_routes_list.append(('dim-dim', ) + edge)
+            atomic_routes_list.append(('dim-dim', ) + get_rev_edge(edge))
         else:
             for _, rel_q, dst_q in tuples:
                 for _, rel_v, dst_v in tuples:
                     if rel_q != rel_v:
                         edge_q = (src, rel_q, dst_q)
                         edge_v = (src, rel_v, dst_v)
-                        atomic_routes_list.append(('dim-fact-dim',) + edge_q + get_rev_edge(edge_v))
+                        atomic_routes_list.append(('dim-fact-dim', ) + edge_q +
+                                                  get_rev_edge(edge_v))
 
     return atomic_routes_list
 
 
 class RelGNNConv(TransformerConv):
+
     def __init__(
         self,
         attn_type,
@@ -83,14 +85,15 @@ class RelGNNConv(TransformerConv):
         self,
         x,
         edge_index,
-        edge_attr = None,
-        return_attention_weights = None,
+        edge_attr=None,
+        return_attention_weights=None,
     ):
         # dim-dim
         if self.attn_type == 'dim-dim':
             if self.simplified_MP and edge_index.shape[1] == 0:
                 return None
-            out = super().forward(x, edge_index, edge_attr, return_attention_weights)
+            out = super().forward(x, edge_index, edge_attr,
+                                  return_attention_weights)
             return self.final_proj(out)
 
         # dim-fact-dim
@@ -109,10 +112,10 @@ class RelGNNConv(TransformerConv):
         else:
             src_attn = self.aggr_conv((src_aggr, dst_aggr), edge_aggr)
 
-        out = super().forward((src_attn, dst_attn), edge_attn, edge_attr, return_attention_weights)
+        out = super().forward((src_attn, dst_attn), edge_attn, edge_attr,
+                              return_attention_weights)
 
         return self.final_proj(out), src_attn
-
 
 
 def group(xs: List[Tensor], aggr: Optional[str]) -> Optional[Tensor]:
@@ -165,6 +168,7 @@ class RelGNN_HeteroConv(torch.nn.Module):
             (:obj:`"sum"`, :obj:`"mean"`, :obj:`"min"`, :obj:`"max"`,
             :obj:`"cat"`, :obj:`None`). (default: :obj:`"sum"`)
     """
+
     def __init__(
         self,
         convs,
@@ -219,6 +223,7 @@ class RelGNN_HeteroConv(torch.nn.Module):
                 :class:`torch_sparse.SparseTensor`.
         """
         out_dict: Dict[str, List[Tensor]] = {}
+
         def update(out_dict, dst, out):
             if dst not in out_dict:
                 out_dict[dst] = [out]
@@ -232,9 +237,9 @@ class RelGNN_HeteroConv(torch.nn.Module):
             if attn_type == 'dim-dim':
                 src, rel, dst = edge_type_info[1:]
                 x = (
-                        x_dict.get(src, None),
-                        x_dict.get(dst, None),
-                    )
+                    x_dict.get(src, None),
+                    x_dict.get(dst, None),
+                )
                 edge_index = edge_index_dict[(src, rel, dst)]
 
                 out = conv(x, edge_index)
@@ -249,14 +254,14 @@ class RelGNN_HeteroConv(torch.nn.Module):
                 src_attn, _, dst = edge_attn
                 src_aggr = edge_aggr[0]
                 x = (
-                        x_dict[src_aggr],
-                        x_dict[src_attn],
-                        x_dict[dst],
-                    )
+                    x_dict[src_aggr],
+                    x_dict[src_attn],
+                    x_dict[dst],
+                )
                 edge_index = (
-                        edge_index_dict[edge_attn],
-                        edge_index_dict[edge_aggr],
-                    )
+                    edge_index_dict[edge_attn],
+                    edge_index_dict[edge_aggr],
+                )
                 out = conv(x, edge_index)
 
                 if self.simplified_MP and out is None:
@@ -265,7 +270,6 @@ class RelGNN_HeteroConv(torch.nn.Module):
                 out_dst, out_src_attn = out
                 update(out_dict, dst, out_dst)
                 update(out_dict, src_attn, out_src_attn)
-
 
         for key, value in out_dict.items():
             out_dict[key] = group(value, self.aggr)
@@ -280,7 +284,9 @@ class RelGNN_HeteroConv(torch.nn.Module):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(num_relations={len(self.convs)})'
 
+
 class RelGNN(torch.nn.Module):
+
     def __init__(
         self,
         node_types: List[NodeType],
@@ -297,7 +303,12 @@ class RelGNN(torch.nn.Module):
         for _ in range(num_model_layers):
             conv = RelGNN_HeteroConv(
                 {
-                    edge_type: RelGNNConv(edge_type[0], (channels, channels), channels, num_heads, aggr=aggr, simplified_MP=simplified_MP)
+                    edge_type:
+                    RelGNNConv(edge_type[0], (channels, channels),
+                               channels,
+                               num_heads,
+                               aggr=aggr,
+                               simplified_MP=simplified_MP)
                     for edge_type in edge_types
                 },
                 aggr=aggr,
@@ -333,6 +344,7 @@ class RelGNN(torch.nn.Module):
 
         return x_dict
 
+
 class RelGNN_Model(torch.nn.Module):
 
     def __init__(
@@ -365,7 +377,8 @@ class RelGNN_Model(torch.nn.Module):
         )
         self.temporal_encoder = HeteroTemporalEncoder(
             node_types=[
-                node_type for node_type in data.node_types if "time" in data[node_type]
+                node_type for node_type in data.node_types
+                if "time" in data[node_type]
             ],
             channels=channels,
         )
@@ -385,12 +398,11 @@ class RelGNN_Model(torch.nn.Module):
             norm=norm,
             num_layers=mlp_layers,
         )
-        self.embedding_dict = ModuleDict(
-            {
-                node: Embedding(data.num_nodes_dict[node], channels)
-                for node in shallow_list
-            }
-        )
+        self.embedding_dict = ModuleDict({
+            node:
+            Embedding(data.num_nodes_dict[node], channels)
+            for node in shallow_list
+        })
 
         self.id_awareness_emb = None
         if id_awareness:
@@ -415,22 +427,22 @@ class RelGNN_Model(torch.nn.Module):
         seed_time = batch[entity_table].seed_time
         x_dict = self.encoder(batch.tf_dict)
 
-        rel_time_dict = self.temporal_encoder(
-            seed_time, batch.time_dict, batch.batch_dict
-        )
+        rel_time_dict = self.temporal_encoder(seed_time, batch.time_dict,
+                                              batch.batch_dict)
 
         for node_type, rel_time in rel_time_dict.items():
             x_dict[node_type] = x_dict[node_type] + rel_time
 
         for node_type, embedding in self.embedding_dict.items():
-            x_dict[node_type] = x_dict[node_type] + embedding(batch[node_type].n_id)
+            x_dict[node_type] = x_dict[node_type] + embedding(
+                batch[node_type].n_id)
 
         x_dict = self.gnn(
             x_dict,
             batch.edge_index_dict,
         )
 
-        return self.head(x_dict[entity_table][: seed_time.size(0)])
+        return self.head(x_dict[entity_table][:seed_time.size(0)])
 
     def forward_dst_readout(
         self,
@@ -440,22 +452,22 @@ class RelGNN_Model(torch.nn.Module):
     ) -> Tensor:
         if self.id_awareness_emb is None:
             raise RuntimeError(
-                "id_awareness must be set True to use forward_dst_readout"
-            )
+                "id_awareness must be set True to use forward_dst_readout")
         seed_time = batch[entity_table].seed_time
         x_dict = self.encoder(batch.tf_dict)
         # Add ID-awareness to the root node
-        x_dict[entity_table][: seed_time.size(0)] += self.id_awareness_emb.weight
+        x_dict[entity_table][:seed_time.size(0
+                                             )] += self.id_awareness_emb.weight
 
-        rel_time_dict = self.temporal_encoder(
-            seed_time, batch.time_dict, batch.batch_dict
-        )
+        rel_time_dict = self.temporal_encoder(seed_time, batch.time_dict,
+                                              batch.batch_dict)
 
         for node_type, rel_time in rel_time_dict.items():
             x_dict[node_type] = x_dict[node_type] + rel_time
 
         for node_type, embedding in self.embedding_dict.items():
-            x_dict[node_type] = x_dict[node_type] + embedding(batch[node_type].n_id)
+            x_dict[node_type] = x_dict[node_type] + embedding(
+                batch[node_type].n_id)
 
         x_dict = self.gnn(
             x_dict,

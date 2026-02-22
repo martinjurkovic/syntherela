@@ -8,7 +8,11 @@ PROJECT_PATH = __file__.split("experiments")[0]
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Run GNN utility benchmark')
-parser.add_argument('--singletable_model', type=str, default=None, help='singletable model to use', choices=["singletable", "singletable_dfs"])
+parser.add_argument('--singletable_model',
+                    type=str,
+                    default=None,
+                    help='singletable model to use',
+                    choices=["singletable", "singletable_dfs"])
 args = parser.parse_args()
 
 RUN_DATASETS = [
@@ -21,39 +25,42 @@ RUN_DATASETS = [
 
 UTILITY_TASKS = [
     {
-        "dataset": "rossmann_subsampled",
-        "task_type": "REGRESSION",
-        "entity_table": "historical",
-        "target_col": "Customers",
+        "dataset":
+        "rossmann_subsampled",
+        "task_type":
+        "REGRESSION",
+        "entity_table":
+        "historical",
+        "target_col":
+        "Customers",
         "methods": [
-            "ORIGINAL",
-            "CLAVADDPM",
-            "MOSTLYAI",
-            "RCTGAN",
-            "REALTABFORMER",
-            "RGCLD",
-            "SDV"
+            "ORIGINAL", "CLAVADDPM", "MOSTLYAI", "RCTGAN", "REALTABFORMER",
+            "RGCLD", "SDV"
         ],
-        "task": "autocomplete",
+        "task":
+        "autocomplete",
     },
     {
-        "dataset": "walmart_subsampled",
-        "task_type": "REGRESSION",
-        "entity_table": "depts",
-        "entity_col": None,
-        "time_col": "Date",
-        "target_col": "Weekly_Sales",
+        "dataset":
+        "walmart_subsampled",
+        "task_type":
+        "REGRESSION",
+        "entity_table":
+        "depts",
+        "entity_col":
+        None,
+        "time_col":
+        "Date",
+        "target_col":
+        "Weekly_Sales",
         "methods": [
-            "ORIGINAL",
-            "CLAVADDPM",
-            "MOSTLYAI",
-            "RCTGAN",
-            "REALTABFORMER",
-            "RGCLD",
-            "SDV"
+            "ORIGINAL", "CLAVADDPM", "MOSTLYAI", "RCTGAN", "REALTABFORMER",
+            "RGCLD", "SDV"
         ],
-        "--lr": 0.1,
-        "task": "autocomplete",
+        "--lr":
+        0.1,
+        "task":
+        "autocomplete",
     },
     # {
     #     "dataset": "f1_subsampled",
@@ -127,7 +134,8 @@ UTILITY_TASKS = [
 results_dir = os.path.join(PROJECT_PATH, "results")
 os.makedirs(results_dir, exist_ok=True)
 
-results_file = os.path.join(results_dir, f"{args.singletable_model}_utility_results.json")
+results_file = os.path.join(results_dir,
+                            f"{args.singletable_model}_utility_results.json")
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
@@ -185,7 +193,9 @@ for task in UTILITY_TASKS:
                     command.extend(["--entity_table", task["entity_table"]])
                 if "target_col" in task:
                     command.extend(["--target_col", task["target_col"]])
-                result = subprocess.run(command, capture_output=True, text=True)
+                result = subprocess.run(command,
+                                        capture_output=True,
+                                        text=True)
 
                 best_test_metrics = None
                 try:
@@ -204,7 +214,8 @@ for task in UTILITY_TASKS:
                 # convert string to dictionary
                 best_test_metrics = ast.literal_eval(best_test_metrics)
                 # print(f"JSON TEST METRICS: {best_test_metrics}")
-                existing_results[dataset][method][str(run_id)] = best_test_metrics
+                existing_results[dataset][method][str(
+                    run_id)] = best_test_metrics
 
                 with open(results_file, "w") as f:
                     json.dump(existing_results, f, indent=4)

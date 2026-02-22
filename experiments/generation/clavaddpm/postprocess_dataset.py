@@ -58,35 +58,38 @@ def main(args):
     model_name = "CLAVADDPM"
 
     metadata = Metadata().load_from_json(
-        Path(real_data_path) / f"{dataset_name}/metadata.json"
-    )
+        Path(real_data_path) / f"{dataset_name}/metadata.json")
 
     tables = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
 
     tables, metadata = remove_sdv_columns(tables, metadata)
 
-    processed_data_path = os.path.join("ClavaDDPM", "complex_data", dataset_name)
-    generated_data_path = os.path.join(
-        "ClavaDDPM", f"clavaDDPM_workspace_run{run}", dataset_name
-    )
+    processed_data_path = os.path.join("ClavaDDPM", "complex_data",
+                                       dataset_name)
+    generated_data_path = os.path.join("ClavaDDPM",
+                                       f"clavaDDPM_workspace_run{run}",
+                                       dataset_name)
     synthetic_data_path = os.path.join(synthetic_data_path, dataset_name)
 
     if os.path.exists(os.path.join(processed_data_path, "first_dates.json")):
-        with open(os.path.join(processed_data_path, "first_dates.json"), "r") as f:
+        with open(os.path.join(processed_data_path, "first_dates.json"),
+                  "r") as f:
             first_dates = json.load(f)
 
     tables_synthetic = dict()
     for table_name in metadata.get_tables():
         table_meta = metadata.get_table_meta(table_name)["columns"]
-        table_path = os.path.join(
-            generated_data_path, table_name, "_final", f"{table_name}_synthetic.csv"
-        )
+        table_path = os.path.join(generated_data_path, table_name, "_final",
+                                  f"{table_name}_synthetic.csv")
         df = pd.read_csv(table_path)
 
-        datetime_columns = metadata.get_column_names(table_name, sdtype="datetime")
-        numerical_columns = metadata.get_column_names(table_name, sdtype="numerical")
+        datetime_columns = metadata.get_column_names(table_name,
+                                                     sdtype="datetime")
+        numerical_columns = metadata.get_column_names(table_name,
+                                                      sdtype="numerical")
 
-        le_path = os.path.join(processed_data_path, f"{table_name}_label_encoders.pkl")
+        le_path = os.path.join(processed_data_path,
+                               f"{table_name}_label_encoders.pkl")
         with open(le_path, "rb") as f:
             label_encoders = pickle.load(f)
 
@@ -101,7 +104,8 @@ def main(args):
                 first_date_str = first_dates[table_name][col]
                 df[col] = reconstruct_dates(df[col], first_date_str)
                 df[col] = pd.to_datetime(df[col], format="%y%m%d")
-                column_format = table_meta[col].get("datetime_format", "%Y-%m-%d")
+                column_format = table_meta[col].get("datetime_format",
+                                                    "%Y-%m-%d")
                 df[col] = df[col].dt.strftime(column_format)
 
         for col in numerical_columns:
@@ -112,7 +116,8 @@ def main(args):
         df = revert_ids(df, metadata, table_name)
         tables_synthetic[table_name] = df
 
-    save_data_path = os.path.join(synthetic_data_path, model_name, run, "sample1")
+    save_data_path = os.path.join(synthetic_data_path, model_name, run,
+                                  "sample1")
     save_tables(tables_synthetic, save_data_path)
 
 

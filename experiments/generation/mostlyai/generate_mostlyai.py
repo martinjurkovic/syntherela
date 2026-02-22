@@ -8,9 +8,8 @@ from syntherela.metadata import Metadata
 from syntherela.data import load_tables, remove_sdv_columns, save_tables
 
 
-def create_config_from_metadata(
-    metadata: Metadata, tables: dict[pd.DataFrame], name: str
-) -> dict:
+def create_config_from_metadata(metadata: Metadata, tables: dict[pd.DataFrame],
+                                name: str) -> dict:
     config = {"name": name, "tables": []}
     for table in metadata.get_tables():
         data = tables[table]
@@ -74,20 +73,22 @@ def postprocess_data(synthetic_data, metadata):
             column_type = column_info["sdtype"]
             if column_type == "datetime":
                 synthetic_data[table][column] = pd.to_datetime(
-                    synthetic_data[table][column]
-                )
+                    synthetic_data[table][column])
             elif column_type == "boolean":
-                synthetic_data[table][column] = synthetic_data[table][column] == "True"
+                synthetic_data[table][column] = synthetic_data[table][
+                    column] == "True"
     return synthetic_data
 
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
-    args.add_argument(
-        "--dataset-name", type=str, default="airbnb-simplified_subsampled"
-    )
+    args.add_argument("--dataset-name",
+                      type=str,
+                      default="airbnb-simplified_subsampled")
     args.add_argument("--real-data-path", type=str, default="data/original")
-    args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
+    args.add_argument("--synthetic-data-path",
+                      type=str,
+                      default="data/synthetic")
     args.add_argument("--api-key", type=str, required=True)
     args.add_argument("--run-id", type=str, default="1")
     args.add_argument("--generator-id", type=str)
@@ -106,15 +107,14 @@ if __name__ == "__main__":
 
     # load the data
     metadata = Metadata().load_from_json(
-        Path(real_data_path) / f"{dataset_name}/metadata.json"
-    )
+        Path(real_data_path) / f"{dataset_name}/metadata.json")
     real_data = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
     real_data, metadata = remove_sdv_columns(real_data, metadata)
 
     # create MOSTLY AI configuration
-    config = create_config_from_metadata(
-        metadata, tables=real_data, name=f"{dataset_name} - {run_id}"
-    )
+    config = create_config_from_metadata(metadata,
+                                         tables=real_data,
+                                         name=f"{dataset_name} - {run_id}")
 
     # Train the model
     mostly = MostlyAI(api_key=api_key)
@@ -128,9 +128,9 @@ if __name__ == "__main__":
     # Sample the model three times
     for sample in range(num_samples):
         sample_id = str(sample + 1)
-        sd = mostly.generate(
-            g, config=config, name=f"{dataset_name} - {run_id} - {sample_id}"
-        )
+        sd = mostly.generate(g,
+                             config=config,
+                             name=f"{dataset_name} - {run_id} - {sample_id}")
         sleep(sleep_for)
         synthetic_data = sd.data()
         synthetic_data = postprocess_data(synthetic_data, metadata)

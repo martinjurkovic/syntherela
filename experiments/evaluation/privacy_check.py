@@ -9,12 +9,11 @@ from syntherela.metadata import Metadata
 from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 
 
-
 # Function to calculate distances in batches
 def calculate_min_distances(syn_batch, data, batch_size_data):
-    min_distances = torch.full(
-        (syn_batch.size(0),), float("inf"), device=syn_batch.device
-    )
+    min_distances = torch.full((syn_batch.size(0), ),
+                               float("inf"),
+                               device=syn_batch.device)
     for start_idx in range(0, data.size(0), batch_size_data):
         end_idx = min(start_idx + batch_size_data, data.size(0))
         data_batch = data[start_idx:end_idx]
@@ -24,27 +23,36 @@ def calculate_min_distances(syn_batch, data, batch_size_data):
     return min_distances
 
 
-def transform_data(real_data: tuple[pd.DataFrame, pd.DataFrame], syn_data: tuple[pd.DataFrame, pd.DataFrame], test_data: tuple[pd.DataFrame, pd.DataFrame],
-                   num_scaler: MinMaxScaler | None = None, cat_encoder: OneHotEncoder | None = None):
+def transform_data(real_data: tuple[pd.DataFrame, pd.DataFrame],
+                   syn_data: tuple[pd.DataFrame, pd.DataFrame],
+                   test_data: tuple[pd.DataFrame, pd.DataFrame],
+                   num_scaler: MinMaxScaler | None = None,
+                   cat_encoder: OneHotEncoder | None = None):
     cat_real_data, num_real_data = real_data
     cat_syn_data, num_syn_data = syn_data
     cat_test_data, num_test_data = test_data
 
     if cat_encoder is not None:
-        cat_real_data_oh = cat_encoder.transform(cat_real_data.to_numpy()).toarray()
-        cat_syn_data_oh = cat_encoder.transform(cat_syn_data.to_numpy()).toarray()
-        cat_test_data_oh = cat_encoder.transform(cat_test_data.to_numpy()).toarray()
+        cat_real_data_oh = cat_encoder.transform(
+            cat_real_data.to_numpy()).toarray()
+        cat_syn_data_oh = cat_encoder.transform(
+            cat_syn_data.to_numpy()).toarray()
+        cat_test_data_oh = cat_encoder.transform(
+            cat_test_data.to_numpy()).toarray()
     else:
-        assert cat_real_data.shape[1] == cat_syn_data.shape[1] == cat_test_data.shape[1] == 0
+        assert cat_real_data.shape[1] == cat_syn_data.shape[
+            1] == cat_test_data.shape[1] == 0
         cat_real_data_oh = np.empty((cat_real_data.shape[0], 0))
         cat_syn_data_oh = np.empty((cat_syn_data.shape[0], 0))
         cat_test_data_oh = np.empty((cat_test_data.shape[0], 0))
 
     if num_scaler is not None:
-        num_real_data_np = num_scaler.transform(num_real_data.fillna(0).to_numpy())
-        num_syn_data_np = num_scaler.transform(num_syn_data.fillna(0).to_numpy())
-        num_test_data_np = num_scaler.transform(num_test_data.fillna(0).to_numpy())
-
+        num_real_data_np = num_scaler.transform(
+            num_real_data.fillna(0).to_numpy())
+        num_syn_data_np = num_scaler.transform(
+            num_syn_data.fillna(0).to_numpy())
+        num_test_data_np = num_scaler.transform(
+            num_test_data.fillna(0).to_numpy())
 
     real_data_np = np.concatenate([num_real_data_np, cat_real_data_oh], axis=1)
     syn_data_np = np.concatenate([num_syn_data_np, cat_syn_data_oh], axis=1)
@@ -52,15 +60,23 @@ def transform_data(real_data: tuple[pd.DataFrame, pd.DataFrame], syn_data: tuple
     return real_data_np, syn_data_np, test_data_np
 
 
-def eval_dcr(syn_data: pd.DataFrame, real_data: pd.DataFrame, test_data: pd.DataFrame, metadata, dcr_batch_size=1000, device="cpu", save_path='', subsample=None):
+def eval_dcr(
+    syn_data: pd.DataFrame,
+    real_data: pd.DataFrame,
+    test_data: pd.DataFrame,
+    metadata,
+    dcr_batch_size=1000,
+    device="cpu",
+    save_path='',
+    subsample=None,
+):
 
     if subsample is not None:
-        syn_data = syn_data.sample(n = subsample, random_state=42)
+        syn_data = syn_data.sample(n=subsample, random_state=42)
 
     num_columns = metadata.get_column_names(sdtype="numerical")
     cat_columns = metadata.get_column_names(
-        sdtype="categorical"
-    ) + metadata.get_column_names(sdtype="boolean")
+        sdtype="categorical") + metadata.get_column_names(sdtype="boolean")
     datetime_columns = metadata.get_column_names(sdtype="datetime")
 
     for col in datetime_columns:
@@ -75,7 +91,6 @@ def eval_dcr(syn_data: pd.DataFrame, real_data: pd.DataFrame, test_data: pd.Data
     if len(cat_columns) > 0:
         cat_encoder = OneHotEncoder(handle_unknown='ignore')
         cat_encoder.fit(real_data[cat_columns].to_numpy())
-
 
     num_real_data = real_data[num_columns]
     cat_real_data = real_data[cat_columns]
@@ -92,7 +107,6 @@ def eval_dcr(syn_data: pd.DataFrame, real_data: pd.DataFrame, test_data: pd.Data
         cat_encoder=cat_encoder,
     )
 
-
     real_data_th = torch.tensor(real_data_np).to(device)
     syn_data_th = torch.tensor(syn_data_np).to(device)
     test_data_th = torch.tensor(test_data_np).to(device)
@@ -101,15 +115,19 @@ def eval_dcr(syn_data: pd.DataFrame, real_data: pd.DataFrame, test_data: pd.Data
     dcrs_test = []
     batch_size = dcr_batch_size
 
-    for i in tqdm(range((syn_data_th.shape[0] // batch_size) + 1), desc=f"Calculating DCR"):
+    for i in tqdm(range((syn_data_th.shape[0] // batch_size) + 1),
+                  desc=f"Calculating DCR"):
         if i != (syn_data_th.shape[0] // batch_size):
-            batch_syn_data_th = syn_data_th[i * batch_size : (i + 1) * batch_size]
+            batch_syn_data_th = syn_data_th[i * batch_size:(i + 1) *
+                                            batch_size]
         else:
-            batch_syn_data_th = syn_data_th[i * batch_size :]
+            batch_syn_data_th = syn_data_th[i * batch_size:]
 
         # Calculate distances for real and test data in smaller batches
-        dcr_real = calculate_min_distances(batch_syn_data_th, real_data_th, batch_size)
-        dcr_test = calculate_min_distances(batch_syn_data_th, test_data_th, batch_size)
+        dcr_real = calculate_min_distances(batch_syn_data_th, real_data_th,
+                                           batch_size)
+        dcr_test = calculate_min_distances(batch_syn_data_th, test_data_th,
+                                           batch_size)
 
         dcrs_real.append(dcr_real)
         dcrs_test.append(dcr_test)
@@ -126,22 +144,16 @@ def eval_dcr(syn_data: pd.DataFrame, real_data: pd.DataFrame, test_data: pd.Data
     # print("DCR Score, a value closer to 0.5 is better")
     print(f"DCR Score = {score} ± {std / np.sqrt(dcrs_real.shape[0])}")
 
-    torch.save(
-        dcrs_real.cpu(), f"{save_path}dcrs_real.pt"
-    )
-    torch.save(
-        dcrs_real.cpu(), f"{save_path}dcrs_real.pt"
-    )
-    torch.save(
-        dcrs_test.cpu(), f"{save_path}dcrs_test.pt"
-    )
+    torch.save(dcrs_real.cpu(), f"{save_path}dcrs_real.pt")
+    torch.save(dcrs_real.cpu(), f"{save_path}dcrs_real.pt")
+    torch.save(dcrs_test.cpu(), f"{save_path}dcrs_test.pt")
     return score, std / np.sqrt(dcrs_real.shape[0])
 
 
 if __name__ == "__main__":
     import json
     if torch.cuda.is_available():
-            device = "cuda:9"
+        device = "cuda:9"
     else:
         device = "cpu"
 
@@ -161,20 +173,14 @@ if __name__ == "__main__":
 
     all_results = {}  # Initialize the dictionary to store results
     methods = [
-        'MOSTLYAI',
-        'RGCLD',
-        'CLAVADDPM',
-        'RCTGAN',
-        'REALTABFORMER',
-        'SDV',
-        'SMOTE',
-        'MARE'
+        'MOSTLYAI', 'RGCLD', 'CLAVADDPM', 'RCTGAN', 'REALTABFORMER', 'SDV',
+        'SMOTE', 'MARE'
     ]
 
     for method in methods:
         tables_syn = load_tables(
-            f"data/synthetic/airbnb-simplified_subsampled/{method}/1/sample1", metadata
-        )
+            f"data/synthetic/airbnb-simplified_subsampled/{method}/1/sample1",
+            metadata)
         metadata.validate_data(tables_syn)
         if method not in all_results:
             all_results[method] = {}
@@ -184,9 +190,18 @@ if __name__ == "__main__":
             real_data = tables_real[table].copy()
             test_data = tables_test[table].copy()
             score, se = eval_dcr(
-                syn_data, real_data, test_data, metadata.get_table_meta(table, to_dict=False), device=device, save_path=f"results/dcr/{table}_{method}_", subsample=None
+                syn_data,
+                real_data,
+                test_data,
+                metadata.get_table_meta(table, to_dict=False),
+                device=device,
+                save_path=f"results/dcr/{table}_{method}_",
+                subsample=None,
             )
-            all_results[method][table] = {"score": score.item(), "se": se.item()}
+            all_results[method][table] = {
+                "score": score.item(),
+                "se": se.item()
+            }
 
             # Save results to JSON after each table evaluation
             with open("results/dcr/all_results.json", "w") as f:

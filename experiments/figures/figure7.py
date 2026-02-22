@@ -9,14 +9,14 @@ from sklearn.model_selection import train_test_split
 from syntherela.metadata import Metadata
 from syntherela.data import load_tables, remove_sdv_columns
 from syntherela.metrics.single_table.detection.single_table_detection import (
-    SingleTableDetection,
-)
+    SingleTableDetection, )
 
 sns.set_theme()
 
 
 def load_data(dataset_name, target_table):
-    metadata = Metadata().load_from_json(f"data/original/{dataset_name}/metadata.json")
+    metadata = Metadata().load_from_json(
+        f"data/original/{dataset_name}/metadata.json")
     tables = load_tables(f"data/original/{dataset_name}/", metadata)
     tables, metadata = remove_sdv_columns(tables, metadata)
 
@@ -27,9 +27,9 @@ def load_data(dataset_name, target_table):
 
 def symulate_generation(tables, target_table, seed=None):
     table = tables[target_table]
-    table_perfect, table_original = train_test_split(
-        table, test_size=0.5, random_state=seed
-    )
+    table_perfect, table_original = train_test_split(table,
+                                                     test_size=0.5,
+                                                     random_state=seed)
     table_shuffled = table_perfect.copy()
     for column in table_shuffled.columns:
         table_shuffled[column] = table_shuffled[column].sample(frac=1).values
@@ -42,12 +42,12 @@ def initialize_metrics(seed):
     lin_cls = LogisticRegression
     lin_args = {"random_state": seed}
 
-    c2st_xgb = SingleTableDetection(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=seed
-    )
-    ld = SingleTableDetection(
-        classifier_cls=lin_cls, classifier_args=lin_args, random_state=seed
-    )
+    c2st_xgb = SingleTableDetection(classifier_cls=xgb_cls,
+                                    classifier_args=xgb_args,
+                                    random_state=seed)
+    ld = SingleTableDetection(classifier_cls=lin_cls,
+                              classifier_args=lin_args,
+                              random_state=seed)
     return c2st_xgb, ld
 
 
@@ -83,8 +83,7 @@ for dataset_name, target_table in zip(datasets, target_tables):
     for i in tqdm(range(100), desc=dataset_name):
         # "generate" data
         table_perfect, table_original, table_shuffled = symulate_generation(
-            tables, target_table, seed=seed + i
-        )
+            tables, target_table, seed=seed + i)
         # prepare metrics
         c2st_xgb, ld = initialize_metrics(seed + i)
 
@@ -126,7 +125,6 @@ for dataset_name, target_table in zip(datasets, target_tables):
         "ld_shuffled": ld_shuffled,
     }
 
-
 colormap = plt.cm.tab20
 fig, axes = plt.subplots(1, 2, figsize=(10, 6))
 
@@ -145,9 +143,11 @@ for i, dataset in enumerate(datasets):
     else:
         label1 = ""
         label2 = ""
-    plot(
-        axes[0], results[dataset]["ld_perfect"], 0 + i * 1.5, colormap(1), label=label2
-    )
+    plot(axes[0],
+         results[dataset]["ld_perfect"],
+         0 + i * 1.5,
+         colormap(1),
+         label=label2)
     plot(
         axes[0],
         results[dataset]["c2st_xgb_perfect"],
@@ -156,9 +156,11 @@ for i, dataset in enumerate(datasets):
         label=label1,
     )
 
-    plot(
-        axes[1], results[dataset]["ld_shuffled"], 0 + i * 1.5, colormap(1), label=label2
-    )
+    plot(axes[1],
+         results[dataset]["ld_shuffled"],
+         0 + i * 1.5,
+         colormap(1),
+         label=label2)
     plot(
         axes[1],
         results[dataset]["c2st_xgb_shuffled"],
@@ -167,12 +169,13 @@ for i, dataset in enumerate(datasets):
         label=label1,
     )
 
-
 axes[0].set_xticks([0.25, 1.75, 3.25, 4.75, 6.25])
-axes[0].set_xticklabels([dataset_names[dataset] for dataset in datasets], rotation=45)
+axes[0].set_xticklabels([dataset_names[dataset] for dataset in datasets],
+                        rotation=45)
 
 axes[1].set_xticks([0.25, 1.75, 3.25, 4.75, 6.25])
-axes[1].set_xticklabels([dataset_names[dataset] for dataset in datasets], rotation=45)
+axes[1].set_xticklabels([dataset_names[dataset] for dataset in datasets],
+                        rotation=45)
 
 for ax in axes:
     ax.legend(loc="upper right", bbox_to_anchor=(0.7, 1))

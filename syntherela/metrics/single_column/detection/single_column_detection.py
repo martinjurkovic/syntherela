@@ -53,4 +53,6 @@ class SingleColumnDetection(DetectionBaseMetric, SingleColumnMetric):
             True if the metric is applicable to the column type, False otherwise.
 
         """
-        return column_type in ["categorical", "datetime", "numerical", "boolean"]
+        return column_type in [
+            "categorical", "datetime", "numerical", "boolean"
+        ]

@@ -26,7 +26,8 @@ def remap_ids(metadata, tables):
         if primary_key not in id_map[parent_table_name]:
             id_map[parent_table_name][primary_key] = {}
             idx = 0
-            for primary_key_val in tables[parent_table_name][primary_key].unique():
+            for primary_key_val in tables[parent_table_name][
+                    primary_key].unique():
                 id_map[parent_table_name][primary_key][primary_key_val] = idx
                 idx += 1
 
@@ -36,18 +37,17 @@ def remap_ids(metadata, tables):
             if relationship["child_table_name"] not in id_map:
                 id_map[relationship["child_table_name"]] = {}
             fk = f"{parent_table_name}_id"
-            id_map[relationship["child_table_name"]][fk] = id_map[parent_table_name][fk]
+            id_map[relationship["child_table_name"]][fk] = id_map[
+                parent_table_name][fk]
 
     # remap the ids
     for table_name in id_map.keys():
         for column_name in id_map[table_name].keys():
             if column_name not in tables[table_name].columns:
                 raise ValueError(
-                    f"Column {column_name} not found in table {table_name}"
-                )
-            tables[table_name][column_name] = tables[table_name][column_name].map(
-                id_map[table_name][column_name]
-            )
+                    f"Column {column_name} not found in table {table_name}")
+            tables[table_name][column_name] = tables[table_name][
+                column_name].map(id_map[table_name][column_name])
 
     return tables
 
@@ -65,13 +65,13 @@ def rename_ids(metadata, tables):
             if pk.dtype != "int64":
                 non_integer_ids = True
         else:
-            tables[table_name][f"{table_name}_id"] = range(len(tables[table_name]))
+            tables[table_name][f"{table_name}_id"] = range(
+                len(tables[table_name]))
             ids[table_name].append(f"{table_name}_id")
         for parent in metadata.get_parents(table_name):
             foreign_keys = metadata.get_foreign_keys(parent, table_name)
             assert len(foreign_keys) == 1, (
-                "CLAVADDPM only supports one foreign key per table pair."
-            )
+                "CLAVADDPM only supports one foreign key per table pair.")
             foreign_key = foreign_keys[0]
             fk = tables[table_name].pop(foreign_key)
             tables[table_name][f"{parent}_id"] = fk
@@ -112,14 +112,12 @@ def main(args):
     run_id = args.run_id
 
     metadata = Metadata().load_from_json(
-        Path(real_data_path) / f"{dataset_name}/metadata.json"
-    )
+        Path(real_data_path) / f"{dataset_name}/metadata.json")
     real_data = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
     real_data, metadata = remove_sdv_columns(real_data, metadata)
 
-    processed_data_path = (
-        Path().absolute() / "ClavaDDPM" / "complex_data" / dataset_name
-    )
+    processed_data_path = (Path().absolute() / "ClavaDDPM" / "complex_data" /
+                           dataset_name)
     os.makedirs(processed_data_path, exist_ok=True)
 
     tables = dict()
@@ -149,11 +147,12 @@ def main(args):
     real_data, ids = rename_ids(metadata, real_data)
     for table_name, df in real_data.items():
         id_columns = ids[table_name]
-        categorical_columns = metadata.get_column_names(
-            table_name, sdtype="categorical"
-        )
-        datetime_columns = metadata.get_column_names(table_name, sdtype="datetime")
-        numerical_columns = metadata.get_column_names(table_name, sdtype="numerical")
+        categorical_columns = metadata.get_column_names(table_name,
+                                                        sdtype="categorical")
+        datetime_columns = metadata.get_column_names(table_name,
+                                                     sdtype="datetime")
+        numerical_columns = metadata.get_column_names(table_name,
+                                                      sdtype="numerical")
 
         for col in numerical_columns:
             df[col] = df[col].fillna(df[col].mean())
@@ -167,9 +166,9 @@ def main(args):
                 df[col] = df[col].fillna(df[col].mode().iloc[0])
             # clip dates to 1900-01-01 to avoid negative values
             df[col] = df[col].clip("1900-01-01", None)
-            df[col], first_dates[table_name][col] = calculate_days_since_earliest_date(
-                df[col].dt.strftime("%y%m%d")
-            )
+            df[col], first_dates[table_name][
+                col] = calculate_days_since_earliest_date(
+                    df[col].dt.strftime("%y%m%d"))
 
         # Create a domain file for each table, id columns excluded.
         encode_and_save(
@@ -217,7 +216,10 @@ def main(args):
             "batch_size": 4096,
             "iterations": 20000,
         },
-        "sampling": {"batch_size": 20000, "classifier_scale": 1.0},
+        "sampling": {
+            "batch_size": 20000,
+            "classifier_scale": 1.0
+        },
         "matching": {
             "num_matching_clusters": 1,
             "matching_batch_size": 1000,
@@ -227,8 +229,8 @@ def main(args):
     }
 
     with open(
-        Path("ClavaDDPM") / "configs" / f"{dataset_name}_run{run_id}.json",
-        "w",
+            Path("ClavaDDPM") / "configs" / f"{dataset_name}_run{run_id}.json",
+            "w",
     ) as f:
         json.dump(config, f, indent=4)
 

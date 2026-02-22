@@ -56,7 +56,9 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
             True if the metric is applicable to the column type, False otherwise.
 
         """
-        return column_type in ["categorical", "numerical", "datetime", "boolean"]
+        return column_type in [
+            "categorical", "numerical", "datetime", "boolean"
+        ]
 
     @staticmethod
     def compute(real_data, synthetic_data, bins, **kwargs):
@@ -79,9 +81,10 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
             The Total Variation Distance between the two columns.
 
         """
-        f_exp, f_obs = get_histograms(
-            real_data, synthetic_data, normalize=True, bins=bins
-        )
+        f_exp, f_obs = get_histograms(real_data,
+                                      synthetic_data,
+                                      normalize=True,
+                                      bins=bins)
         total_variation = 0
         for i in range(len(f_obs)):
             total_variation += abs(f_obs[i] - f_exp[i])
@@ -119,10 +122,12 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
             }
         # check for datetime
         if is_datetime(real_data):
-            real_data = pd.to_numeric(real_data, errors="coerce", downcast="integer")
-            synthetic_data = pd.to_numeric(
-                synthetic_data, errors="coerce", downcast="integer"
-            )
+            real_data = pd.to_numeric(real_data,
+                                      errors="coerce",
+                                      downcast="integer")
+            synthetic_data = pd.to_numeric(synthetic_data,
+                                           errors="coerce",
+                                           downcast="integer")
         if real_data.dtype.name in ("object", "category", "bool"):
             bins = None
         else:

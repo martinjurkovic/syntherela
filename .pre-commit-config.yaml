@@ -20,13 +20,6 @@ repos:
     - id: check-merge-conflict
       name: Check merge conflict
 
-- repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.12.1
-  hooks:
-    - id: ruff
-      args: [--fix]
-    - id: ruff-format
-
 - repo: https://github.com/PyCQA/autoflake
   rev: v2.3.1
   hooks:
@@ -40,9 +33,52 @@ repos:
         --in-place,
       ]
 
+- repo: https://github.com/google/yapf
+  rev: v0.43.0
+  hooks:
+    - id: yapf
+      name: Format code
+      additional_dependencies: [toml]
+
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.14.14
+  hooks:
+    - id: ruff
+      name: Ruff formatting
+      args: [--fix, --exit-non-zero-on-fix]
+
 -   repo: https://github.com/pycqa/pydocstyle
     rev: 6.3.0
     hooks:
     -   id: pydocstyle
         args: ["--ignore=D107,D203,D213"]
         files: ^syntherela/
+
+# - repo: https://github.com/executablebooks/mdformat
+#   rev: 1.0.0
+#   hooks:
+#     - id: mdformat
+#       name: Format Markdown
+#       additional_dependencies:
+#         - mdformat-gfm
+#         - mdformat-front-matters
+#         - mdformat-footnote
+
+# - repo: https://github.com/sphinx-contrib/sphinx-lint
+#   rev: v1.0.2
+#   hooks:
+#     - id: sphinx-lint
+#       name: Check Sphinx
+
+# - repo: https://github.com/pycqa/isort
+#   rev: 7.0.0
+#   hooks:
+#     - id: isort
+#       name: Sort imports
+
+# - repo: https://github.com/PyCQA/flake8
+#   rev: 7.3.0
+#   hooks:
+#     - id: flake8
+#       name: Check PEP8
+#       additional_dependencies: [Flake8-pyproject]

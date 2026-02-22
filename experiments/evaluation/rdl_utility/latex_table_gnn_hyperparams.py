@@ -7,6 +7,7 @@ Creates separate tables for each GNN architecture
 import json
 import os
 
+
 def load_hyperparameters():
     """Load hyperparameters from JSON files organized by GNN architecture and dataset"""
 
@@ -18,8 +19,8 @@ def load_hyperparameters():
 
     # GNN architectures to process
     gnn_architectures = [
-        "hetero_gat", "hetero_gatv2", "hetero_gin",
-        "hetero_graphconv", "hetero_graphsage", "relgnn"
+        "hetero_gat", "hetero_gatv2", "hetero_gin", "hetero_graphconv",
+        "hetero_graphsage", "relgnn"
     ]
 
     # Datasets to process
@@ -40,11 +41,13 @@ def load_hyperparameters():
                 try:
                     with open(filepath, 'r') as f:
                         data = json.load(f)
-                        hyperparams[gnn_arch][dataset] = data['best_hyperparameters']
+                        hyperparams[gnn_arch][dataset] = data[
+                            'best_hyperparameters']
                 except Exception as e:
                     print(f"Warning: Could not load {filepath}: {e}")
 
     return hyperparams
+
 
 def generate_gnn_hyperparameter_table(gnn_arch, hyperparams):
     """Generate LaTeX table for a specific GNN architecture"""
@@ -78,7 +81,10 @@ def generate_gnn_hyperparameter_table(gnn_arch, hyperparams):
         all_params.update(dataset_hyperparams.keys())
 
     # Order parameters consistently
-    param_order = ["lr", "num_layers", "num_neighbors", "weight_decay", "mlp_layers", "aggr"]
+    param_order = [
+        "lr", "num_layers", "num_neighbors", "weight_decay", "mlp_layers",
+        "aggr"
+    ]
     params_to_show = [p for p in param_order if p in all_params]
 
     # Create table header
@@ -110,12 +116,15 @@ def generate_gnn_hyperparameter_table(gnn_arch, hyperparams):
 """
 
     # Add rows for each dataset
-    datasets_order = ["rossmann_subsampled", "walmart_subsampled", "airbnb_simplified_subsampled",
-                     "Berka_subsampled", "f1_subsampled"]
+    datasets_order = [
+        "rossmann_subsampled", "walmart_subsampled",
+        "airbnb_simplified_subsampled", "Berka_subsampled", "f1_subsampled"
+    ]
 
     for dataset in datasets_order:
         if dataset in dataset_params:
-            dataset_display = dataset_rename.get(dataset, dataset.replace("_", "\\_"))
+            dataset_display = dataset_rename.get(dataset,
+                                                 dataset.replace("_", "\\_"))
 
             row_values = [dataset_display]
 
@@ -127,7 +136,8 @@ def generate_gnn_hyperparameter_table(gnn_arch, hyperparams):
                         if value < 0.001:
                             formatted_value = f"{value:.2e}"
                         else:
-                            formatted_value = f"{value:.3f}".rstrip('0').rstrip('.')
+                            formatted_value = f"{value:.3f}".rstrip(
+                                '0').rstrip('.')
                     else:
                         formatted_value = str(value)
                     row_values.append(formatted_value)
@@ -143,13 +153,16 @@ def generate_gnn_hyperparameter_table(gnn_arch, hyperparams):
 
     return latex_table
 
+
 def generate_latex_table():
     """Generate all GNN hyperparameter tables"""
     hyperparams = load_hyperparameters()
 
     all_tables = []
-    gnn_architectures = ["hetero_gat", "hetero_gatv2", "hetero_gin",
-                        "hetero_graphconv", "hetero_graphsage", "relgnn"]
+    gnn_architectures = [
+        "hetero_gat", "hetero_gatv2", "hetero_gin", "hetero_graphconv",
+        "hetero_graphsage", "relgnn"
+    ]
 
     for gnn_arch in gnn_architectures:
         if gnn_arch in hyperparams and hyperparams[gnn_arch]:
@@ -157,6 +170,7 @@ def generate_latex_table():
             all_tables.append(table)
 
     return "\n\n".join(all_tables)
+
 
 def generate_detailed_latex_table():
     """Generate a detailed combined table showing hyperparameters for all GNN architectures"""
@@ -193,10 +207,14 @@ def generate_detailed_latex_table():
 \hline
 """
 
-    gnn_architectures = ["hetero_gat", "hetero_gatv2", "hetero_gin",
-                        "hetero_graphconv", "hetero_graphsage", "relgnn"]
-    datasets_order = ["rossmann_subsampled", "walmart_subsampled", "airbnb_simplified_subsampled",
-                     "Berka_subsampled", "f1_subsampled"]
+    gnn_architectures = [
+        "hetero_gat", "hetero_gatv2", "hetero_gin", "hetero_graphconv",
+        "hetero_graphsage", "relgnn"
+    ]
+    datasets_order = [
+        "rossmann_subsampled", "walmart_subsampled",
+        "airbnb_simplified_subsampled", "Berka_subsampled", "f1_subsampled"
+    ]
 
     for gnn_arch in gnn_architectures:
         if gnn_arch in hyperparams and hyperparams[gnn_arch]:
@@ -204,7 +222,8 @@ def generate_detailed_latex_table():
 
             for i, dataset in enumerate(datasets_order):
                 if dataset in hyperparams[gnn_arch]:
-                    dataset_display = dataset_rename.get(dataset, dataset.replace("_", "\\_"))
+                    dataset_display = dataset_rename.get(
+                        dataset, dataset.replace("_", "\\_"))
                     params = hyperparams[gnn_arch][dataset]
 
                     # Show GNN name only for first dataset
@@ -219,10 +238,12 @@ def generate_detailed_latex_table():
                     aggr = params.get("aggr", "-")
 
                     # Format weight decay in scientific notation if very small
-                    if isinstance(weight_decay, float) and weight_decay < 0.001:
+                    if isinstance(weight_decay,
+                                  float) and weight_decay < 0.001:
                         weight_decay = f"{weight_decay:.1e}"
                     elif isinstance(weight_decay, float):
-                        weight_decay = f"{weight_decay:.5f}".rstrip('0').rstrip('.')
+                        weight_decay = f"{weight_decay:.5f}".rstrip(
+                            '0').rstrip('.')
 
                     latex_table += f"{gnn_cell} & {dataset_display} & {lr} & {num_layers} & {num_neighbors} & {weight_decay} & {mlp_layers} & {aggr} \\\\\n"
 
@@ -238,6 +259,7 @@ def generate_detailed_latex_table():
 """
 
     return latex_table
+
 
 if __name__ == "__main__":
     print("=== Individual GNN Hyperparameter Tables ===")

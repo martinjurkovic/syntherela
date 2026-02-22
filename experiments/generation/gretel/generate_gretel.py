@@ -21,7 +21,6 @@ from gretel_client.rest_v1.models import (
 )
 from gretel_client.workflows.logs import print_logs_for_workflow_run
 
-
 # Helpers for running workflows from the notebook
 
 
@@ -45,12 +44,10 @@ def run_workflow(config: str):
             project_id=project.project_guid,
             config=config_dict,
             name=config_dict["name"],
-        )
-    )
+        ))
 
     workflow_run = workflow_api.create_workflow_run(
-        CreateWorkflowRunRequest(workflow_id=workflow.id)
-    )
+        CreateWorkflowRunRequest(workflow_id=workflow.id))
 
     print(f"workflow: {workflow.id}")
     print(f"workflow run id: {workflow_run.id}")
@@ -60,11 +57,18 @@ def run_workflow(config: str):
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
-    args.add_argument("--dataset-name", type=str, default="Biodegradability_v1")
+    args.add_argument("--dataset-name",
+                      type=str,
+                      default="Biodegradability_v1")
     args.add_argument("--real-data-path", type=str, default="data/original")
-    args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
+    args.add_argument("--synthetic-data-path",
+                      type=str,
+                      default="data/synthetic")
     args.add_argument("--connection-uid", type=str, required=True)
-    args.add_argument("--model", type=str, required=True, choices=["lstm", "actgan"])
+    args.add_argument("--model",
+                      type=str,
+                      required=True,
+                      choices=["lstm", "actgan"])
     args.add_argument("--run-id", type=str, default="1")
     args = args.parse_args()
 
@@ -80,8 +84,7 @@ if __name__ == "__main__":
 
     # Load real data
     metadata = Metadata().load_from_json(
-        Path(real_data_path) / f"{dataset_name}/metadata.json"
-    )
+        Path(real_data_path) / f"{dataset_name}/metadata.json")
     real_data = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
     real_data, metadata = remove_sdv_columns(real_data, metadata)
     metadata.validate_data(real_data)
@@ -95,14 +98,14 @@ if __name__ == "__main__":
     workflow_api = session.get_v1_api(WorkflowsApi)
 
     project = create_or_get_unique_project(
-        name=f"Synthesize-{dataset_name_gretel}-{model}"
-    )
+        name=f"Synthesize-{dataset_name_gretel}-{model}")
 
     # Configure and Run your Relational Workflow
     # Gretel Workflows provide an easy to use, config driven API for automating and operationalizing synthetic data. A Gretel Workflow is constructed by actions that are composed to create a pipeline for processing data with Gretel. To learn more about Gretel Workflows, check out [our docs](https://docs.gretel.ai/reference/workflows).
 
     ### Define Source Data via Connector
-    connection_type = connection_api.get_connection(input_connection_uid).dict()["type"]
+    connection_type = connection_api.get_connection(
+        input_connection_uid).dict()["type"]
 
     # ### Define Workflow configuration
     workflow_config = f"""\
@@ -145,10 +148,10 @@ if __name__ == "__main__":
         f"./data_{dataset_name}_{model}/workflow-output.tar.gz",
     )
 
-    with gzip.open(
-        f"./data_{dataset_name}_{model}/workflow-output.tar.gz", "rb"
-    ) as f_in:
-        with open(f"./data_{dataset_name}_{model}/workflow-output.tar", "wb") as f_out:
+    with gzip.open(f"./data_{dataset_name}_{model}/workflow-output.tar.gz",
+                   "rb") as f_in:
+        with open(f"./data_{dataset_name}_{model}/workflow-output.tar",
+                  "wb") as f_out:
             f_out.write(f_in.read())
 
     with tarfile.open(f"{path}/workflow-output.tar") as tar:
@@ -159,7 +162,8 @@ if __name__ == "__main__":
     )
     os.makedirs(path_synthetic, exist_ok=True)
     for table in table_names:
-        shutil.copy(f"{path}/synth_{table}.csv", f"{path_synthetic}/{table}.csv")
+        shutil.copy(f"{path}/synth_{table}.csv",
+                    f"{path_synthetic}/{table}.csv")
 
     # Postprocess synthetic data (some categorical columns are generated as floats)
     def is_float(value):
@@ -186,16 +190,14 @@ if __name__ == "__main__":
                         break
                 if numeric:
                     synthetic_data[table][column] = synthetic_data[table][
-                        column
-                    ].astype("object")
+                        column].astype("object")
                     for i, value in synthetic_data[table][column].items():
                         if value != value or not is_float(str(value)):
                             # skip NaN
                             continue
                         synthetic_data[table].at[i, column] = int(float(value))
                     synthetic_data[table][column] = synthetic_data[table][
-                        column
-                    ].astype("object")
+                        column].astype("object")
 
     # Save synthetic data
     save_tables(synthetic_data, Path(path_synthetic))

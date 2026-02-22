@@ -13,7 +13,6 @@ from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 import featuretools as ft
 
-
 from relbench.base import Dataset, TaskType, EntityTask, BaseTask, AutoCompleteTask
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
@@ -50,20 +49,22 @@ parser.add_argument(
     "--task_type",
     type=str,
     default="REGRESSION",
-    choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
+    choices=[
+        "BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"
+    ],
 )
 
 parser.add_argument("--dataset", type=str, default="walmart_subsampled")
 parser.add_argument("--entity_table", type=str, default="depts")
 parser.add_argument("--target_col", type=str, default="Weekly_Sales")
 
-
 parser.add_argument("--num_trials", type=int, default=10)
 parser.add_argument(
     "--sample_size",
     type=int,
     default=50_000,
-    help="Subsample the specified number of training data to train lightgbm model.",
+    help=
+    "Subsample the specified number of training data to train lightgbm model.",
 )
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
@@ -92,10 +93,11 @@ predict_column_task_config = {
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id)
-dataset_test: Dataset = DATASETS[args.dataset](
-    method=args.method, run_id=args.run_id, type="test"
-)
+dataset: Dataset = DATASETS[args.dataset](method=args.method,
+                                          run_id=args.run_id)
+dataset_test: Dataset = DATASETS[args.dataset](method=args.method,
+                                               run_id=args.run_id,
+                                               type="test")
 
 # task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
 if args.task == "autocomplete":
@@ -103,12 +105,10 @@ if args.task == "autocomplete":
     dataset.entity_table = args.entity_table
     dataset_test.target_col = args.target_col
     dataset_test.entity_table = args.entity_table
-    task: AutoCompleteTask = TASKS[args.task](
-        dataset=dataset, **predict_column_task_config
-    )
+    task: AutoCompleteTask = TASKS[args.task](dataset=dataset,
+                                              **predict_column_task_config)
     task_test: AutoCompleteTask = TASKS[args.task](
-        dataset=dataset_test, **predict_column_task_config
-    )
+        dataset=dataset_test, **predict_column_task_config)
 else:
     task: BaseTask = TASKS[args.task](dataset=dataset)
     # task_test: BaseTask = TASKS[args.task](dataset=dataset_test)
@@ -117,7 +117,6 @@ else:
 train_table = task.get_table("train")
 val_table = task.get_table("val")
 test_table = task_test.get_table("test", mask_input_cols=False)
-
 
 dfs: Dict[str, pd.DataFrame] = {}
 # entity_table = dataset.get_db().table_dict[task.entity_table]
@@ -144,7 +143,9 @@ try:
         for col in keys_to_delete:
             del col_to_stype[col]
 except FileNotFoundError:
-    raise ValueError(f"Stypes cache file not found for {args.dataset}. Please run the metadata_sdv_to_relbench.py script to generate the cache file.")
+    raise ValueError(
+        f"Stypes cache file not found for {args.dataset}. Please run the metadata_sdv_to_relbench.py script to generate the cache file."
+    )
     col_to_stype_dict = get_stype_proposal(dataset.get_db())
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
@@ -183,7 +184,8 @@ for split, table in [
     db = None
     # Get database for this split
     if split == "test":
-        db = dataset_test.get_db(upto_test_timestamp=False if args.task == "autocomplete" else True)
+        db = dataset_test.get_db(
+            upto_test_timestamp=False if args.task == "autocomplete" else True)
     else:
         db = dataset.get_db()
 
@@ -200,7 +202,9 @@ for split, table in [
             before_len = len(df)
             df = df.drop_duplicates(subset=[table_obj.pkey_col])
             if len(df) < before_len:
-                print(f"  Removed {before_len - len(df)} duplicates from {table_name}")
+                print(
+                    f"  Removed {before_len - len(df)} duplicates from {table_name}"
+                )
 
         # Create logical types mapping
         logical_types = {}
@@ -248,25 +252,31 @@ for split, table in [
                 df[artificial_pkey] = range(len(df))
                 logical_types[artificial_pkey] = 'integer'
                 pkey_to_use = artificial_pkey
-                print(f"  Created artificial primary key for {table_name}: {artificial_pkey}")
+                print(
+                    f"  Created artificial primary key for {table_name}: {artificial_pkey}"
+                )
             else:
                 pkey_to_use = table_obj.pkey_col
 
             if pkey_to_use not in df.columns:
-                print(f"  ✗ Skipped {table_name}: primary key '{pkey_to_use}' not found")
+                print(
+                    f"  ✗ Skipped {table_name}: primary key '{pkey_to_use}' not found"
+                )
                 continue
 
             if df[pkey_to_use].nunique() != len(df):
-                print(f"  ✗ Skipped {table_name}: primary key '{pkey_to_use}' not unique")
+                print(
+                    f"  ✗ Skipped {table_name}: primary key '{pkey_to_use}' not unique"
+                )
                 continue
 
-            es = es.add_dataframe(
-                dataframe_name=table_name,
-                dataframe=df,
-                index=pkey_to_use,
-                logical_types=logical_types
+            es = es.add_dataframe(dataframe_name=table_name,
+                                  dataframe=df,
+                                  index=pkey_to_use,
+                                  logical_types=logical_types)
+            print(
+                f"  ✓ Added {table_name}: {len(df)} rows, pkey='{pkey_to_use}'"
             )
-            print(f"  ✓ Added {table_name}: {len(df)} rows, pkey='{pkey_to_use}'")
 
         except Exception as e:
             print(f"  ✗ Failed to add {table_name}: {e}")
@@ -276,8 +286,11 @@ for split, table in [
     print(f"Adding relationships...")
     relationships_added = 0
     for table_name, table_obj in db.table_dict.items():
-        if hasattr(table_obj, 'fkey_col_to_pkey_table') and table_obj.fkey_col_to_pkey_table:
-            for fkey_col, parent_table in table_obj.fkey_col_to_pkey_table.items():
+        if hasattr(
+                table_obj,
+                'fkey_col_to_pkey_table') and table_obj.fkey_col_to_pkey_table:
+            for fkey_col, parent_table in table_obj.fkey_col_to_pkey_table.items(
+            ):
                 if parent_table in es.dataframe_dict and table_name in es.dataframe_dict:
                     try:
                         parent_obj = db.table_dict[parent_table]
@@ -287,12 +300,15 @@ for split, table in [
                             parent_dataframe_name=parent_table,
                             child_dataframe_name=table_name,
                             parent_column_name=parent_pkey,
-                            child_column_name=fkey_col
+                            child_column_name=fkey_col)
+                        print(
+                            f"  ✓ {parent_table}.{parent_pkey} -> {table_name}.{fkey_col}"
                         )
-                        print(f"  ✓ {parent_table}.{parent_pkey} -> {table_name}.{fkey_col}")
                         relationships_added += 1
                     except Exception as e:
-                        print(f"  ✗ Failed relationship {parent_table} -> {table_name}: {e}")
+                        print(
+                            f"  ✗ Failed relationship {parent_table} -> {table_name}: {e}"
+                        )
 
     print(f"EntitySet created with {relationships_added} relationships")
 
@@ -306,8 +322,7 @@ for split, table in [
         trans_primitives=["month", "year"],
         max_depth=2,
         features_only=False,
-        verbose=True
-    )
+        verbose=True)
     #     print(f"Generated {len(feature_defs)} features for training")
     # else:
     #     print(f"Applying training features to {split} data")
@@ -331,7 +346,8 @@ for split, table in [
     left_entity = list(table.fkey_col_to_pkey_table.keys())[0]
 
     # Ensure dtype compatibility between entity table primary key and task table foreign key
-    entity_df = entity_df.astype({entity_table.pkey_col: table.df[left_entity].dtype})
+    entity_df = entity_df.astype(
+        {entity_table.pkey_col: table.df[left_entity].dtype})
 
     # Use DFS features instead of raw entity_df
     # Reset index to make entity IDs a column for joining
@@ -357,21 +373,24 @@ for split, table in [
         merged_df_len = len(merged_df)
         for col in merged_df.columns:
             dtype = merged_df[col].dtype
-            if (pd.api.types.is_object_dtype(dtype) or
-                pd.api.types.is_string_dtype(dtype) or
-                pd.api.types.is_bool_dtype(dtype) or
-                isinstance(dtype, pd.CategoricalDtype)):
+            if (pd.api.types.is_object_dtype(dtype)
+                    or pd.api.types.is_string_dtype(dtype)
+                    or pd.api.types.is_bool_dtype(dtype)
+                    or isinstance(dtype, pd.CategoricalDtype)):
                 categorical_cols.append(col)
-
 
         # Drop rows where categorical columns are NaN
         if split in ["train", "val"]:
             merged_df = merged_df.dropna(subset=categorical_cols)
             if len(merged_df) < merged_df_len:
-                print(f"Dropped {merged_df_len - len(merged_df)} rows with NaN categorical values")
+                print(
+                    f"Dropped {merged_df_len - len(merged_df)} rows with NaN categorical values"
+                )
                 DROPPED_COLS = True
 
-    print(f"Joined {split} data: task table {table.df.shape} + DFS features -> {merged_df.shape}")
+    print(
+        f"Joined {split} data: task table {table.df.shape} + DFS features -> {merged_df.shape}"
+    )
 
     # Store the merged result
     dfs[split] = merged_df
@@ -404,7 +423,8 @@ for col in dfs["train"].columns:
         col_to_stype[col] = stype.numerical
     elif pd.api.types.is_bool_dtype(dtype):
         col_to_stype[col] = stype.categorical
-    elif pd.api.types.is_object_dtype(dtype) or pd.api.types.is_string_dtype(dtype):
+    elif pd.api.types.is_object_dtype(dtype) or pd.api.types.is_string_dtype(
+            dtype):
         # All text fields are categorical
         col_to_stype[col] = stype.categorical
     elif pd.api.types.is_datetime64_any_dtype(dtype):
@@ -418,8 +438,6 @@ for col in dfs["train"].columns:
         col_to_stype[col] = stype.categorical
 
 print(f"Mapped {len(col_to_stype)} columns to stypes for DFS features")
-
-
 
 train_dataset = torch_frame.data.Dataset(
     df=dfs["train"],
@@ -441,8 +459,8 @@ tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
 tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
 if task.task_type in [
-    TaskType.BINARY_CLASSIFICATION,
-    TaskType.MULTILABEL_CLASSIFICATION,
+        TaskType.BINARY_CLASSIFICATION,
+        TaskType.MULTILABEL_CLASSIFICATION,
 ]:
     tune_metric = Metric.ROCAUC
 elif task.task_type == TaskType.REGRESSION:
@@ -453,18 +471,15 @@ else:
     raise ValueError(f"Task task type is unsupported {task.task_type}")
 
 if task.task_type in [
-    TaskType.BINARY_CLASSIFICATION,
-    TaskType.REGRESSION,
-    TaskType.MULTICLASS_CLASSIFICATION,
+        TaskType.BINARY_CLASSIFICATION,
+        TaskType.REGRESSION,
+        TaskType.MULTICLASS_CLASSIFICATION,
 ]:
     model = LightGBM(
         task_type=train_dataset.task_type,
         metric=tune_metric,
-        num_classes=(
-            task.num_classes
-            if task.task_type == TaskType.MULTICLASS_CLASSIFICATION
-            else None
-        ),
+        num_classes=(task.num_classes if task.task_type
+                     == TaskType.MULTICLASS_CLASSIFICATION else None),
     )
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
@@ -484,7 +499,11 @@ else:
 
 def clean_metrics(metrics):
     """Convert numpy values to regular Python numbers for cleaner output."""
-    return {k: v.item() if hasattr(v, 'item') else v for k, v in metrics.items()}
+    return {
+        k: v.item() if hasattr(v, 'item') else v
+        for k, v in metrics.items()
+    }
+
 
 if not DROPPED_COLS:
     print(f"Train: {clean_metrics(train_metrics)}")

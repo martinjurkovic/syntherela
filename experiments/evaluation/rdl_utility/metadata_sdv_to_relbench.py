@@ -10,7 +10,10 @@ import json
 import os
 from pathlib import Path
 
-def convert_sdv_to_relbench_type(sdtype, column_name, computer_representation=None):
+
+def convert_sdv_to_relbench_type(sdtype,
+                                 column_name,
+                                 computer_representation=None):
     """Convert SDV data type to relbench data type."""
     # Basic mapping rules based on SDV types
     if sdtype == "datetime":
@@ -27,6 +30,7 @@ def convert_sdv_to_relbench_type(sdtype, column_name, computer_representation=No
         # Default fallback
         raise ValueError(f"Unknown SDV type: {sdtype}")
 
+
 def convert_metadata(sdv_metadata):
     """Convert SDV metadata to relbench format."""
     relbench_metadata = {}
@@ -36,14 +40,15 @@ def convert_metadata(sdv_metadata):
 
         for column_name, column_info in table_info["columns"].items():
             sdtype = column_info["sdtype"]
-            computer_representation = column_info.get("computer_representation")
+            computer_representation = column_info.get(
+                "computer_representation")
 
             relbench_type = convert_sdv_to_relbench_type(
-                sdtype, column_name, computer_representation
-            )
+                sdtype, column_name, computer_representation)
             relbench_metadata[table_name][column_name] = relbench_type
 
     return relbench_metadata
+
 
 def main():
     """Convert SDV metadata to relbench format for all datasets."""
@@ -67,7 +72,8 @@ def main():
             pass
 
         # Create output directory
-        output_dir = Path.home() / ".cache" / "relbench_examples" / dataset # / "tasks" / task
+        output_dir = Path.home(
+        ) / ".cache" / "relbench_examples" / dataset  # / "tasks" / task
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Save relbench metadata
@@ -76,6 +82,7 @@ def main():
             json.dump(relbench_metadata, f, indent=2)
 
         print(f"Saved relbench metadata to: {output_path}")
+
 
 if __name__ == "__main__":
     main()

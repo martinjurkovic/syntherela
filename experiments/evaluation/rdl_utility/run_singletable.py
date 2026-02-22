@@ -13,7 +13,6 @@ from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 
-
 from relbench.base import Dataset, TaskType, EntityTask, BaseTask, AutoCompleteTask
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.tasks import get_task
@@ -50,20 +49,22 @@ parser.add_argument(
     "--task_type",
     type=str,
     default="REGRESSION",
-    choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
+    choices=[
+        "BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"
+    ],
 )
 
 parser.add_argument("--dataset", type=str, default="rossmann_subsampled")
 parser.add_argument("--entity_table", type=str, default="historical")
 parser.add_argument("--target_col", type=str, default="Customers")
 
-
 parser.add_argument("--num_trials", type=int, default=10)
 parser.add_argument(
     "--sample_size",
     type=int,
     default=50_000,
-    help="Subsample the specified number of training data to train lightgbm model.",
+    help=
+    "Subsample the specified number of training data to train lightgbm model.",
 )
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
@@ -92,10 +93,11 @@ predict_column_task_config = {
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id)
-dataset_test: Dataset = DATASETS[args.dataset](
-    method=args.method, run_id=args.run_id, type="test"
-)
+dataset: Dataset = DATASETS[args.dataset](method=args.method,
+                                          run_id=args.run_id)
+dataset_test: Dataset = DATASETS[args.dataset](method=args.method,
+                                               run_id=args.run_id,
+                                               type="test")
 
 # task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
 if args.task == "autocomplete":
@@ -103,12 +105,10 @@ if args.task == "autocomplete":
     dataset.entity_table = args.entity_table
     dataset_test.target_col = args.target_col
     dataset_test.entity_table = args.entity_table
-    task: AutoCompleteTask = TASKS[args.task](
-        dataset=dataset, **predict_column_task_config
-    )
+    task: AutoCompleteTask = TASKS[args.task](dataset=dataset,
+                                              **predict_column_task_config)
     task_test: AutoCompleteTask = TASKS[args.task](
-        dataset=dataset_test, **predict_column_task_config
-    )
+        dataset=dataset_test, **predict_column_task_config)
 else:
     task: BaseTask = TASKS[args.task](dataset=dataset)
     # task_test: BaseTask = TASKS[args.task](dataset=dataset_test)
@@ -118,12 +118,13 @@ train_table = task.get_table("train")
 val_table = task.get_table("val")
 test_table = task_test.get_table("test")
 
-
 dfs: Dict[str, pd.DataFrame] = {}
 entity_table = dataset.get_db().table_dict[task.entity_table]
 entity_df = entity_table.df
 
-entity_table_test = dataset_test.get_db(upto_test_timestamp=False if args.task == "autocomplete" else True).table_dict[task.entity_table]
+entity_table_test = dataset_test.get_db(
+    upto_test_timestamp=False if args.task ==
+    "autocomplete" else True).table_dict[task.entity_table]
 entity_df_test = entity_table_test.df
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -144,7 +145,9 @@ try:
         for col in keys_to_delete:
             del col_to_stype[col]
 except FileNotFoundError:
-    raise ValueError(f"Stypes cache file not found for {args.dataset}. Please run the metadata_sdv_to_relbench.py script to generate the cache file.")
+    raise ValueError(
+        f"Stypes cache file not found for {args.dataset}. Please run the metadata_sdv_to_relbench.py script to generate the cache file."
+    )
     col_to_stype_dict = get_stype_proposal(dataset.get_db())
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
@@ -173,7 +176,7 @@ else:
 
 # randomly subsample in case training data size is too large.
 if args.sample_size > 0 and args.sample_size < len(train_table):
-    sampled_idx = np.random.permutation(len(train_table))[: args.sample_size]
+    sampled_idx = np.random.permutation(len(train_table))[:args.sample_size]
     train_table.df = train_table.df.iloc[sampled_idx]
 
 for split, table in [
@@ -186,7 +189,8 @@ for split, table in [
         entity_table = entity_table_test
 
     left_entity = list(table.fkey_col_to_pkey_table.keys())[0]
-    entity_df = entity_df.astype({entity_table.pkey_col: table.df[left_entity].dtype})
+    entity_df = entity_df.astype(
+        {entity_table.pkey_col: table.df[left_entity].dtype})
     # Remove duplicated columns from entity_df that are already in the table df
     for col in set(entity_df.columns).intersection(set(table.df.columns)):
         if col != entity_table.pkey_col:
@@ -198,7 +202,8 @@ for split, table in [
         right_on=entity_table.pkey_col,
     )
     if args.left_join_fkey:
-        for fkey_col, pkey_table_name in entity_table.fkey_col_to_pkey_table.items():
+        for fkey_col, pkey_table_name in entity_table.fkey_col_to_pkey_table.items(
+        ):
             pkey_table = dataset.get_db().table_dict[pkey_table_name]
             dfs[split] = dfs[split].merge(
                 pkey_table.df,
@@ -225,13 +230,10 @@ for split, table in [
                 elif col not in col_to_stype:
                     # add stype for the column
                     col_to_stype[col] = stype(stype_str)
-                elif (
-                    f"{col}_{pkey_table_name}" not in col_to_stype
-                    and f"{col}_{pkey_table_name}" in dfs[split].columns
-                ):
+                elif (f"{col}_{pkey_table_name}" not in col_to_stype
+                      and f"{col}_{pkey_table_name}" in dfs[split].columns):
                     # add stype for the column with suffix to avoid name collision
                     col_to_stype[f"{col}_{pkey_table_name}"] = stype(stype_str)
-
 
 train_dataset = torch_frame.data.Dataset(
     df=dfs["train"],
@@ -253,8 +255,8 @@ tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
 tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
 if task.task_type in [
-    TaskType.BINARY_CLASSIFICATION,
-    TaskType.MULTILABEL_CLASSIFICATION,
+        TaskType.BINARY_CLASSIFICATION,
+        TaskType.MULTILABEL_CLASSIFICATION,
 ]:
     tune_metric = Metric.ROCAUC
 elif task.task_type == TaskType.REGRESSION:
@@ -265,18 +267,15 @@ else:
     raise ValueError(f"Task task type is unsupported {task.task_type}")
 
 if task.task_type in [
-    TaskType.BINARY_CLASSIFICATION,
-    TaskType.REGRESSION,
-    TaskType.MULTICLASS_CLASSIFICATION,
+        TaskType.BINARY_CLASSIFICATION,
+        TaskType.REGRESSION,
+        TaskType.MULTICLASS_CLASSIFICATION,
 ]:
     model = LightGBM(
         task_type=train_dataset.task_type,
         metric=tune_metric,
-        num_classes=(
-            task.num_classes
-            if task.task_type == TaskType.MULTICLASS_CLASSIFICATION
-            else None
-        ),
+        num_classes=(task.num_classes if task.task_type
+                     == TaskType.MULTICLASS_CLASSIFICATION else None),
     )
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
@@ -292,10 +291,13 @@ else:
     raise ValueError(f"Task task type is unsupported {task.task_type}")
 
 
-
 def clean_metrics(metrics):
     """Convert numpy values to regular Python numbers for cleaner output."""
-    return {k: v.item() if hasattr(v, 'item') else v for k, v in metrics.items()}
+    return {
+        k: v.item() if hasattr(v, 'item') else v
+        for k, v in metrics.items()
+    }
+
 
 print(f"Train: {clean_metrics(train_metrics)}")
 print(f"Val: {clean_metrics(val_metrics)}")

@@ -17,10 +17,9 @@ authors = [
 ]
 description = "SyntheRela - Synthetic Relational Data Generation Benchmark"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 keywords = ["python", "syntherela", "synthetic data", "relational data", "evaluation", "benchmark"]
 classifiers = [
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
