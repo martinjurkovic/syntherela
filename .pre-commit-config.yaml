@@ -5,13 +5,20 @@ ci:
 
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
-    -   id: check-toml
-    -   id: end-of-file-fixer
-    -   id: trailing-whitespace
-    -   id: mixed-line-ending
-    -   id: check-merge-conflict
+    - id: no-commit-to-branch
+      name: No commits to main
+    - id: check-toml
+      name: Check toml
+    - id: end-of-file-fixer
+      name: End-of-file fixer
+    - id: trailing-whitespace
+      name: Remove trailing whitespaces
+    - id: mixed-line-ending
+      name: Mixed line ending
+    - id: check-merge-conflict
+      name: Check merge conflict
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.12.1
@@ -19,6 +26,19 @@ repos:
     - id: ruff
       args: [--fix]
     - id: ruff-format
+
+- repo: https://github.com/PyCQA/autoflake
+  rev: v2.3.1
+  hooks:
+    - id: autoflake
+      name: Remove unused imports and variables
+      args: [
+        --remove-all-unused-imports,
+        --remove-unused-variables,
+        --remove-duplicate-keys,
+        --ignore-init-module-imports,
+        --in-place,
+      ]
 
 -   repo: https://github.com/pycqa/pydocstyle
     rev: 6.3.0
