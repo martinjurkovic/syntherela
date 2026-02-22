@@ -3,9 +3,7 @@
 import os
 import json
 import glob
-from dotenv import load_dotenv
 
-load_dotenv()
 
 """
 Merge Results Script
@@ -14,7 +12,7 @@ Merges individual dataset result files into a single combined results file.
 Run this after the tmux benchmark completes.
 """
 
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
 
 def merge_results():
     """Merge all dataset-specific result files into a single file"""

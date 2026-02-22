@@ -3,14 +3,10 @@ import json
 import numpy as np
 import glob
 
-from dotenv import load_dotenv
-
 # Note: The generated LaTeX table uses cell coloring for highlighting
 # Make sure to include \usepackage[table]{xcolor} in your LaTeX document preamble
 
-load_dotenv()
-
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
 
 # Configuration for reading results
 USE_HYPERPARAMETER_TUNING_RESULTS = True  # Set to True to read from hyperparameter_tuning_100 directory

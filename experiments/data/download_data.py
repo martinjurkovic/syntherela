@@ -2,11 +2,8 @@ import os
 import zipfile
 
 import gdown
-from dotenv import load_dotenv
 
-load_dotenv()
-
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
 
 
 def download_and_extract(url, filename, subdirectory):

@@ -1,15 +1,13 @@
 import os
 from syntherela.data import load_tables, save_tables
 from syntherela.metadata import Metadata
-from dotenv import load_dotenv
 
-load_dotenv()
 
-project_path = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
 
-path = os.path.join(project_path, "data/original/walmart/")
+path = os.path.join(PROJECT_PATH, "data/original/walmart/")
 metadata_path = os.path.join(
-    project_path, "data", "original", "walmart", "metadata.json"
+    PROJECT_PATH, "data", "original", "walmart", "metadata.json"
 )
 metadata = Metadata.load_from_json(metadata_path)
 
@@ -28,5 +26,5 @@ depts_df = depts_df[
 
 tables["depts"] = depts_df
 tables["features"] = features_df
-save_path = os.path.join(project_path, "data/original/walmart_subsampled/")
+save_path = os.path.join(PROJECT_PATH, "data/original/walmart_subsampled/")
 save_tables(tables, save_path)

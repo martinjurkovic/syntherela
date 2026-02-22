@@ -2,12 +2,11 @@ import json
 import os
 
 import numpy as np
-from dotenv import load_dotenv
 from scipy.stats import spearmanr, kendalltau, sem
 
-load_dotenv()
 
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+
+PROJECT_PATH = __file__.split("experiments")[0]
 NUM_RUNS = 3
 
 datasets_methods = {

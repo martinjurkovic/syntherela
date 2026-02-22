@@ -2,11 +2,9 @@ import os
 import subprocess
 import json
 import ast
-from dotenv import load_dotenv
 
-load_dotenv()
 
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
 
 RUN_DATASETS = [
     "rossmann_subsampled",

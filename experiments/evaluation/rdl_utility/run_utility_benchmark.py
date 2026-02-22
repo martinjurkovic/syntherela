@@ -3,9 +3,6 @@ import subprocess
 import json
 import ast
 import argparse
-from dotenv import load_dotenv
-
-load_dotenv()
 
 """
 GNN Utility Benchmark Script
@@ -30,7 +27,7 @@ parser.add_argument('--use_tuned_hyperparameters', action='store_true',
                     help='Use best hyperparameters from hyperparameter tuning results')
 args = parser.parse_args()
 
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
 
 def load_tuned_hyperparameters(dataset, gnn_architecture):
     """Load best hyperparameters for a specific dataset-architecture combination"""

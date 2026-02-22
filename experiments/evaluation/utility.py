@@ -355,11 +355,8 @@ cls_args = {
 feature_selection_models = {"regression": ["xgboost"], "classification": ["xgboost"]}
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
 
-    load_dotenv()
-
-    PROJECT_PATH = os.getenv("PROJECT_PATH")
+    PROJECT_PATH = __file__.split("experiments")[0]
 
     args = argparse.ArgumentParser()
     args.add_argument(

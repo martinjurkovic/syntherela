@@ -2,11 +2,7 @@ import os
 import json
 import numpy as np
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
 
 # Define which metric to use for each dataset
 dataset_metrics = {

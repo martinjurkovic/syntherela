@@ -1,16 +1,13 @@
 import os
 from syntherela.data import load_tables, save_tables
 from syntherela.metadata import Metadata
-from dotenv import load_dotenv
 import pandas as pd
 
 
-load_dotenv()
+PROJECT_PATH = __file__.split("experiments")[0]
 
-project_path = os.getenv("PROJECT_PATH")
-
-path = os.path.join(project_path, "data/original/f1/")
-metadata_path = os.path.join(project_path, "data", "original", "f1", "metadata.json")
+path = os.path.join(PROJECT_PATH, "data/original/f1/")
+metadata_path = os.path.join(PROJECT_PATH, "data", "original", "f1", "metadata.json")
 metadata = Metadata.load_from_json(metadata_path)
 
 tables = load_tables(path, metadata)
@@ -44,5 +41,5 @@ tables["constructor_standings"] = constructor_standings_df
 tables["races"] = races_df
 tables["results"] = results_df
 tables["standings"] = standings_df
-save_path = os.path.join(project_path, "data/original/f1_subsampled/")
+save_path = os.path.join(PROJECT_PATH, "data/original/f1_subsampled/")
 save_tables(tables, save_path, metadata)

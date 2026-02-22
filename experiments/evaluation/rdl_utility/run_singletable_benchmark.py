@@ -2,12 +2,9 @@ import os
 import subprocess
 import json
 import ast
-from dotenv import load_dotenv
 import argparse
 
-load_dotenv()
-
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Run GNN utility benchmark')

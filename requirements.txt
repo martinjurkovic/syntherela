@@ -1,3 +1,2 @@
 .
-python-dotenv==1.0.1
 gdown==5.2.0

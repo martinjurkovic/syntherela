@@ -10,9 +10,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 import optuna
-from dotenv import load_dotenv
 
-load_dotenv()
 
 """
 Optuna-based Hyperparameter Tuning for GNNs
@@ -31,7 +29,7 @@ Usage:
     python run_optuna_hyperparameter_tuning.py --gnn_architecture hetero-graphsage --dataset rossmann_subsampled --torch_device cuda:9
 """
 
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
 
 # Original datasets with their task configurations
 DATASET_CONFIGS = {
