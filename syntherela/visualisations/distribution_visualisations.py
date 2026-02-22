@@ -15,7 +15,8 @@ sns.set_palette("colorblind")
 def visualize_marginals(real_data, synthetic_data, metadata):
     """Visualize marginal distributions of real and synthetic data.
 
-    Creates plots comparing the distributions of each column in real and synthetic data.
+    Creates plots comparing the distributions of each column in real and
+    synthetic data.
 
     Parameters
     ----------
@@ -199,8 +200,8 @@ def visualize_bivariate_distributions(real_data, synthetic_data, metadata):
 def visualize_parent_child_bivariates(real_data, synthetic_data, metadata):
     """Visualize bivariate distributions between parent and child tables.
 
-    Creates scatter plots comparing the joint distributions of foreign key relationships
-    between parent and child tables in real and synthetic data.
+    Creates scatter plots comparing the joint distributions of foreign key
+    relationships between parent and child tables in real and synthetic data.
 
     Parameters
     ----------

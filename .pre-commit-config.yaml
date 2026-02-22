@@ -54,13 +54,13 @@ repos:
     - id: isort
       name: Sort imports
 
-# - repo: https://github.com/PyCQA/flake8
-#   rev: 7.3.0
-#   hooks:
-#     - id: flake8
-#       name: Check PEP8
-#       additional_dependencies: [Flake8-pyproject]
-#       args: [--ignore=E501] # FIXME: remove this
+- repo: https://github.com/PyCQA/flake8
+  rev: 7.3.0
+  hooks:
+    - id: flake8
+      name: Check PEP8
+      additional_dependencies: [Flake8-pyproject]
+      files: ^syntherela/
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.14.14

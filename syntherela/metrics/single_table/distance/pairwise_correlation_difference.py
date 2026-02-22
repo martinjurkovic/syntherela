@@ -1,8 +1,9 @@
 """Pairwise correlation difference metric for single tables.
 
-This module implements a metric that measures the difference between correlation matrices
-of real and synthetic data, evaluating how well the synthetic data preserves linear relationships
-between variables in the original dataset.
+This module implements a metric that measures the difference between
+correlation matrices of real and synthetic data, evaluating how well the
+synthetic data preserves linear relationships between variables in the original
+dataset.
 """
 
 import numpy as np
@@ -15,7 +16,7 @@ from syntherela.metrics.base import DistanceBaseMetric, SingleTableMetric
 
 
 class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
-    """Pairwise correlation difference metric."""
+    """Pairwise correlation difference (PCD) metric."""
 
     def __init__(
         self, norm_order="fro", correlation_method="pearson", **kwargs
@@ -41,10 +42,10 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         return numeric_count > 1
 
     def compute(self, original_table, sythetic_table, metadata, **kwargs):
-        """Compute pairwise correlation difference between original and synthetic data.
+        """Compute PCD between original and synthetic data.
 
         Based on:
-            Andre Goncalves, Priyadip Ray, Braden Soper, Jennifer Stevens, Linda Coyle & Ana Paula Sales (2020).
+            Andre Goncalves, et al. (2020).
             Generation and evaluation of synthetic patient data.
             https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-020-00977-1
 
@@ -60,7 +61,8 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         Returns:
         -------
         float
-            The pairwise correlation difference between the original and synthetic data.
+            The pairwise correlation difference between the original and
+            synthetic data.
 
         """
         orig = original_table.copy()

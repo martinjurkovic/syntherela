@@ -11,9 +11,9 @@ from syntherela.metrics.base import DetectionBaseMetric, SingleTableMetric
 class SingleTableDetection(DetectionBaseMetric, SingleTableMetric):
     """Detection metric (C2ST) for single tables.
 
-    This class implements a detection metric that uses a classifier to distinguish
-    between real and synthetic data at the table level. It prepares the data by
-    removing ID columns before training the classifier.
+    This class implements a detection metric that uses a classifier to
+    distinguish between real and synthetic data at the table level. It prepares
+    the data by removing ID columns before training the classifier.
 
     Parameters
     ----------

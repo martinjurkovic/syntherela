@@ -92,7 +92,8 @@ def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
                 datetime_format = column_info.get("datetime_format")
                 if not datetime_format:
                     raise ValueError(
-                        f'"datetime_format" not found in metadata for column "{column}" in table "{table_name}"'
+                        f'"datetime_format" not found in metadata for column '
+                        f'"{column}" in table "{table_name}"'
                     )
                 datetime_formats[column] = datetime_format
 
@@ -124,8 +125,9 @@ def remove_sdv_columns(
 ):
     """Remove SDV-specific columns from tables.
 
-    "_v1" Versions of the relational demo datasets in SDV have some columns that are not present in the original datasets.
-    We created this function to remove these columns from the tables and the metadata.
+    "_v1" Versions of the relational demo datasets in SDV have some columns
+    that are not present in the original datasets. We created this function to
+    remove these columns from the tables and the metadata.
     """
     warnings.warn(
         "This function is deprecated and will be removed in the future.",
@@ -179,7 +181,7 @@ def save_tables(
     for table_name, table in tables.items():
         if metadata:
             for col in table.columns:
-                # if col in metadata is datetime, convert to string with datetime_format
+                # convert to string with datetime_format
                 if metadata.tables[table_name].columns[col]["sdtype"
                                                             ] == "datetime":
                     datetime_format = (
@@ -187,20 +189,19 @@ def save_tables(
                         get("datetime_format")
                     )
                     if datetime_format:
-                        # If the column is already a string, convert it to datetime first
-                        # to ensure the datetime_format is applied correctly.
+                        # If the column is already a string, convert it to
+                        # datetime first to ensure the formatting is applied.
                         table[col] = pd.to_datetime(
                             table[col]
                         ).dt.strftime(datetime_format)
         table.to_csv(os.path.join(path, f"{table_name}.csv"), index=False)
 
 
+# See also https://docs.sdv.dev/sdv/single-table-data/data-preparation/loading-data. # noqa: E501
 def download_sdv_relational_datasets(
     data_path: Union[str, os.PathLike] = "data/original",
 ):
     """Download SDV relational datasets.
-
-    The datasets are available at https://docs.sdv.dev/sdv/single-table-data/data-preparation/loading-data.
 
     Parameters
     ----------
@@ -234,7 +235,8 @@ def denormalize_tables(tables: Tables, metadata: Metadata):
     tables: Tables
         Dictionary mapping table names to pandas DataFrames.
     metadata: Metadata
-        Metadata object containing information about the tables and their relationships.
+        Metadata object containing information about the tables and their
+        relationships.
 
     Returns:
     -------
@@ -269,8 +271,8 @@ def denormalize_tables(tables: Tables, metadata: Metadata):
         )
 
         # Drop the foreign key column with suffix from the denormalized table
-        for column, column_info in metadata.tables[
-            relationships[0]["child_table_name"]].columns.items():
+        columns = metadata.tables[relationships[0]["child_table_name"]].columns
+        for column, column_info in columns.items():
             if column_info["sdtype"] != "id":
                 continue
             denormalized_table = drop_column_if_in_table(
@@ -327,8 +329,10 @@ def make_column_names_unique(
     -------
     tuple
         Tuple containing:
-        - real_data: Dictionary mapping table names to pandas DataFrames with unique column names.
-        - synthetic_data: Dictionary mapping table names to pandas DataFrames with unique column names.
+        - real_data: Dictionary mapping table names to pandas DataFrames with
+        unique column names.
+        - synthetic_data: Dictionary mapping table names to pandas DataFrames
+        with unique column names.
         - metadata: Updated metadata object with unique column names.
 
     """

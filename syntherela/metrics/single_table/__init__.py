@@ -1,1 +1,1 @@
-"""Metrics for evaluating synthetic relational database quality at the table level."""
+"""Metrics for evaluating synthetic RDB quality at the table level."""

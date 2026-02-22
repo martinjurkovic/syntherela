@@ -12,8 +12,9 @@ from syntherela.metrics.base import SingleColumnMetric, StatisticalBaseMetric
 class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
     """Kolmogorov-Smirnov test metric for comparing marginal distributions.
 
-    This metric computes the Kolmogorov-Smirnov test statistic between the distributions
-    of real and synthetic data columns. It is applicable to numerical and datetime columns.
+    This metric computes the Kolmogorov-Smirnov test statistic between the
+    distributions of real and synthetic data columns. It is applicable to
+    numerical and datetime columns.
 
     Parameters
     ----------
@@ -46,7 +47,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         Returns:
         -------
         bool
-            True if the metric is applicable to the column type, False otherwise.
+            Whether the metric is applicable to the column type.
 
         """
         return column_type == "numerical" or column_type == "datetime"
@@ -71,7 +72,8 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
             return
 
         raise ValueError(
-            f"{self.name} can only be applied to numerical columns, but column {column.name} is of type {column.dtype}"
+            f"{self.name} can only be applied to numerical columns, but "
+            f"column {column.name} is of type {column.dtype}"
         )
 
     @staticmethod

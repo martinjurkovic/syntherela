@@ -20,9 +20,11 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         is_applicable(column_type):
             Checks if the metric is applicable to the given column type.
         validate(column):
-            Validates if the column is of a type that can be used with the chi-square test.
+            Validates if the column is of a type that can be used with the
+            chi-square test.
         compute(real_data, synthetic_data):
-            Computes the chi-square statistic and p-value for the given real and synthetic data.
+            Computes the chi-square statistic and p-value for the given real
+            and synthetic data.
 
     """
 
@@ -37,10 +39,11 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         return column_type == "categorical" or column_type == "boolean"
 
     def validate(self, column):
-        """Validate if the data type that can be used with the chi-square test."""
+        """Validate if the data can be used with the chi-square test."""
         if column.dtype.name not in ("object", "category", "bool"):
             raise ValueError(
-                f"{self.name} can only be applied to categorical columns, but column {column.name} is of type {column.dtype}"
+                f"{self.name} can only be applied to categorical columns, but "
+                f"column {column.name} is of type {column.dtype}"
             )
 
     @staticmethod
@@ -56,13 +59,13 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
 
         Returns:
         -------
-            dict: A dictionary containing the chi-square test statistic and p-value.
+            dict: A dictionary containing the test statistic and p-value.
                 - "statistic" (float): The chi-square test statistic.
                 - "p_value" (float): The p-value of the chi-square test.
 
         Raises:
         ------
-            AssertionError: If the indexes of the frequency counts do not match.
+            AssertionError: If the indexes of frequency counts do not match.
 
         """
         orig_col = pd.Categorical(real_data)

@@ -13,8 +13,8 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
     """Total Variation Distance metric for comparing distributions.
 
     This metric computes the total variation distance between the distributions
-    of real and synthetic data columns. It is applicable to categorical, numerical,
-    datetime, and boolean columns.
+    of real and synthetic data columns. It is applicable to categorical,
+    numerical, datetime, and boolean columns.
 
     Parameters
     ----------
@@ -53,7 +53,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         Returns:
         -------
         bool
-            True if the metric is applicable to the column type, False otherwise.
+            Whether the metric is applicable to the column type.
 
         """
         return column_type in [

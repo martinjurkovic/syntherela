@@ -1,7 +1,8 @@
 """Detection metrics (C2ST) for single columns.
 
 This module provides metrics for detecting synthetic data in single columns
-by training classifiers to distinguish between real and synthetic marginal distributions.
+by training classifiers to distinguish between real and synthetic marginal
+distributions.
 """
 
 from syntherela.metrics.base import DetectionBaseMetric, SingleColumnMetric
@@ -10,9 +11,9 @@ from syntherela.metrics.base import DetectionBaseMetric, SingleColumnMetric
 class SingleColumnDetection(DetectionBaseMetric, SingleColumnMetric):
     """Detection metric for single columns.
 
-    This class implements a detection metric that uses a classifier to distinguish
-    between real and synthetic data at the column level. It is applicable to
-    categorical, datetime, numerical, and boolean columns.
+    This class implements a detection metric that uses a classifier to
+    distinguish  between real and synthetic data at the column level. It is
+    applicable to categorical, datetime, numerical, and boolean columns.
 
     Parameters
     ----------
@@ -50,7 +51,7 @@ class SingleColumnDetection(DetectionBaseMetric, SingleColumnMetric):
         Returns:
         -------
         bool
-            True if the metric is applicable to the column type, False otherwise.
+            Whether the metric is applicable to the column type.
 
         """
         return column_type in [

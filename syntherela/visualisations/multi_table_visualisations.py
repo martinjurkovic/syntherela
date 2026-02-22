@@ -20,7 +20,7 @@ def visualize_parent_child_multi_table(
     """Visualize parent-child detection metrics for multi-table datasets.
 
     This function creates bar charts comparing parent-child detection metrics
-    across different synthetic data generation methods for multi-table datasets.
+    across different synthetic data generation methods.
 
     Parameters
     ----------
@@ -34,7 +34,7 @@ def visualize_parent_child_multi_table(
         Additional keyword arguments including:
         - save_figs : bool
             Whether to save the figures.
-        - save_figs_path : str
+        - save_path : str
             Path where to save the figures.
         - detection_metrics : list
             List of detection metrics to visualize.
@@ -65,8 +65,8 @@ def visualize_parent_child_multi_table(
         )
 
         save_figs = kwargs.get("save_figs", False)
-        save_figs_path = kwargs.get("save_figs_path", "./figs")
-        save_figs_path = Path(save_figs_path) / "multi_table" / "detection"
+        save_path = kwargs.get("save_path", "./figs")
+        save_path = Path(save_path) / "multi_table" / "detection"
 
         method_order = kwargs.get(
             "method_order", ["SDV", "RCTGAN", "MOSTLYAI", "REALTABFORMER"]
@@ -111,9 +111,6 @@ def visualize_parent_child_multi_table(
                     all_results[dataset][method]["multi_table_metrics"][metric]
                     [table]["SE"] for method in methods
                 ]
-                # baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][metric][table]["baseline_mean"] for method in methods])
-                # baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][metric][table]["baseline_se"] for method in methods])
-
                 baseline_means = np.array([0.5 for method in methods])
                 baseline_ses = np.array([0.00 for method in methods])
 
@@ -155,8 +152,6 @@ def visualize_parent_child_multi_table(
                     all_results[dataset][method]["multi_table_metrics"]
                     [agg_metric][table]["SE"] for method in methods
                 ]
-                # baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_mean"] for method in methods])
-                # baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_se"] for method in methods])
 
                 baseline_means = np.array([0.5 for method in methods])
                 baseline_ses = np.array([0.00 for method in methods])
@@ -216,9 +211,9 @@ def visualize_parent_child_multi_table(
             plt.title(f"Dataset {dataset}, table {table}")
 
             if save_figs:
-                os.makedirs(save_figs_path, exist_ok=True)
+                os.makedirs(save_path, exist_ok=True)
                 plt.savefig(
-                    f"{save_figs_path}/{dataset}_{table}_parent_child_detection.png",
+                    f"{save_path}/{dataset}_{table}_PC_detection.png",
                     dpi=300,
                 )
 
@@ -226,8 +221,8 @@ def visualize_parent_child_multi_table(
 def visualize_multi_table(all_results, datasets, methods, **kwargs):
     """Visualize detection metrics for multi-table datasets.
 
-    This function creates bar charts comparing detection metrics
-    across different synthetic data generation methods for multi-table datasets.
+    This function creates bar charts comparing detection metrics across
+    different synthetic data generation methods for multi-table datasets.
 
     Parameters
     ----------
@@ -241,7 +236,7 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
         Additional keyword arguments including:
         - save_figs : bool
             Whether to save the figures.
-        - save_figs_path : str
+        - save_path : str
             Path where to save the figures.
         - detection_metrics : list
             List of detection metrics to visualize.
@@ -250,8 +245,8 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
 
     """
     save_figs = kwargs.get("save_figs", False)
-    save_figs_path = kwargs.get("save_figs_path", "./figs/")
-    save_figs_path = Path(save_figs_path) / "multi_table" / "detection"
+    save_path = kwargs.get("save_path", "./figs/")
+    save_path = Path(save_path) / "multi_table" / "detection"
 
     methods_all = methods.copy()
 
@@ -372,5 +367,5 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
         plt.title(f"Dataset {dataset}")
 
         if save_figs:
-            os.makedirs(save_figs_path, exist_ok=True)
-            plt.savefig(save_figs_path / f"{dataset}_multi_table_detection.png")
+            os.makedirs(save_path, exist_ok=True)
+            plt.savefig(save_path / f"{dataset}_multi_table_detection.png")

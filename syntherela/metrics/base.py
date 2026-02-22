@@ -83,7 +83,7 @@ class SingleColumnMetric(BaseMetric):
         Returns:
         -------
         bool
-            True if the metric is applicable to the column type, False otherwise.
+            Whether the metric is applicable to the column type.
 
         Raises:
         ------
@@ -262,14 +262,17 @@ class DistanceBaseMetric(BaseMetric):
     Methods:
     -------
         compute(real_data, synthetic_data, **kwargs):
-            Compute the metric value between two samples. Must be implemented by subclasses.
+            Compute the metric value between two samples. Must be implemented
+            by subclasses.
         run(real_data, synthetic_data, **kwargs):
             Compute the reference and actual metric values.
-        boostrap_metric_values(data1, data2, m=100, random_state=None, **kwargs):
+        boostrap_metric_values(data1, data2, m=100, random_state=None,
+        **kwargs):
             Compute the metric values for m bootstrap samples.
         bootstrap_metric_estimate(real_data, synthetic_data, m=1000, **kwargs):
             Compute the bootstrap mean and standard error estimates.
-        bootstrap_reference_standard_conf_int(real_data, m=1000, alpha=0.05, **kwargs):
+        bootstrap_reference_standard_conf_int(real_data, m=1000, alpha=0.05,
+        **kwargs):
             Compute the standard CI on the original data using bootstrapping.
 
     """
@@ -367,11 +370,13 @@ class DistanceBaseMetric(BaseMetric):
 class DetectionBaseMetric(BaseMetric):
     """C2ST Base class.
 
-    DetectionBaseMetric extends the BaseMetric class to provide methods for evaluating the
-    performance of a classifier in distinguishing between real and synthetic data.
-    It includes methods for preparing data, performing stratified k-fold cross-validation,
-    computing the C2ST metric, generating bootstrap samples, estimating baseline performance,
-    computing p-values using the binomial test, and plotting feature importance and partial dependence.
+    DetectionBaseMetric extends the BaseMetric class to provide methods for
+    evaluating the performance of a classifier in distinguishing between real
+    and synthetic data. It includes methods for preparing data, performing
+    stratified k-fold cross-validation, computing the C2ST metric, generating
+    bootstrap samples, estimating baseline performance, computing p-values
+    using the binomial test, and plotting feature importance and partial
+    dependence.
 
     Attributes:
     ----------
@@ -407,7 +412,8 @@ class DetectionBaseMetric(BaseMetric):
         Compute the C2ST metric.
     feature_importance(combine_categorical=False, combine_datetime=False)
         Return the feature importance scores for trained classifiers.
-    plot_feature_importance(metadata, ax=None, combine_categorical=False, combine_datetime=False, lab_fontsize=30, fontsize=23)
+    plot_feature_importance(metadata, ax=None, combine_categorical=False,
+        combine_datetime=False, lab_fontsize=30, fontsize=23)
         Plot the feature importance of the discriminator.
     plot_partial_dependence(feature, lab_fontsize=30, seed=0)
         Plot partial dependence for a given feature.
@@ -424,7 +430,9 @@ class DetectionBaseMetric(BaseMetric):
     ):
         super().__init__(**kwargs)
         self.classifier_cls = classifier_cls
-        self.classifier_args = classifier_args if classifier_args is not None else {}
+        if classifier_args is None:
+            classifier_args = {}
+        self.classifier_args = classifier_args
         self.random_state = random_state
         self.folds = folds
         self.classifiers = []
@@ -547,12 +555,17 @@ class DetectionBaseMetric(BaseMetric):
     @staticmethod
     def bootstrap_sample(real_data, random_state=None, metadata=None):
         """Generate a bootstrap sample from the real data."""
-        return real_data.sample(frac=1, replace=True, random_state=random_state)
+        return real_data.sample(
+            frac=1,
+            replace=True,
+            random_state=random_state,
+        )
 
     def baseline(self, real_data, metadata, m=1000, **kwargs):
         """Estimate the metric using bootstrapping.
 
-        Compute the baseline performance using bootstrapping and stratified k-fold cross-validation.
+        Compute the baseline performance using bootstrapping and stratified
+        k-fold cross-validation.
 
         Parameters
         ----------
@@ -563,11 +576,12 @@ class DetectionBaseMetric(BaseMetric):
         m: int
             The number of bootstrap samples to generate. Default is 1000.
         **kwargs:
-            Additional keyword arguments to be passed to the prepare_data method.
+            Keyword arguments to be passed to the prepare_data method.
 
         Returns:
         -------
-        tuple: A tuple containing the mean and standard error of the bootstrap accuracies.
+        tuple: A tuple containing the mean and standard error of the bootstrap
+        accuracies.
 
         """
         bootstrap_scores = []
@@ -635,24 +649,30 @@ class DetectionBaseMetric(BaseMetric):
         Parameters
         ----------
         combine_categorical: bool
-            If True, combine one-hot encoded categorical features into a single feature.
+            If True, combine one-hot encoded categorical features into a single
+            feature.
         combine_datetime: bool:
-            If True, combine datetime features (Year, Month, Day, Hour, Minute, Second) into a single feature.
+            If True, combine datetime features (Year, Month, Day, Hour, Minute,
+            Second) into a single feature.
 
         Returns:
         -------
-        dict: A dictionary where keys are feature names and values are arrays of feature importance scores, sorted by the mean importance score in descending order.
+        dict: A dictionary where keys are feature names and values are arrays
+        of feature importance scores, sorted by the mean importance score in
+        descending order.
 
         Raises:
         ------
-        ValueError: If no classifiers have been trained or if the classifier does not have a feature_importances_ attribute.
+        ValueError: If no classifiers have been trained or if the classifier
+        does not have a feature_importances_ attribute.
 
         """
         if not len(self.classifiers):
             raise ValueError("No classifiers have been trained.")
         if not hasattr(self.classifiers[0], "feature_importances_"):
             raise ValueError(
-                "The classifier does not have a feature_importances_ attribute."
+                "The classifier does not have a feature_importances_ "
+                "attribute."
             )
 
         features = dict()
@@ -726,7 +746,8 @@ class DetectionBaseMetric(BaseMetric):
         metadata : dict or object
             Metadata containing information about the columns and their types.
         ax : matplotlib.axes.Axes, optional
-            Matplotlib Axes object to plot on. If None, a new figure and axes will be created.
+            Matplotlib Axes object to plot on. If None, a new figure and axes
+            will be created.
         combine_categorical : bool, optional
             If True, combine categorical features. Default is False.
         combine_datetime : bool, optional
@@ -765,7 +786,7 @@ class DetectionBaseMetric(BaseMetric):
                 return "aggregate"
 
             feature_type = None
-            # FIXME: check if the object is SingleTableMetadata or MultiTableMetadata
+            # TODO: check if the object is single or multi table metadata
             if isinstance(metadata, dict):
                 return find_column_type(feature_name, metadata["columns"])
             else:
@@ -840,8 +861,8 @@ class DetectionBaseMetric(BaseMetric):
     def plot_partial_dependence(self, feature, lab_fontsize=30, seed=0):
         """Plot partial dependence for a given feature.
 
-        Compute the partial dependence for each model trained during cross-validation
-        and plot the average partial dependence.
+        Compute the partial dependence for each model trained during cross-
+        validation and plot the average partial dependence.
 
         Parameters
         ----------

@@ -1,4 +1,4 @@
-"""Detection metrics (C2ST) for distinguishing between real and synthetic databases."""
+"""Detection metrics (C2ST) for comparing real and synthetic databases."""
 
 from .aggregation_detection import (
     AggregationDetection,

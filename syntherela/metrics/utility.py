@@ -28,7 +28,9 @@ class MachineLearningEfficacyMetric(BaseMetric):
         super().__init__(**kwargs)
         self.target = target
         self.classifier_cls = classifier_cls
-        self.classifier_args = classifier_args if classifier_args is not None else {}
+        self.classifier_args = classifier_args
+        if classifier_args is None:
+            classifier_args = {}
         self.random_state = random_state
         self.name = f"{type(self).__name__}-{classifier_cls.__name__}"
         self.feature_engineering_function = feature_engineering_function
@@ -184,13 +186,13 @@ class MachineLearningEfficacyMetric(BaseMetric):
         importances_syn = []
         if feature_importance:
             if compute_real:
-                full_feature_importance_real, _ = self.feature_importance(
-                    model_real
+                feature_importance_real, _ = self.feature_importance(
+                    model_real,
                 )
             else:
-                full_feature_importance_real = feature_importance_real
-            full_feature_importance_syn, feature_names = self.feature_importance(
-                model_synthetic
+                feature_importance_real = feature_importance_real
+            feature_importance_syn, feature_names = self.feature_importance(
+                model_synthetic,
             )
             for model_synthetic in models_synthetic:
                 importance_syn, feature_names = self.feature_importance(
@@ -199,8 +201,8 @@ class MachineLearningEfficacyMetric(BaseMetric):
                 importances_syn.append(importance_syn)
         else:
             feature_names = []
-            full_feature_importance_real = []
-            full_feature_importance_syn = []
+            feature_importance_real = []
+            feature_importance_syn = []
 
         return {
             "real_score": score_real,
@@ -211,8 +213,8 @@ class MachineLearningEfficacyMetric(BaseMetric):
             "difference": difference,
             "importance_synthetic": importances_syn,
             "feature_names": feature_names,
-            "full_feature_importance_real": full_feature_importance_real,
-            "full_feature_importance_synthetic": full_feature_importance_syn,
+            "feature_importance_real": feature_importance_real,
+            "feature_importance_synthetic": feature_importance_syn,
         }
 
     def feature_importance(self, model):

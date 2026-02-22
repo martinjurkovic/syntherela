@@ -1,7 +1,6 @@
-"""Multi-table trends reports for synthetic data.
+"""Multi-table trends reports for synthetic data."""
 
-Based on https://github.com/weipang142857/ClavaDDPM/blob/main/gen_multi_report.py
-"""
+# Based on https://github.com/weipang142857/ClavaDDPM/blob/main/gen_multi_report.py # noqa: E501
 
 import warnings
 from collections import defaultdict
@@ -23,14 +22,14 @@ class PairTrendsReport(BaseReport):
     """Single table column pair trends report.
 
     This class extends BaseReport to evaluate trends between pairs of columns
-    in a single table. It uses the ColumnPairTrends property to measure how well
-    the synthetic data preserves relationships between columns.
+    in a single table. It uses the ColumnPairTrends property to measure how
+    well the synthetic data preserves relationships between columns.
 
     Attributes:
     ----------
     _properties : dict
-        Dictionary containing the properties to evaluate, with 'Column Pair Trends'
-        as the key and a ColumnPairTrends instance as the value.
+        Dictionary containing the properties to evaluate, with 'Column Pair
+        Trends' as the key and a ColumnPairTrends instance as the value.
 
     """
 
@@ -44,16 +43,17 @@ def recursive_merge(
 ) -> pd.DataFrame:
     """Merge a list of dataframes using the given keys.
 
-    This function recursively merges a list of dataframes using the specified keys.
-    It starts with the last dataframe in the list and merges each preceding dataframe
-    using the corresponding key pairs.
+    This function recursively merges a list of dataframes using the specified
+    keys. It starts with the last dataframe in the list and merges each
+    preceding dataframe using the corresponding key pairs.
 
     Parameters
     ----------
     dataframes : list[pd.DataFrame]
         List of pandas DataFrames to merge.
     keys : list[str]
-        List of key pairs for merging. Each pair consists of (foreign_key, primary_key).
+        List of key pairs for merging. Each pair consists of
+        (foreign_key, primary_key).
 
     Returns:
     -------
@@ -61,7 +61,7 @@ def recursive_merge(
         The merged DataFrame containing data from all input dataframes.
 
     """
-    # Start with the top table, which is the last in the list if we are going top to bottom
+    # Start with the top table, the last in the list if we are go top to bottom
     result_df = dataframes[-1]
     for i in range(
         len(dataframes) - 2, -1, -1
@@ -80,11 +80,12 @@ def recursive_merge(
 def get_joint_table(
     long_path: list[str], tables: dict[pd.DataFrame], dataset_meta: Metadata
 ) -> tuple:
-    """Denormalize the tables in the long path and return the joined table and metadata.
+    """Denormalize the tables in along path and return the joined relation.
 
-    This function joins multiple tables along a path of relationships defined in the metadata.
-    It creates a denormalized view of the data by merging tables based on primary key and
-    foreign key relationships, and removes columns from intermediate tables.
+    This function joins multiple tables along a path of relationships defined
+    in the metadata. It creates a denormalized view of the data by merging
+    tables based on primary key and foreign key relationships, and removes
+    columns from intermediate tables.
 
     Parameters
     ----------
@@ -93,7 +94,8 @@ def get_joint_table(
     tables : dict[pd.DataFrame]
         Dictionary mapping table names to pandas DataFrames.
     dataset_meta : Metadata
-        Metadata object containing information about the tables and their relationships.
+        Metadata object containing information about the tables and their
+        relationships.
 
     Returns:
     -------
@@ -145,10 +147,10 @@ def evaluate_long_path(
     bottom_table: str,
     verbose: bool = True,
 ) -> dict:
-    """Evaluate trends between columns in tables joined along a path of foreign keys.
+    """Evaluate trends between columns in tables joined along a path of FKs.
 
-    This function evaluates the correlation and contingency similarity between columns
-    from the two tables joing along a path of foreign keys.
+    This function evaluates the correlation and contingency similarity between
+    columns from the two tables joined along a path of foreign keys.
 
     Parameters
     ----------
@@ -183,9 +185,10 @@ def evaluate_long_path(
     column_pair_quality = quality.get_details("Column Pair Trends")
     if "Error" in column_pair_quality.columns:
         errors = column_pair_quality["Error"]
-        error_types = {str(e).split(":")[0] for e in errors if str(e) != "None"}
+        error_types = {str(e).split(":")[0] for e in errors if e}
         warnings.warn(
-            f"Found the following error types in the column pair trends: {error_types}",
+            f"Found the following error types in the column pair trends: "
+            f"{error_types}",
             stacklevel=2,
         )
         mask = errors == errors  # Select rows with errors (not None)
@@ -204,26 +207,29 @@ def evaluate_long_path(
             col_1 in top_table_cols and col_2 in bottom_table_cols
             or col_1 in bottom_table_cols and col_2 in top_table_cols
         ):
-            res[f"{top_table} - {bottom_table} : {col_1} {col_2}"] = row["Score"
-                                                                         ]
+            res[f"{top_table} - {bottom_table} : {col_1} {col_2}"] = row[
+                "Score"  #
+            ]
     return res
 
 
 def find_paths_with_length_greater_than_one(metadata: Metadata) -> list[str]:
     """Find paths in the database schema with length greater than one.
 
-    This function uses depth-first search to find all paths in the database schema
-    that contain at least two edges (three tables).
+    This function uses depth-first search to find all paths in the database
+    schema that contain at least two edges (three tables).
 
     Parameters
     ----------
     metadata : Metadata
-        Metadata object containing information about the tables and their relationships.
+        Metadata object containing information about the tables and their
+        relationships.
 
     Returns:
     -------
     list[str]
-        List of paths with length greater than one, where each path is a list of table names.
+        List of paths with length greater than one, where each path is a list
+        of table names.
 
     """
     # Build adjacency list while skipping edges that start with None
@@ -246,7 +252,8 @@ def find_paths_with_length_greater_than_one(metadata: Metadata) -> list[str]:
             dfs(neighbor, path)
             path.pop()
 
-    # Start DFS from each node that has children, making sure we're not modifying the graph
+    # Start DFS from each node that has children
+    # make sure to not modify the graph
     starting_nodes = list(graph.keys())
     for node in starting_nodes:
         dfs(node, [node])
@@ -262,9 +269,10 @@ def get_long_range(
 ) -> dict:
     """Evaluate trends between columns in tables connected by long paths.
 
-    This function identifies paths in the database schema with length greater than one
-    and evaluates the similarity of trends between columns in tables at the ends of these paths.
-    It compares how well the synthetic data preserves relationships between distant tables.
+    This function identifies paths in the database schema with length greater
+    than one and evaluates the similarity of trends between columns in tables
+    at the ends of these paths. It compares how well the synthetic data
+    preserves relationships between distant tables.
 
     Parameters
     ----------
@@ -273,7 +281,8 @@ def get_long_range(
     syn_tables : dict[pd.DataFrame]
         Dictionary mapping table names to synthetic data DataFrames.
     dataset_meta : Metadata
-        Metadata object containing information about the tables and their relationships.
+        Metadata object containing information about the tables and their
+        relationships.
     verbose : bool, default=True
         Whether to print verbose output during evaluation.
 
@@ -281,7 +290,8 @@ def get_long_range(
     -------
     dict
         Dictionary mapping hop counts to dictionaries of column pair scores.
-        Each inner dictionary maps column pair identifiers to trend similarity scores.
+        Each inner dictionary maps column pair identifiers to trend similarity
+        scores.
 
     """
     long_paths = find_paths_with_length_greater_than_one(dataset_meta)
@@ -324,8 +334,8 @@ def get_long_range(
 def get_avg_long_range_scores(res: dict) -> tuple:
     """Calculate average scores and standard errors for long-range trends.
 
-    This function computes the average score and standard error for each hop distance
-    in the long-range trend results.
+    This function computes the average score and standard error for each hop
+    distance in the long-range trend results.
 
     Parameters
     ----------
@@ -359,9 +369,10 @@ def multi_table_trends(
 ) -> dict:
     """Evaluate trends between columns across tables.
 
-    This function evaluates how well synthetic data preserves relationships between
-    columns in different tables. It calculates scores for both direct relationships
-    (one hop) and indirect relationships (multiple hops) between tables.
+    This function evaluates how well synthetic data preserves relationships
+    between columns in different tables. It calculates scores for both direct
+    relationships (one hop) and indirect relationships (multiple hops) between
+    tables.
 
     Parameters
     ----------
@@ -370,7 +381,8 @@ def multi_table_trends(
     syn_tables : dict[pd.DataFrame]
         Dictionary mapping table names to synthetic data DataFrames.
     metadata : Metadata
-        Metadata object containing information about the tables and their relationships.
+        Metadata object containing information about the tables and their
+        relationships.
     verbose : bool, default=True
         Whether to print verbose output during evaluation.
 
@@ -378,7 +390,8 @@ def multi_table_trends(
     -------
     dict
         Dictionary containing evaluation results with the following keys:
-        - hop_relation: Dictionary mapping hop counts to dictionaries of column pair scores
+        - hop_relation: Dictionary mapping hop counts to dictionaries of column
+        pair scores
         - avg_scores: Dictionary mapping hop counts to average scores
         - scores_se: Dictionary mapping hop counts to standard errors of scores
         - all_avg_score: Overall average score across all hops
@@ -388,7 +401,12 @@ def multi_table_trends(
     for table in tables.keys():
         syn_tables[table] = syn_tables[table][tables[table].columns]
 
-    hop_relation = get_long_range(tables, syn_tables, metadata, verbose=verbose)
+    hop_relation = get_long_range(
+        tables,
+        syn_tables,
+        metadata,
+        verbose=verbose,
+    )
 
     multi_report = MultiTableTrendsReport()
     multi_report.generate(tables, syn_tables, metadata.to_dict(), verbose)
@@ -398,9 +416,8 @@ def multi_table_trends(
     )
     one_hop_dict = {}
     for _, row in one_hop.iterrows():
-        one_hop_dict[
-            f"{row['Parent Table']} - {row['Child Table']} : {row['Column 1']} {row['Column 2']}"
-        ] = row["Score"]
+        one_hop_dict[f"{row['Parent Table']} - {row['Child Table']} : "
+                     f"{row['Column 1']} {row['Column 2']}"] = row["Score"]
 
     hop_relation[1] = one_hop_dict
 

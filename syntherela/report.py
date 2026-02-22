@@ -25,8 +25,8 @@ from syntherela.visualisations.distribution_visualisations import (
 class Report:
     """Report class for evaluating synthetic data quality.
 
-    This class provides functionality to generate reports comparing synthetic data
-    against real data using various metrics at different levels.
+    This class provides functionality to generate reports comparing synthetic
+    data against real data using various metrics at different levels.
 
     Parameters
     ----------
@@ -82,7 +82,8 @@ class Report:
         real_data : dict
             Dictionary mapping table names to pandas DataFrames for real data.
         synthetic_data : dict
-            Dictionary mapping table names to pandas DataFrames for synthetic data.
+            Dictionary mapping table names to pandas DataFrames for synthetic
+            data.
         metadata : Metadata
             Metadata object containing information about the tables.
         report_name : str
@@ -128,7 +129,8 @@ class Report:
                 self.real_data[table].columns ==
                 self.synthetic_data[table].columns
             ).all(), (
-                f"Columns in real and synthetic data do not match for table {table}"
+                f"Columns in real and synthetic data do not match for table "
+                f"{table}"
             )
         self.metadata = metadata
         self.report_name = report_name
@@ -176,13 +178,15 @@ class Report:
             ) as pbar:
                 for table in self.metadata.get_tables():
                     for metric in self.single_column_metrics:
-                        for column, column_info in self.metadata.tables[
-                            table].columns.items():
+                        table_columns = self.metadata.tables[table].columns
+                        for column, column_info in table_columns.items():
                             if not metric.is_applicable(column_info["sdtype"]):
                                 pbar.update(1)
                                 continue
                             try:
-                                self.results["single_column_metrics"].setdefault(
+                                self.results[
+                                    "single_column_metrics"
+                                ].setdefault(  #
                                     metric.name, {}
                                 ).setdefault(table, {})[column] = metric.run(
                                     self.real_data[table][column],
@@ -192,7 +196,9 @@ class Report:
                                 )
                             except Exception as e:
                                 print(
-                                    f"There was a problem with metric {metric.name}, table {table}, column {column}"
+                                    f"There was a problem with metric "
+                                    f"{metric.name}, table {table}, column "
+                                    f"{column}"
                                 )
                                 print(e)
                             pbar.update(1)
@@ -226,7 +232,8 @@ class Report:
                             )
                         except Exception as e:
                             print(
-                                f"There was a problem with metric {metric.name}, table {table}"
+                                f"There was a problem with metric "
+                                f"{metric.name}, table {table}"
                             )
                             print(e)
                         pbar.update(1)
@@ -242,12 +249,12 @@ class Report:
                 self.multi_table_metrics, desc="Running Multi Table Metrics"
             ):
                 try:
-                    self.results["multi_table_metrics"][
-                        metric.name] = metric.run(
-                            self.real_data,
-                            self.synthetic_data,
-                            metadata=self.metadata,
-                        )
+                    result = metric.run(
+                        self.real_data,
+                        self.synthetic_data,
+                        metadata=self.metadata,
+                    )
+                    self.results["multi_table_metrics"][metric.name] = result
                 except Exception as e:
                     print(f"There was a problem with metric {metric.name}")
                     print(e)
@@ -333,11 +340,12 @@ class Report:
             hop_scores = multi_table_trends_results["avg_scores"]
             hop_se = multi_table_trends_results["scores_se"]
             for hop in multi_table_trends_results["hop_relation"]:
+                hop_results = {
+                    "mean": hop_scores[hop],
+                    "se": hop_se[hop],
+                }
                 self.results["multi_table_metrics"]["Trends"][
-                    "k_hop_similarity"][hop] = {
-                        "mean": hop_scores[hop],
-                        "se": hop_se[hop],
-                    }
+                    "k_hop_similarity"][hop] = hop_results
 
     def load_from_json(self, path):
         """Load report results from a JSON file.
@@ -360,7 +368,9 @@ class Report:
 
     def print_results(self):
         """Print report results to the console."""
-        print(json.dumps(self.results, sort_keys=True, indent=4, cls=NpEncoder))
+        print(
+            json.dumps(self.results, sort_keys=True, indent=4, cls=NpEncoder),
+        )
 
     def save_results(self, path, filename=None):
         """Save report results to a JSON file.
@@ -381,9 +391,8 @@ class Report:
         path = Path(path)
 
         if filename is None:
-            filename = (
-                f"{self.report_name}_{self.report_datetime.strftime('%Y_%m_%d')}.json"
-            )
+            time_str = self.report_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+            filename = (f"{self.report_name}_{time_str}.json")
 
         path = path / filename
 
@@ -445,6 +454,9 @@ class Report:
         ):
             if metric.name == metric_name:
                 return metric
+        all_metrics = self.single_column_metrics + \
+            self.single_table_metrics + self.multi_table_metrics
         raise ValueError(
-            f'Metric with name "{metric_name}" not found in the report. Available metrics: {[metric.name for metric in self.single_column_metrics + self.single_table_metrics + self.multi_table_metrics]}'
+            f'Metric with name "{metric_name}" not found in the report. '
+            f"Available metrics: {[metric.name for metric in all_metrics]}"
         )

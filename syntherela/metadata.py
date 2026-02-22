@@ -1,6 +1,7 @@
 """Metadata handling for synthetic data evaluation.
 
-This module provides classes and functions for managing metadata abjects describing the database schema: tables and their relationships.
+This module provides classes and functions for managing metadata objects
+describing the database schema: tables and their relationships.
 """
 
 import json
@@ -267,9 +268,9 @@ class Metadata(MultiTableMetadata):
             """
             table_meta = metadata.get_table_meta(table_name)
             table_label = (
-                '< <table cellpadding="0" cellborder="0" cellspacing="0" border="0">'
+                '< <table cellpadding="0" cellborder="0" cellspacing="0" border="0">'  # noqa: E501
             )
-            table_label += f'<tr><td bgcolor="#476893">  </td> <td align="left" bgcolor="#476893"><font color="white"><b>{table_name}</b></font></td> <td align="right" bgcolor="#476893"></td></tr>'
+            table_label += f'<tr><td bgcolor="#476893">  </td> <td align="left" bgcolor="#476893"><font color="white"><b>{table_name}</b></font></td> <td align="right" bgcolor="#476893"></td></tr>'  # noqa: E501
             primary_key = metadata.get_primary_key(table_name)
             for col, info in table_meta["columns"].items():
                 sdtype = info["sdtype"]
@@ -277,7 +278,7 @@ class Metadata(MultiTableMetadata):
                 if col == primary_key:
                     col = f"<u><b>{col}</b></u>"
                 color = "#e2edf1" if sdtype == "id" else "#f2f2f2"
-                table_label += f'<tr><td bgcolor="{color}">  </td> <td align="left" bgcolor="{color}"><font color="#6e6e6e"  {fontspec}>{col} </font></td> <td align="right" bgcolor="{color}"><font color="#9b9c9c" {fontspec}>{sdtype}</font></td></tr>'
+                table_label += f'<tr><td bgcolor="{color}">  </td> <td align="left" bgcolor="{color}"><font color="#6e6e6e"  {fontspec}>{col} </font></td> <td align="right" bgcolor="{color}"><font color="#9b9c9c" {fontspec}>{sdtype}</font></td></tr>'  # noqa: E501
             table_label += "</table> >"
             return table_label
 
@@ -320,9 +321,10 @@ class Metadata(MultiTableMetadata):
                 from warnings import warn
 
                 warning_message = (
-                    "Graphviz does not seem to be installed on this system. For full "
-                    "metadata visualization capabilities, please make sure to have its "
-                    "binaries propertly installed: https://graphviz.gitlab.io/download/"
+                    "Graphviz does not seem to be installed on this system. "
+                    "For full metadata visualization capabilities, please "
+                    "make sure to have its binaries properly installed: "
+                    "https://graphviz.gitlab.io/download/"
                 )
                 warn(warning_message, RuntimeWarning, stacklevel=2)
         return dot
@@ -379,16 +381,15 @@ def convert_metadata_to_v0(metadata: Metadata) -> dict:
                 )
             if column_info["sdtype"] == "datetime":
                 metadata_v0["tables"][table_name]["fields"][column][
-                    "format"] = (
-                        column_info["datetime_format"]
-                    )
+                    "format"] = column_info["datetime_format"]
 
         if "primary_key" in table_info:
+            pkey_metadata = {
+                "type": "id",
+                "subtype": "string",
+            }
             metadata_v0["tables"][table_name]["fields"][
-                table_info["primary_key"]] = {
-                    "type": "id",
-                    "subtype": "string",
-                }
+                table_info["primary_key"]] = pkey_metadata
             metadata_v0["tables"][table_name]["primary_key"] = table_info[
                 "primary_key"]
 
@@ -397,11 +398,12 @@ def convert_metadata_to_v0(metadata: Metadata) -> dict:
         child_table_name = relationship["child_table_name"]
         parent_primary_key = relationship["parent_primary_key"]
         child_foreign_key = relationship["child_foreign_key"]
+        table_pkey = {
+            "table": parent_table_name,
+            "field": parent_primary_key,
+        }
         metadata_v0["tables"][child_table_name]["fields"][child_foreign_key][
-            "ref"] = {
-                "table": parent_table_name,
-                "field": parent_primary_key,
-            }
+            "ref"] = table_pkey
         metadata_v0["tables"][child_table_name]["fields"][child_foreign_key][
             "subtype"] = "string"
     return metadata_v0
