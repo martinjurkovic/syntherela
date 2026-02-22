@@ -1,7 +1,8 @@
-import os
-import json
-import numpy as np
 import glob
+import json
+import os
+
+import numpy as np
 
 # Note: The generated LaTeX table uses cell coloring for highlighting
 # Make sure to include \usepackage[table]{xcolor} in your LaTeX document preamble
@@ -9,10 +10,12 @@ import glob
 PROJECT_PATH = __file__.split("experiments")[0]
 
 # Configuration for reading results
-USE_HYPERPARAMETER_TUNING_RESULTS = True  # Set to True to read from hyperparameter_tuning_100 directory
+# Set to True to read from hyperparameter_tuning_100 directory
+USE_HYPERPARAMETER_TUNING_RESULTS = True
 
 # Configuration for table highlighting
-HIGHLIGHT_COLOR = "green!10"  # Change this to adjust the highlight color (e.g., "blue!15", "yellow!8", etc.)
+# Change this to adjust the highlight color (e.g., "blue!15", "yellow!8", etc.)
+HIGHLIGHT_COLOR = "green!10"
 
 # Define which metric to use for each dataset
 dataset_metrics = {
@@ -27,18 +30,20 @@ dataset_metrics = {
 results_dir = os.path.join(PROJECT_PATH, "results", "rdl_utility")
 results_file = os.path.join(results_dir, "gnn_utility_results_merged.json")
 
-with open(results_file, "r") as f:
+with open(results_file) as f:
     data = json.load(f)
 
 if USE_HYPERPARAMETER_TUNING_RESULTS:
     # Override ORIGINAL method results with hyperparameter tuning results
-    hyperparameter_dir = os.path.join(PROJECT_PATH, "results",
-                                      "hyperparameter_tuning_100")
+    hyperparameter_dir = os.path.join(
+        PROJECT_PATH, "results", "hyperparameter_tuning_100"
+    )
     hyperparameter_files = glob.glob(
-        os.path.join(hyperparameter_dir, "hyperparameter_results_*.json"))
+        os.path.join(hyperparameter_dir, "hyperparameter_results_*.json")
+    )
 
     for file_path in hyperparameter_files:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             result = json.load(f)
 
         dataset = result["dataset"]
@@ -82,7 +87,7 @@ datasets = [
 # Get all GNN architectures from the data
 gnn_architectures = set()
 methods = set()
-for dataset, method_data in data.items():
+for _dataset, method_data in data.items():
     for method, gnn_data in method_data.items():
         methods.add(method)
         for gnn_arch in gnn_data.keys():
@@ -99,8 +104,10 @@ for dataset in datasets:
     for gnn_arch in gnn_architectures:
         results[dataset][gnn_arch] = {}
         for method in methods:
-            if (dataset in data and method in data[dataset]
-                    and gnn_arch in data[dataset][method]):
+            if (
+                dataset in data and method in data[dataset]
+                and gnn_arch in data[dataset][method]
+            ):
 
                 runs = data[dataset][method][gnn_arch]
                 metric_values = []
@@ -185,8 +192,10 @@ for dataset in datasets:
             if method not in methods or method == "ORIGINAL":
                 continue
 
-            if (dataset in results and gnn_arch in results[dataset]
-                    and method in results[dataset][gnn_arch]):
+            if (
+                dataset in results and gnn_arch in results[dataset]
+                and method in results[dataset][gnn_arch]
+            ):
 
                 mean, se = results[dataset][gnn_arch][method]
                 all_scores_for_dataset.append((mean, se, method, gnn_arch))
@@ -210,12 +219,16 @@ for dataset in datasets:
 
 # Generate LaTeX table
 num_columns = len(
-    available_methods) + 3  # Dataset + GNN Arch + Score Type + Methods
-latex_table = ("\\begin{table}[ht]\n\\centering\n\\begin{tabular}{c" +
-               "c" * num_columns + "}\n")
+    available_methods
+) + 3  # Dataset + GNN Arch + Score Type + Methods
+latex_table = (
+    "\\begin{table}[ht]\n\\centering\n\\begin{tabular}{c" + "c" * num_columns +
+    "}\n"
+)
 latex_table += "\\toprule\n"
 latex_table += "Dataset & GNN Architecture & & " + " & ".join(
-    available_methods) + " \\\\\n"
+    available_methods
+) + " \\\\\n"
 latex_table += "\\midrule\n"
 
 for dataset_idx, dataset in enumerate(datasets):
@@ -225,9 +238,12 @@ for dataset_idx, dataset in enumerate(datasets):
     # Filter GNN architectures to only include those with data for this dataset
     available_gnn_archs = []
     for gnn_arch in gnn_architectures:
-        if (dataset in results and gnn_arch in results[dataset]
-                and any(method in results[dataset][gnn_arch]
-                        for method in method_order if method in methods)):
+        if (
+            dataset in results and gnn_arch in results[dataset] and any(
+                method in results[dataset][gnn_arch]
+                for method in method_order if method in methods
+            )
+        ):
             available_gnn_archs.append(gnn_arch)
 
     num_gnn_archs = len(available_gnn_archs)
@@ -236,12 +252,15 @@ for dataset_idx, dataset in enumerate(datasets):
         # Collect all scores for this dataset and GNN architecture to determine best and second best
         scores = []
         for method in available_methods:
-            original_method = next(k for k, v in method_rename.items()
-                                   if v == method)
+            original_method = next(
+                k for k, v in method_rename.items() if v == method
+            )
             # Skip ORIGINAL in the comparison for best/worst determination
             if original_method not in ["ORIGINAL"]:
-                if (dataset in results and gnn_arch in results[dataset]
-                        and original_method in results[dataset][gnn_arch]):
+                if (
+                    dataset in results and gnn_arch in results[dataset]
+                    and original_method in results[dataset][gnn_arch]
+                ):
                     mean, se = results[dataset][gnn_arch][original_method]
                     scores.append((mean, se, method))
                 else:
@@ -258,8 +277,9 @@ for dataset_idx, dataset in enumerate(datasets):
             )
         else:
             # For MAE, lower is better
-            sorted_scores = sorted((s for s in scores if s[0] != float("inf")),
-                                   key=lambda x: x[0])
+            sorted_scores = sorted(
+                (s for s in scores if s[0] != float("inf")), key=lambda x: x[0]
+            )
 
         best_method_tuple = sorted_scores[0] if sorted_scores else None
         underlined_methods = []
@@ -299,10 +319,13 @@ for dataset_idx, dataset in enumerate(datasets):
 
         # Method columns
         for method in available_methods:
-            original_method = next(k for k, v in method_rename.items()
-                                   if v == method)
-            if (dataset in results and gnn_arch in results[dataset]
-                    and original_method in results[dataset][gnn_arch]):
+            original_method = next(
+                k for k, v in method_rename.items() if v == method
+            )
+            if (
+                dataset in results and gnn_arch in results[dataset]
+                and original_method in results[dataset][gnn_arch]
+            ):
 
                 mean, se = results[dataset][gnn_arch][original_method]
 
@@ -320,8 +343,8 @@ for dataset_idx, dataset in enumerate(datasets):
                     is_global_best = (
                         dataset in dataset_global_best
                         and dataset_global_best[dataset]['method'] == method
-                        and dataset_global_best[dataset]['gnn_arch']
-                        == gnn_arch)
+                        and dataset_global_best[dataset]['gnn_arch'] == gnn_arch
+                    )
 
                     if method == best_method_name_for_bolding:
                         # Bold for best method (per architecture)
@@ -359,7 +382,8 @@ for dataset_idx, dataset in enumerate(datasets):
                     # if pm_se_str_core:
                     #     base_score_part += f"{{\\tiny${pm_se_str_core}$}}"
                     row.append(
-                        f"{base_score_part} $({baseline_scores[dataset]})$")
+                        f"{base_score_part} $({baseline_scores[dataset]})$"
+                    )
                 else:
                     # Other methods (shouldn't reach here with current logic)
                     formatted_score = f"${mean_val_str}$"

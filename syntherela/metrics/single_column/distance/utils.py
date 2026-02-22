@@ -32,16 +32,16 @@ def get_histograms(
     return_keys: bool
         Whether to return the keys.
 
-    Returns
+    Returns:
     -------
         The observed and expected frequencies and the keys if return_keys is True.
 
     """
     if is_datetime(original):
         original = pd.to_numeric(original, errors="coerce", downcast="integer")
-        synthetic = pd.to_numeric(synthetic,
-                                  errors="coerce",
-                                  downcast="integer")
+        synthetic = pd.to_numeric(
+            synthetic, errors="coerce", downcast="integer"
+        )
 
     if original.dtype.name in ("object", "category", "bool"):  # categorical
         gt = original.value_counts().to_dict()

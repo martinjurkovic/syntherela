@@ -41,7 +41,7 @@ class Metadata(MultiTableMetadata):
     def get_tables(self):
         """Get a list of all table names in the metadata.
 
-        Returns
+        Returns:
         -------
         list
             List of table names.
@@ -57,7 +57,7 @@ class Metadata(MultiTableMetadata):
         table_name: str
             Name of the table.
 
-        Returns
+        Returns:
         -------
         str
             Name of the primary key column.
@@ -67,9 +67,10 @@ class Metadata(MultiTableMetadata):
         return table_meta.primary_key
 
     def get_table_meta(
-            self,
-            table_name: str,
-            to_dict: bool = True) -> Union[dict, SingleTableMetadata]:
+        self,
+        table_name: str,
+        to_dict: bool = True
+    ) -> Union[dict, SingleTableMetadata]:
         """Get metadata for a specific table.
 
         Parameters
@@ -79,7 +80,7 @@ class Metadata(MultiTableMetadata):
         to_dict: bool, default=True
             Whether to return the metadata as a dictionary.
 
-        Returns
+        Returns:
         -------
         Union[dict, SingleTableMetadata]
             Table metadata as a dictionary or SingleTableMetadata object.
@@ -98,7 +99,7 @@ class Metadata(MultiTableMetadata):
         table_name: str
             Name of the parent table.
 
-        Returns
+        Returns:
         -------
         set
             Set of child table names.
@@ -118,7 +119,7 @@ class Metadata(MultiTableMetadata):
         table_name: str
             Name of the child table.
 
-        Returns
+        Returns:
         -------
         set
             Set of parent table names.
@@ -130,8 +131,9 @@ class Metadata(MultiTableMetadata):
                 parents.add(relation["parent_table_name"])
         return parents
 
-    def get_foreign_keys(self, parent_table_name: str,
-                         child_table_name: str) -> list:
+    def get_foreign_keys(
+        self, parent_table_name: str, child_table_name: str
+    ) -> list:
         """Get foreign keys between parent and child tables.
 
         Parameters
@@ -141,7 +143,7 @@ class Metadata(MultiTableMetadata):
         child_table_name: str
             Name of the child table.
 
-        Returns
+        Returns:
         -------
         list
             List of foreign key column names.
@@ -149,8 +151,9 @@ class Metadata(MultiTableMetadata):
         """
         return self._get_foreign_keys(parent_table_name, child_table_name)
 
-    def rename_column(self, table_name: str, old_column_name: str,
-                      new_column_name: str):
+    def rename_column(
+        self, table_name: str, old_column_name: str, new_column_name: str
+    ):
         """Rename a column in a table.
 
         Parameters
@@ -172,18 +175,22 @@ class Metadata(MultiTableMetadata):
             self.tables[table_name].primary_key = new_column_name
 
         for relationship in self.relationships:
-            if (relationship["parent_table_name"] == table_name
-                    and relationship["parent_primary_key"] == old_column_name):
+            if (
+                relationship["parent_table_name"] == table_name
+                and relationship["parent_primary_key"] == old_column_name
+            ):
                 relationship["parent_primary_key"] = new_column_name
-            if (relationship["child_table_name"] == table_name
-                    and relationship["child_foreign_key"] == old_column_name):
+            if (
+                relationship["child_table_name"] == table_name
+                and relationship["child_foreign_key"] == old_column_name
+            ):
                 relationship["child_foreign_key"] = new_column_name
         return self
 
     def get_root_tables(self) -> list:
         """Get all root tables (tables with no parents).
 
-        Returns
+        Returns:
         -------
         list
             List of root table names.
@@ -199,7 +206,7 @@ class Metadata(MultiTableMetadata):
 
         The level is determined by the length of the path from any root table.
 
-        Returns
+        Returns:
         -------
         dict
             Dictionary mapping table names to their levels.
@@ -216,7 +223,8 @@ class Metadata(MultiTableMetadata):
             relationship = relationships.pop(0)
             if relationship["parent_table_name"] in table_levels:
                 table_levels[relationship["child_table_name"]] = (
-                    table_levels[relationship["parent_table_name"]] + 1)
+                    table_levels[relationship["parent_table_name"]] + 1
+                )
             else:
                 relationships.append(relationship)
         return table_levels
@@ -229,24 +237,17 @@ class Metadata(MultiTableMetadata):
         output_filename: str, default=None
             Name of the output file. If None, the graph is not saved.
 
-        Returns
+        Returns:
         -------
         graphviz.Digraph
             Graph visualization of the metadata.
 
         """
-        try:
-            filename, graphviz_extension = _get_graphviz_extension(
-                output_filename)
-        except ValueError:
-            raise ValueError(
-                "Unable to save a visualization with this file type. Try a supported file type like "
-                "'png', 'jpg' or 'pdf'. For a full list, see 'https://graphviz.org/docs/outputs/'"
-            )
+        filename, graphviz_extension = _get_graphviz_extension(output_filename)
 
-        def create_table_node(table_name: str,
-                              metadata: Metadata,
-                              font: str = "Arial"):
+        def create_table_node(
+            table_name: str, metadata: Metadata, font: str = "Arial"
+        ):
             """Create a node for a table in the graph.
 
             Parameters
@@ -258,7 +259,7 @@ class Metadata(MultiTableMetadata):
             font: str, default="Arial"
                 Font to use for the node.
 
-            Returns
+            Returns:
             -------
             str
                 HTML-like label for the node.
@@ -309,9 +310,9 @@ class Metadata(MultiTableMetadata):
             )
 
         if filename:
-            dot.render(filename=filename,
-                       cleanup=True,
-                       format=graphviz_extension)
+            dot.render(
+                filename=filename, cleanup=True, format=graphviz_extension
+            )
         else:
             try:
                 graphviz.version()
@@ -323,7 +324,7 @@ class Metadata(MultiTableMetadata):
                     "metadata visualization capabilities, please make sure to have its "
                     "binaries propertly installed: https://graphviz.gitlab.io/download/"
                 )
-                warn(warning_message, RuntimeWarning)
+                warn(warning_message, RuntimeWarning, stacklevel=2)
         return dot
 
 
@@ -337,7 +338,7 @@ def drop_ids(table: pd.DataFrame, metadata: dict) -> pd.DataFrame:
     metadata: dict
         Metadata dictionary for the table.
 
-    Returns
+    Returns:
     -------
     pd.DataFrame
         DataFrame with ID columns removed.
@@ -357,7 +358,7 @@ def convert_metadata_to_v0(metadata: Metadata) -> dict:
     metadata: Metadata
         Metadata object to convert.
 
-    Returns
+    Returns:
     -------
     dict
         Metadata in v0 format.
@@ -374,10 +375,13 @@ def convert_metadata_to_v0(metadata: Metadata) -> dict:
             if column_info["sdtype"] == "boolean":
                 # convert boolean to categorical
                 metadata_v0["tables"][table_name]["fields"][column]["type"] = (
-                    "categorical")
+                    "categorical"
+                )
             if column_info["sdtype"] == "datetime":
                 metadata_v0["tables"][table_name]["fields"][column][
-                    "format"] = (column_info["datetime_format"])
+                    "format"] = (
+                        column_info["datetime_format"]
+                    )
 
         if "primary_key" in table_info:
             metadata_v0["tables"][table_name]["fields"][
@@ -403,8 +407,9 @@ def convert_metadata_to_v0(metadata: Metadata) -> dict:
     return metadata_v0
 
 
-def convert_and_save_metadata_v0(metadata: Metadata, path: Union[str,
-                                                                 os.PathLike]):
+def convert_and_save_metadata_v0(
+    metadata: Metadata, path: Union[str, os.PathLike]
+):
     """Convert Metadata object to v0 format and save it to a file.
 
     Parameters

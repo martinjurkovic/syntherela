@@ -8,7 +8,16 @@ from typing import Dict
 
 import numpy as np
 import torch
+from gnn_datasets import F1Dataset
 from model import Model
+from relbench.base import Dataset, EntityTask, TaskType
+from relbench.modeling.graph import (
+    get_node_train_table_input,
+    make_pkey_fkey_graph,
+)
+from relbench.modeling.utils import get_stype_proposal
+from relbench.tasks import get_task
+from relbench.tasks.f1 import DriverTop3Task
 from text_embedder import GloveTextEmbedding
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame import stype
@@ -16,15 +25,6 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
-
-from relbench.base import Dataset, EntityTask, TaskType
-from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
-from relbench.modeling.utils import get_stype_proposal
-from relbench.tasks import get_task
-from relbench.tasks.f1 import DriverTop3Task
-
-from gnn_datasets import (
-    F1Dataset, )
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-f1")
@@ -65,9 +65,9 @@ task: EntityTask = DriverTop3Task(dataset=dataset)
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
-    with open(stypes_cache_path, "r") as f:
+    with open(stypes_cache_path) as f:
         col_to_stype_dict = json.load(f)
-    for table, col_to_stype in col_to_stype_dict.items():
+    for _table, col_to_stype in col_to_stype_dict.items():
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
@@ -80,7 +80,8 @@ data, col_stats_dict = make_pkey_fkey_graph(
     dataset.get_db(),
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=256),
+        text_embedder=GloveTextEmbedding(device=device), batch_size=256
+    ),
     # cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
 
@@ -98,7 +99,8 @@ elif task.task_type == TaskType.REGRESSION:
     # Get the clamp value at inference time
     train_table = task.get_table("train")
     clamp_min, clamp_max = np.percentile(
-        train_table.df[task.target_col].to_numpy(), [2, 98])
+        train_table.df[task.target_col].to_numpy(), [2, 98]
+    )
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     out_channels = task.num_labels
     loss_fn = BCEWithLogitsLoss()
@@ -177,8 +179,8 @@ def test(loader: NeighborLoader) -> np.ndarray:
             pred = torch.clamp(pred, clamp_min, clamp_max)
 
         if task.task_type in [
-                TaskType.BINARY_CLASSIFICATION,
-                TaskType.MULTILABEL_CLASSIFICATION,
+            TaskType.BINARY_CLASSIFICATION,
+            TaskType.MULTILABEL_CLASSIFICATION,
         ]:
             pred = torch.sigmoid(pred)
 
@@ -208,8 +210,8 @@ for epoch in range(1, args.epochs + 1):
     )
 
     if (higher_is_better and val_metrics[tune_metric] >= best_val_metric) or (
-            not higher_is_better
-            and val_metrics[tune_metric] <= best_val_metric):
+        not higher_is_better and val_metrics[tune_metric] <= best_val_metric
+    ):
         best_val_metric = val_metrics[tune_metric]
         state_dict = copy.deepcopy(model.state_dict())
 

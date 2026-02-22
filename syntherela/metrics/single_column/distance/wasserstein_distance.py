@@ -1,12 +1,12 @@
 """Wasserstein distance metric for single columns."""
 
 import pandas as pd
+from scipy.stats import wasserstein_distance
 from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
-from scipy.stats import wasserstein_distance
 from sklearn.preprocessing import MinMaxScaler
 
-from syntherela.metrics.base import SingleColumnMetric, DistanceBaseMetric
+from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
 
 
 class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
@@ -27,8 +27,9 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
     @staticmethod
     def compute(real_data, synthetic_data, **kwargs):
         """Compute the Wasserstein distance between two columns."""
-        combined_data = pd.concat([real_data, synthetic_data],
-                                  ignore_index=True)
+        combined_data = pd.concat(
+            [real_data, synthetic_data], ignore_index=True
+        )
         orig_col = pd.Series(real_data).dropna()
         synth_col = pd.Series(synthetic_data).dropna()
         # sample real and synthetic data to have the same length
@@ -46,12 +47,12 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
     def run(self, real_data, synthetic_data, **kwargs):
         """Execute the Wasserstein distance metric."""
         if is_datetime(real_data):
-            real_data = pd.to_numeric(real_data,
-                                      errors="coerce",
-                                      downcast="integer")
-            synthetic_data = pd.to_numeric(synthetic_data,
-                                           errors="coerce",
-                                           downcast="integer")
+            real_data = pd.to_numeric(
+                real_data, errors="coerce", downcast="integer"
+            )
+            synthetic_data = pd.to_numeric(
+                synthetic_data, errors="coerce", downcast="integer"
+            )
         if self.is_constant(real_data):
             return {
                 "value": 0,

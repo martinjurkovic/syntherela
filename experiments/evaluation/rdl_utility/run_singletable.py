@@ -8,22 +8,27 @@ import numpy as np
 import pandas as pd
 import torch
 import torch_frame
+from gnn_datasets import (
+    AirbnbDataset,
+    BerkaDataset,
+    F1Dataset,
+    RossmannDataset,
+    WalmartDataset,
+)
+from relbench.base import (
+    AutoCompleteTask,
+    BaseTask,
+    Dataset,
+    EntityTask,
+    TaskType,
+)
+from relbench.modeling.utils import remove_pkey_fkey
+from relbench.tasks import get_task
+from relbench.tasks.f1 import DriverDNFTask, DriverPositionTask, DriverTop3Task
 from torch_frame import stype
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
-
-from relbench.base import Dataset, TaskType, EntityTask, BaseTask, AutoCompleteTask
-from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
-from relbench.tasks import get_task
-from relbench.tasks.f1 import DriverPositionTask, DriverTop3Task, DriverDNFTask
-from gnn_datasets import (
-    RossmannDataset,
-    WalmartDataset,
-    F1Dataset,
-    AirbnbDataset,
-    BerkaDataset,
-)
 
 DATASETS = {
     RossmannDataset.name: RossmannDataset,
@@ -93,11 +98,11 @@ predict_column_task_config = {
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = DATASETS[args.dataset](method=args.method,
-                                          run_id=args.run_id)
-dataset_test: Dataset = DATASETS[args.dataset](method=args.method,
-                                               run_id=args.run_id,
-                                               type="test")
+dataset: Dataset = DATASETS[args.dataset
+                            ](method=args.method, run_id=args.run_id)
+dataset_test: Dataset = DATASETS[args.dataset](
+    method=args.method, run_id=args.run_id, type="test"
+)
 
 # task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
 if args.task == "autocomplete":
@@ -105,10 +110,12 @@ if args.task == "autocomplete":
     dataset.entity_table = args.entity_table
     dataset_test.target_col = args.target_col
     dataset_test.entity_table = args.entity_table
-    task: AutoCompleteTask = TASKS[args.task](dataset=dataset,
-                                              **predict_column_task_config)
+    task: AutoCompleteTask = TASKS[args.task](
+        dataset=dataset, **predict_column_task_config
+    )
     task_test: AutoCompleteTask = TASKS[args.task](
-        dataset=dataset_test, **predict_column_task_config)
+        dataset=dataset_test, **predict_column_task_config
+    )
 else:
     task: BaseTask = TASKS[args.task](dataset=dataset)
     # task_test: BaseTask = TASKS[args.task](dataset=dataset_test)
@@ -123,14 +130,14 @@ entity_table = dataset.get_db().table_dict[task.entity_table]
 entity_df = entity_table.df
 
 entity_table_test = dataset_test.get_db(
-    upto_test_timestamp=False if args.task ==
-    "autocomplete" else True).table_dict[task.entity_table]
+    upto_test_timestamp=False if args.task == "autocomplete" else True
+).table_dict[task.entity_table]
 entity_df_test = entity_table_test.df
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 
 try:
-    with open(stypes_cache_path, "r") as f:
+    with open(stypes_cache_path) as f:
         col_to_stype_dict = json.load(f)
     for table, col_to_stype in col_to_stype_dict.items():
         orig_columns = dataset.get_db().table_dict[table].df.columns
@@ -144,14 +151,15 @@ try:
         # Delete the keys after iteration
         for col in keys_to_delete:
             del col_to_stype[col]
-except FileNotFoundError:
+except FileNotFoundError as e:
     raise ValueError(
         f"Stypes cache file not found for {args.dataset}. Please run the metadata_sdv_to_relbench.py script to generate the cache file."
-    )
-    col_to_stype_dict = get_stype_proposal(dataset.get_db())
-    Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
-    with open(stypes_cache_path, "w") as f:
-        json.dump(col_to_stype_dict, f, indent=2, default=str)
+    ) from e
+    # TODO @martin: clean this up
+    # col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    # Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
+    # with open(stypes_cache_path, "w") as f:
+    #     json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 col_to_stype = col_to_stype_dict[task.entity_table]
 remove_pkey_fkey(col_to_stype, entity_table)
@@ -190,7 +198,8 @@ for split, table in [
 
     left_entity = list(table.fkey_col_to_pkey_table.keys())[0]
     entity_df = entity_df.astype(
-        {entity_table.pkey_col: table.df[left_entity].dtype})
+        {entity_table.pkey_col: table.df[left_entity].dtype}
+    )
     # Remove duplicated columns from entity_df that are already in the table df
     for col in set(entity_df.columns).intersection(set(table.df.columns)):
         if col != entity_table.pkey_col:
@@ -230,8 +239,10 @@ for split, table in [
                 elif col not in col_to_stype:
                     # add stype for the column
                     col_to_stype[col] = stype(stype_str)
-                elif (f"{col}_{pkey_table_name}" not in col_to_stype
-                      and f"{col}_{pkey_table_name}" in dfs[split].columns):
+                elif (
+                    f"{col}_{pkey_table_name}" not in col_to_stype
+                    and f"{col}_{pkey_table_name}" in dfs[split].columns
+                ):
                     # add stype for the column with suffix to avoid name collision
                     col_to_stype[f"{col}_{pkey_table_name}"] = stype(stype_str)
 
@@ -255,8 +266,8 @@ tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
 tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
 if task.task_type in [
-        TaskType.BINARY_CLASSIFICATION,
-        TaskType.MULTILABEL_CLASSIFICATION,
+    TaskType.BINARY_CLASSIFICATION,
+    TaskType.MULTILABEL_CLASSIFICATION,
 ]:
     tune_metric = Metric.ROCAUC
 elif task.task_type == TaskType.REGRESSION:
@@ -267,15 +278,17 @@ else:
     raise ValueError(f"Task task type is unsupported {task.task_type}")
 
 if task.task_type in [
-        TaskType.BINARY_CLASSIFICATION,
-        TaskType.REGRESSION,
-        TaskType.MULTICLASS_CLASSIFICATION,
+    TaskType.BINARY_CLASSIFICATION,
+    TaskType.REGRESSION,
+    TaskType.MULTICLASS_CLASSIFICATION,
 ]:
     model = LightGBM(
         task_type=train_dataset.task_type,
         metric=tune_metric,
-        num_classes=(task.num_classes if task.task_type
-                     == TaskType.MULTICLASS_CLASSIFICATION else None),
+        num_classes=(
+            task.num_classes
+            if task.task_type == TaskType.MULTICLASS_CLASSIFICATION else None
+        ),
     )
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 

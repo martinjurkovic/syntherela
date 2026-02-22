@@ -1,13 +1,16 @@
 import os
+
+import pandas as pd
+
 from syntherela.data import load_tables, save_tables
 from syntherela.metadata import Metadata
-import pandas as pd
 
 PROJECT_PATH = __file__.split("experiments")[0]
 
 path = os.path.join(PROJECT_PATH, "data/original/f1/")
-metadata_path = os.path.join(PROJECT_PATH, "data", "original", "f1",
-                             "metadata.json")
+metadata_path = os.path.join(
+    PROJECT_PATH, "data", "original", "f1", "metadata.json"
+)
 metadata = Metadata.load_from_json(metadata_path)
 
 tables = load_tables(path, metadata)
@@ -24,8 +27,8 @@ test_timestamp = "2010-01-01 00:00:00"
 test_timestamp_dt = pd.to_datetime(test_timestamp, format="%Y-%m-%d %H:%M:%S")
 
 # Filter dataframes
-constructor_results_df = constructor_results_df[constructor_results_df["date"]
-                                                < test_timestamp_dt]
+constructor_results_df = constructor_results_df[
+    (constructor_results_df["date"] < test_timestamp_dt)]
 constructor_standings_df = constructor_standings_df[
     constructor_standings_df["date"] < test_timestamp_dt]
 races_df = races_df[races_df["datetime"] < test_timestamp_dt]

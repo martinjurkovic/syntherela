@@ -28,7 +28,7 @@ class SingleTableDetection(DetectionBaseMetric, SingleTableMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Name of the metric.
@@ -53,7 +53,7 @@ class SingleTableDetection(DetectionBaseMetric, SingleTableMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns
+        Returns:
         -------
         tuple
             A tuple containing:

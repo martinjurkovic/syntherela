@@ -27,7 +27,7 @@ class SingleColumnDetection(DetectionBaseMetric, SingleColumnMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Name of the metric.
@@ -47,7 +47,7 @@ class SingleColumnDetection(DetectionBaseMetric, SingleColumnMetric):
         column_type : str
             The type of the column.
 
-        Returns
+        Returns:
         -------
         bool
             True if the metric is applicable to the column type, False otherwise.

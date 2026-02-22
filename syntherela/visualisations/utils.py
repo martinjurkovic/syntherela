@@ -1,7 +1,8 @@
 """Utility functions for visualizations."""
 
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 COLORMAP = [
     "#377eb8",
@@ -38,7 +39,7 @@ def get_color(method_name):
     method_name : str
         The name of the method to get the color for.
 
-    Returns
+    Returns:
     -------
     str or None
         The hex color code for the method, or None if not found.
@@ -57,7 +58,7 @@ def get_x_tick_width_coef(N):
     N : int
         The number of ticks.
 
-    Returns
+    Returns:
     -------
     float
         The coefficient for x-tick width.
@@ -74,7 +75,7 @@ def get_bins(data):
     data : pandas.Series
         The data to determine bins for.
 
-    Returns
+    Returns:
     -------
     int or array
         Number of bins or array of bin edges.
@@ -93,8 +94,14 @@ def prettify_feature_name(feature_name):
     """Convert feature names into a more readable format."""
     split_name = feature_name.split("_")
     if len(split_name) > 1:
-        return " ".join([(word.capitalize().replace("Nunique", "\#Unique")
-                          if "id" not in word else "") for word in split_name])
+        return " ".join(
+            [
+                (
+                    word.capitalize().replace("Nunique", r"\#Unique")
+                    if "id" not in word else ""
+                ) for word in split_name
+            ]
+        )
     return feature_name[0].upper() + feature_name[1:]
 
 
@@ -106,7 +113,7 @@ def prettify_metric_name(metric_name):
     metric_name : str
         The name of the metric to prettify.
 
-    Returns
+    Returns:
     -------
     str
         The prettified metric name.
@@ -135,14 +142,15 @@ def prettify_dataset_name(dataset_name):
     dataset_name : str
         The name of the dataset to prettify.
 
-    Returns
+    Returns:
     -------
     str
         The prettified dataset name.
 
     """
-    if dataset_name in ("rossmann", "rossmann_store_sales",
-                        "rossmann_subsampled"):
+    if dataset_name in (
+        "rossmann", "rossmann_store_sales", "rossmann_subsampled"
+    ):
         return "Rossmann"
     if dataset_name in ("airbnb-simplified_subsampled", "airbnb-simplified"):
         return "Airbnb"
@@ -165,7 +173,7 @@ def prettify_method_name(method_name):
     method_name : str
         The name of the method to prettify.
 
-    Returns
+    Returns:
     -------
     str
         The prettified method name.
@@ -180,8 +188,9 @@ def prettify_method_name(method_name):
     return method_name
 
 
-def get_dataset_info(granularity_level, metric_type, all_results, dataset,
-                     methods, **kwargs):
+def get_dataset_info(
+    granularity_level, metric_type, all_results, dataset, methods, **kwargs
+):
     """Retrieve information about datasets and methods.
 
     Parameters
@@ -199,21 +208,22 @@ def get_dataset_info(granularity_level, metric_type, all_results, dataset,
     **kwargs : dict
         Additional keyword arguments.
 
-    Returns
+    Returns:
     -------
     tuple
         A tuple containing base metrics, base metric names, save_figs flag,
         save_figs_path, and methods.
 
-    Raises
+    Raises:
     ------
     ValueError
         If an unknown metric type or granularity level is provided.
 
     """
-    base_metrics = list(all_results[dataset][list(
-        all_results[dataset].keys())[0]]
-                        [f"{granularity_level}_metrics"].keys())
+    base_metrics = list(
+        all_results[dataset][list(all_results[dataset].keys()
+                                  )[0]][f"{granularity_level}_metrics"].keys()
+    )
 
     if granularity_level == "single_table":
         if metric_type == "distance":
@@ -281,6 +291,7 @@ def get_dataset_info(granularity_level, metric_type, all_results, dataset,
             if method in methods and method in all_results[dataset]
         ]
         methods += sorted(
-            [method for method in methods if method not in method_order])
+            [method for method in methods if method not in method_order]
+        )
 
     return base_metrics, base_metric_names, save_figs, save_figs_path, methods

@@ -4,15 +4,16 @@ from pathlib import Path
 import pandas as pd
 from sklearn.impute import SimpleImputer
 from synthcity.plugins import Plugins
+
+from syntherela.data import load_tables, remove_sdv_columns, save_tables
 from syntherela.metadata import Metadata
-from syntherela.data import load_tables, save_tables, remove_sdv_columns
 
 Plugins(categories=["generic", "privacy"]).list()
 
 args = argparse.ArgumentParser()
-args.add_argument("--dataset-name",
-                  type=str,
-                  default="airbnb-simplified_subsampled")
+args.add_argument(
+    "--dataset-name", type=str, default="airbnb-simplified_subsampled"
+)
 args.add_argument("--real-data-path", type=str, default="data/original")
 args.add_argument("--synthetic-data-path", type=str, default="data/synthetic")
 args.add_argument("--model-save-path", type=str, default="checkpoints")
@@ -89,7 +90,8 @@ SYNTHETIC_MODEL_PARAMS = {
 }
 
 metadata = Metadata().load_from_json(
-    Path(real_data_path) / f"{dataset_name}/metadata.json")
+    Path(real_data_path) / f"{dataset_name}/metadata.json"
+)
 real_data = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
 real_data, metadata = remove_sdv_columns(real_data, metadata, validate=False)
 metadata.validate_data(real_data)
@@ -101,8 +103,9 @@ for MODEL_NAME in MODEL_NAMES:
         try:
             X = real_data[table]
             X_orig = X.copy()
-            syn_model = Plugins().get(MODEL_NAME,
-                                      **SYNTHETIC_MODEL_PARAMS[MODEL_NAME])
+            syn_model = Plugins().get(
+                MODEL_NAME, **SYNTHETIC_MODEL_PARAMS[MODEL_NAME]
+            )
             syn_model.strict = False
 
             # check if any column is constant
@@ -113,9 +116,10 @@ for MODEL_NAME in MODEL_NAMES:
             numeric_columns = X.select_dtypes(include="number").columns
             if len(numeric_columns) > 0:
                 imp = SimpleImputer(strategy="mean")
-                X[numeric_columns] = pd.DataFrame(imp.fit_transform(
-                    X[numeric_columns]),
-                                                  columns=numeric_columns)
+                X[numeric_columns] = pd.DataFrame(
+                    imp.fit_transform(X[numeric_columns]),
+                    columns=numeric_columns
+                )
 
             syn_model.fit(X)
             synthetic_data[table] = syn_model.generate(len(X))
@@ -127,6 +131,8 @@ for MODEL_NAME in MODEL_NAMES:
         except Exception as e:
             print(f"Exception occured at {MODEL_NAME}-{table}: {e}")
 
-    save_data_path = (Path(synthetic_data_path) / dataset_name / MODEL_NAME /
-                      run_id / "sample1")
+    save_data_path = (
+        Path(synthetic_data_path) / dataset_name / MODEL_NAME / run_id /
+        "sample1"
+    )
     save_tables(synthetic_data, save_data_path)

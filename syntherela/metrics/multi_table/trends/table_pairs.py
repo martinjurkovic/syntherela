@@ -7,7 +7,9 @@ from sdmetrics.reports.multi_table._properties import (
     Cardinality,
     InterTableTrends,
 )
-from sdmetrics.reports.multi_table.base_multi_table_report import BaseMultiTableReport
+from sdmetrics.reports.multi_table.base_multi_table_report import (
+    BaseMultiTableReport,
+)
 
 
 class MultiTableTrendsReport(BaseMultiTableReport):
