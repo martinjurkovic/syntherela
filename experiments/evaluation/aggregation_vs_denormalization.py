@@ -18,6 +18,7 @@ class AggregationDetectionWithoutChildCounts(AggregationDetection):
         super().__init__(*args, **kwargs)
         self.add_child_counts = False
 
+
 args = argparse.ArgumentParser()
 args.add_argument("--dataset-name", type=str, default="imdb_MovieLens_v1")
 args.add_argument("--methods", "-m", action="append", default=None)
@@ -44,13 +45,19 @@ single_column_metrics = []
 single_table_metrics = []
 multi_table_metrics = [
     AggregationDetection(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
+        classifier_cls=xgb_cls,
+        classifier_args=xgb_args,
+        random_state=42,
     ),
     ParentChildDetection(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
+        classifier_cls=xgb_cls,
+        classifier_args=xgb_args,
+        random_state=42,
     ),
     AggregationDetectionWithoutChildCounts(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
+        classifier_cls=xgb_cls,
+        classifier_args=xgb_args,
+        random_state=42,
     ),
 ]
 
@@ -66,7 +73,7 @@ benchmark = Benchmark(
     sample_id="sample1",
     datasets=[dataset_name],
     methods=methods,
-    compute_trends=False
+    compute_trends=False,
 )
 
 benchmark.run()

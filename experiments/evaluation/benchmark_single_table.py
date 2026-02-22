@@ -25,7 +25,9 @@ from syntherela.metrics.single_column.detection import SingleColumnDetection
 from syntherela.metrics.single_table.detection import SingleTableDetection
 
 args = argparse.ArgumentParser()
-args.add_argument("--dataset-name", type=str, default="airbnb-simplified_subsampled")
+args.add_argument("--dataset-name",
+                  type=str,
+                  default="airbnb-simplified_subsampled")
 args.add_argument("--methods", "-m", action="append", default=None)
 args.add_argument("--run-id", type=str, default="1")
 args = args.parse_args()
@@ -57,22 +59,30 @@ single_column_metrics = [
     JensenShannonDistance(),
     WassersteinDistance(),
     SingleColumnDetection(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
+        classifier_cls=xgb_cls,
+        classifier_args=xgb_args,
+        random_state=42,
     ),
     # SingleColumnDetection(classifier_cls=rf_cls, classifier_args=rf_args),
     SingleColumnDetection(
-        classifier_cls=logistic, classifier_args=logistic_args, random_state=42
+        classifier_cls=logistic,
+        classifier_args=logistic_args,
+        random_state=42,
     ),
 ]
 single_table_metrics = [
     MaximumMeanDiscrepancy(),
     PairwiseCorrelationDifference(),
     SingleTableDetection(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
+        classifier_cls=xgb_cls,
+        classifier_args=xgb_args,
+        random_state=42,
     ),
     # SingleTableDetection(classifier_cls=rf_cls, classifier_args=rf_args),
     SingleTableDetection(
-        classifier_cls=logistic, classifier_args=logistic_args, random_state=42
+        classifier_cls=logistic,
+        classifier_args=logistic_args,
+        random_state=42,
     ),
 ]
 

@@ -38,7 +38,8 @@ class PairTrendsReport(BaseReport):
         self._properties = {"Column Pair Trends": ColumnPairTrends()}
 
 
-def recursive_merge(dataframes: list[pd.DataFrame], keys: list[str]) -> pd.DataFrame:
+def recursive_merge(dataframes: list[pd.DataFrame],
+                    keys: list[str]) -> pd.DataFrame:
     """Merge a list of dataframes using the given keys.
 
     This function recursively merges a list of dataframes using the specified keys.
@@ -60,19 +61,19 @@ def recursive_merge(dataframes: list[pd.DataFrame], keys: list[str]) -> pd.DataF
     """
     # Start with the top table, which is the last in the list if we are going top to bottom
     result_df = dataframes[-1]
-    for i in range(
-        len(dataframes) - 2, -1, -1
-    ):  # Iterate backwards, excluding the last already used
+    for i in range(len(dataframes) - 2, -1,
+                   -1):  # Iterate backwards, excluding the last already used
         fk, pk = keys[i]
-        result_df = pd.merge(
-            left=result_df, right=dataframes[i], how="left", left_on=fk, right_on=pk
-        )
+        result_df = pd.merge(left=result_df,
+                             right=dataframes[i],
+                             how="left",
+                             left_on=fk,
+                             right_on=pk)
     return result_df
 
 
-def get_joint_table(
-    long_path: list[str], tables: dict[pd.DataFrame], dataset_meta: Metadata
-) -> tuple:
+def get_joint_table(long_path: list[str], tables: dict[pd.DataFrame],
+                    dataset_meta: Metadata) -> tuple:
     """Denormalize the tables in the long path and return the joined table and metadata.
 
     This function joins multiple tables along a path of relationships defined in the metadata.
@@ -102,9 +103,8 @@ def get_joint_table(
         parent = long_path[i - 1]
         child = long_path[i]
         pk = dataset_meta.get_primary_key(parent)
-        fk = dataset_meta.get_foreign_keys(parent, child)[
-            0
-        ]  # ClavaDDPM assumes only 1 fk between tables
+        fk = dataset_meta.get_foreign_keys(
+            parent, child)[0]  # ClavaDDPM assumes only 1 fk between tables
         path_keys.append((fk, pk))
     long_path_joined = recursive_merge(path_tables, path_keys)
 
@@ -170,12 +170,18 @@ def evaluate_long_path(
 
     """
     quality = PairTrendsReport()
-    quality.generate(real_joined, syn_joined, metadata.to_dict(), verbose=verbose)
+    quality.generate(real_joined,
+                     syn_joined,
+                     metadata.to_dict(),
+                     verbose=verbose)
 
     column_pair_quality = quality.get_details("Column Pair Trends")
     if "Error" in column_pair_quality.columns:
         errors = column_pair_quality["Error"]
-        error_types = {str(e).split(":")[0] for e in errors if str(e) != "None"}
+        error_types = {
+            str(e).split(":")[0]
+            for e in errors if str(e) != "None"
+        }
         warnings.warn(
             f"Found the following error types in the column pair trends: {error_types}"
         )
@@ -191,13 +197,10 @@ def evaluate_long_path(
         col_1 = row["Column 1"]
         col_2 = row["Column 2"]
 
-        if (
-            col_1 in top_table_cols
-            and col_2 in bottom_table_cols
-            or col_1 in bottom_table_cols
-            and col_2 in top_table_cols
-        ):
-            res[f"{top_table} - {bottom_table} : {col_1} {col_2}"] = row["Score"]
+        if (col_1 in top_table_cols and col_2 in bottom_table_cols
+                or col_1 in bottom_table_cols and col_2 in top_table_cols):
+            res[f"{top_table} - {bottom_table} : {col_1} {col_2}"] = row[
+                "Score"]
     return res
 
 
@@ -287,7 +290,8 @@ def get_long_range(
     )
     for long_path in long_paths:
         hop = len(long_path) - 1
-        real_joined, table_meta = get_joint_table(long_path, tables_real, metadata)
+        real_joined, table_meta = get_joint_table(long_path, tables_real,
+                                                  metadata)
         syn_joined_1, _ = get_joint_table(long_path, tables_syn, metadata)
         top_table = long_path[0]
         bottom_table = long_path[-1]
@@ -378,17 +382,21 @@ def multi_table_trends(
     for table in tables.keys():
         syn_tables[table] = syn_tables[table][tables[table].columns]
 
-    hop_relation = get_long_range(tables, syn_tables, metadata, verbose=verbose)
+    hop_relation = get_long_range(tables,
+                                  syn_tables,
+                                  metadata,
+                                  verbose=verbose)
 
     multi_report = MultiTableTrendsReport()
     multi_report.generate(tables, syn_tables, metadata.to_dict(), verbose)
 
-    one_hop = multi_report.get_details("Intertable Trends").dropna(subset=["Score"])
+    one_hop = multi_report.get_details("Intertable Trends").dropna(
+        subset=["Score"])
     one_hop_dict = {}
     for _, row in one_hop.iterrows():
         one_hop_dict[
-            f"{row['Parent Table']} - {row['Child Table']} : {row['Column 1']} {row['Column 2']}"
-        ] = row["Score"]
+            f"{row['Parent Table']} - {row['Child Table']} : {row['Column 1']} {row['Column 2']}"] = row[
+                "Score"]
 
     hop_relation[1] = one_hop_dict
 
@@ -412,7 +420,6 @@ def multi_table_trends(
     result["avg_scores"] = avg_scores
     result["scores_se"] = scores_se
     result["all_avg_score"] = all_avg_score
-    result["cardinality"] = multi_report.get_details("Cardinality")[
-        "Score"
-    ].values.mean()
+    result["cardinality"] = multi_report.get_details(
+        "Cardinality")["Score"].values.mean()
     return result

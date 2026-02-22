@@ -67,8 +67,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         """
         column_dtype = column.dtypes
         if np.issubdtype(column_dtype, np.number) or np.issubdtype(
-            column_dtype, np.datetime64
-        ):
+                column_dtype, np.datetime64):
             return
 
         raise ValueError(

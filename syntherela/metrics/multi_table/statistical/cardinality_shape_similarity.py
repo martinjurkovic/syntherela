@@ -36,12 +36,15 @@ class CardinalityShapeSimilarity(StatisticalBaseMetric):
                 real_data[rel["child_table_name"]][rel["child_foreign_key"]],
             )
             cardinality_synthetic = get_cardinality_distribution(
-                synthetic_data[rel["parent_table_name"]][rel["parent_primary_key"]],
-                synthetic_data[rel["child_table_name"]][rel["child_foreign_key"]],
+                synthetic_data[rel["parent_table_name"]][
+                    rel["parent_primary_key"]],
+                synthetic_data[rel["child_table_name"]][
+                    rel["child_foreign_key"]],
             )
             statistic, pval = ks_2samp(cardinality_real, cardinality_synthetic)
-            results[f"{rel['parent_table_name']}_{rel['child_table_name']}"] = {
-                "statistic": statistic,
-                "pval": pval,
-            }
+            results[
+                f"{rel['parent_table_name']}_{rel['child_table_name']}"] = {
+                    "statistic": statistic,
+                    "pval": pval,
+                }
         return results

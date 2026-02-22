@@ -9,15 +9,13 @@ import warnings
 from pathlib import Path
 from datetime import datetime
 
-
 from syntherela.report import Report
 from syntherela.metadata import Metadata
 from syntherela.data import load_tables, remove_sdv_columns
 from syntherela.metrics.single_column.statistical import ChiSquareTest
 from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
 from syntherela.visualisations.multi_table_visualisations import (
-    visualize_multi_table,
-)
+    visualize_multi_table, )
 from syntherela.visualisations.single_column_visualisations import (
     visualize_single_column_detection_metrics,
     visualize_single_column_distance_metrics,
@@ -127,15 +125,14 @@ class Benchmark:
         self.validate_metadata = validate_metadata
         self.compute_trends = compute_trends
 
-        self.benchmark_name = (benchmark_name,)
+        self.benchmark_name = (benchmark_name, )
         self.real_data_dir = Path(real_data_dir)
         self.synthetic_data_dir = Path(synthetic_data_dir)
         self.results_dir = Path(results_dir)
 
         if self.datasets is None:
             self.datasets = [
-                d
-                for d in os.listdir(self.synthetic_data_dir)
+                d for d in os.listdir(self.synthetic_data_dir)
                 if os.path.isdir(os.path.join(self.synthetic_data_dir, d))
             ]
 
@@ -152,11 +149,11 @@ class Benchmark:
             for dataset_name in self.datasets:
                 if dataset_name not in self.methods:
                     self.methods[dataset_name] = [
-                        d
-                        for d in os.listdir(self.synthetic_data_dir / dataset_name)
+                        d for d in os.listdir(self.synthetic_data_dir /
+                                              dataset_name)
                         if os.path.isdir(
-                            os.path.join(self.synthetic_data_dir / dataset_name, d)
-                        )
+                            os.path.join(
+                                self.synthetic_data_dir / dataset_name, d))
                     ]
 
         self.single_column_metrics = single_column_metrics
@@ -211,8 +208,7 @@ class Benchmark:
         synthetic_data = load_tables(synthetic_data_path, metadata)
 
         real_data, metadata = remove_sdv_columns(
-            real_data, metadata, validate=self.validate_metadata
-        )
+            real_data, metadata, validate=self.validate_metadata)
         synthetic_data, metadata = remove_sdv_columns(
             synthetic_data,
             metadata,
@@ -241,10 +237,8 @@ class Benchmark:
 
         """
         existing_results = None
-        if (
-            dataset_name in self.all_results
-            and method_name in self.all_results[dataset_name]
-        ):
+        if (dataset_name in self.all_results
+                and method_name in self.all_results[dataset_name]):
             existing_results = self.all_results[dataset_name][method_name]
 
         if existing_results:
@@ -252,9 +246,8 @@ class Benchmark:
             for metric_type, metrics in new_results.items():
                 if metric_type in existing_results:
                     # If the existing metric is a dictionary, update it
-                    if isinstance(existing_results[metric_type], dict) and isinstance(
-                        metrics, dict
-                    ):
+                    if isinstance(existing_results[metric_type],
+                                  dict) and isinstance(metrics, dict):
                         existing_results[metric_type].update(metrics)
                     else:
                         # If either is not a dictionary, just replace with new value
@@ -281,8 +274,7 @@ class Benchmark:
             for method_name in self.methods[dataset_name]:
                 try:
                     real_data, synthetic_data, metadata = self.load_data(
-                        dataset_name, method_name
-                    )
+                        dataset_name, method_name)
 
                     print(
                         f"Starting benchmark for {dataset_name}, method_name {method_name}"
@@ -292,7 +284,8 @@ class Benchmark:
                         real_data=real_data,
                         synthetic_data=synthetic_data,
                         metadata=metadata,
-                        report_name=f"{self.benchmark_name}_{dataset_name}_{method_name}",
+                        report_name=
+                        f"{self.benchmark_name}_{dataset_name}_{method_name}",
                         method_name=method_name,
                         dataset_name=dataset_name,
                         run_id=self.run_id,
@@ -304,16 +297,15 @@ class Benchmark:
                         sample_id=self.sample_id,
                     )
 
-                    self.reports.setdefault(dataset_name, {})[method_name] = report
+                    self.reports.setdefault(dataset_name,
+                                            {})[method_name] = report
 
                     # Generate and merge new results
                     new_results = report.generate()
                     merged_results = self.merge_results(
-                        dataset_name, method_name, new_results
-                    )
-                    self.all_results.setdefault(dataset_name, {})[method_name] = (
-                        merged_results
-                    )
+                        dataset_name, method_name, new_results)
+                    self.all_results.setdefault(
+                        dataset_name, {})[method_name] = (merged_results)
 
                     # Update report results with merged results before saving
                     report.results = merged_results
@@ -340,8 +332,7 @@ class Benchmark:
                 file_name = self.build_file_name(dataset_name, method_name)
                 try:
                     real_data, synthetic_data, metadata = self.load_data(
-                        dataset_name, method_name
-                    )
+                        dataset_name, method_name)
                 except FileNotFoundError:
                     warnings.warn(
                         f"Results for {dataset_name}, method {method_name} not found."
@@ -358,10 +349,10 @@ class Benchmark:
                     run_id=self.run_id,
                     sample_id=self.sample_id,
                 ).load_from_json(self.results_dir / file_name)
-                self.reports.setdefault(dataset_name, {})[method_name] = temp_report
-                self.all_results.setdefault(dataset_name, {})[method_name] = (
-                    temp_report.results
-                )
+                self.reports.setdefault(dataset_name,
+                                        {})[method_name] = temp_report
+                self.all_results.setdefault(
+                    dataset_name, {})[method_name] = (temp_report.results)
         if not self.all_results:
             warnings.warn("No results found.")
 
@@ -389,7 +380,10 @@ class Benchmark:
         file_name += ".json"
         return file_name
 
-    def visualize_single_table_metrics(self, distance=True, detection=True, **kwargs):
+    def visualize_single_table_metrics(self,
+                                       distance=True,
+                                       detection=True,
+                                       **kwargs):
         """Visualize single table metrics.
 
         Parameters
@@ -425,7 +419,10 @@ class Benchmark:
                 **kwargs,
             )
 
-    def visualize_single_column_metrics(self, distance=True, detection=True, **kwargs):
+    def visualize_single_column_metrics(self,
+                                        distance=True,
+                                        detection=True,
+                                        **kwargs):
         """Visualize single column metrics.
 
         Parameters

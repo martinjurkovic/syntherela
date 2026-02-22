@@ -31,21 +31,30 @@ def eval_mia(
             # convert each one to its integer codes
             for col in cat_cols:
                 df[col] = df[col].cat.codes
-            print(f"Converted categorical columns to int codes: {list(cat_cols)}")
+            print(
+                f"Converted categorical columns to int codes: {list(cat_cols)}"
+            )
 
     if len(syn_data) < len(test_data):
         test_data = test_data.sample(n=len(syn_data), random_state=42)
     S = SynthEval(real_data, holdout_dataframe=test_data)
-    eval_df = S.evaluate(syn_data, None, "mia")     # set the target column to the primary key of the table
+    eval_df = S.evaluate(
+        syn_data, None,
+        "mia")  # set the target column to the primary key of the table
 
     # Filter for rows with 'mia_recall' and 'mia_precision'
-    filtered_rows = eval_df[eval_df['metric'].isin(['mia_recall', 'mia_precision'])]
+    filtered_rows = eval_df[eval_df['metric'].isin(
+        ['mia_recall', 'mia_precision'])]
 
     # Extract values into variables
-    mia_recall_val = filtered_rows.loc[filtered_rows['metric'] == 'mia_recall', 'val'].values[0]
-    mia_recall_err = filtered_rows.loc[filtered_rows['metric'] == 'mia_recall', 'err'].values[0]
-    mia_precision_val = filtered_rows.loc[filtered_rows['metric'] == 'mia_precision', 'val'].values[0]
-    mia_precision_err = filtered_rows.loc[filtered_rows['metric'] == 'mia_precision', 'err'].values[0]
+    mia_recall_val = filtered_rows.loc[filtered_rows['metric'] == 'mia_recall',
+                                       'val'].values[0]
+    mia_recall_err = filtered_rows.loc[filtered_rows['metric'] == 'mia_recall',
+                                       'err'].values[0]
+    mia_precision_val = filtered_rows.loc[filtered_rows['metric'] ==
+                                          'mia_precision', 'val'].values[0]
+    mia_precision_err = filtered_rows.loc[filtered_rows['metric'] ==
+                                          'mia_precision', 'err'].values[0]
 
     # Print extracted variables
 
@@ -55,6 +64,7 @@ def eval_mia(
     print("mia_recall_err:", mia_recall_err)
 
     return mia_precision_val, mia_precision_err, mia_recall_val, mia_recall_err
+
 
 if __name__ == "__main__":
 
@@ -79,20 +89,14 @@ if __name__ == "__main__":
         all_results = {}
     # Initialize the dictionary to store results
     methods = [
-        'MOSTLYAI',
-        'RGCLD',
-        'CLAVADDPM',
-        'RCTGAN',
-        'REALTABFORMER',
-        'SDV',
-        'SMOTE',
-        "MARE"
+        'MOSTLYAI', 'RGCLD', 'CLAVADDPM', 'RCTGAN', 'REALTABFORMER', 'SDV',
+        'SMOTE', "MARE"
     ]
 
     for method in methods:
         tables_syn = load_tables(
-            f"data/synthetic/airbnb-simplified_subsampled/{method}/1/sample1", metadata
-        )
+            f"data/synthetic/airbnb-simplified_subsampled/{method}/1/sample1",
+            metadata)
         metadata.validate_data(tables_syn)
         if method not in all_results:
             all_results[method] = {}

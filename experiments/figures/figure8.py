@@ -11,14 +11,14 @@ from sdmetrics.single_table.detection import LogisticDetection
 from syntherela.metadata import Metadata
 from syntherela.data import load_tables, remove_sdv_columns
 from syntherela.metrics.single_table.detection.single_table_detection import (
-    SingleTableDetection,
-)
+    SingleTableDetection, )
 
 sns.set_theme()
 
 
 def load_data(dataset_name, target_table):
-    metadata = Metadata().load_from_json(f"data/original/{dataset_name}/metadata.json")
+    metadata = Metadata().load_from_json(
+        f"data/original/{dataset_name}/metadata.json")
     tables = load_tables(f"data/original/{dataset_name}/", metadata)
     tables, metadata = remove_sdv_columns(tables, metadata)
 
@@ -33,12 +33,12 @@ def initialize_metrics(seed):
     lin_cls = LogisticRegression
     lin_args = {"random_state": seed}
 
-    c2st_xgb = SingleTableDetection(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=seed
-    )
-    ld = SingleTableDetection(
-        classifier_cls=lin_cls, classifier_args=lin_args, random_state=seed
-    )
+    c2st_xgb = SingleTableDetection(classifier_cls=xgb_cls,
+                                    classifier_args=xgb_args,
+                                    random_state=seed)
+    ld = SingleTableDetection(classifier_cls=lin_cls,
+                              classifier_args=lin_args,
+                              random_state=seed)
     return c2st_xgb, ld
 
 
@@ -62,17 +62,16 @@ target_tables = ["users", "molecule", "movies", "store", "stores"]
 
 ## Data Copying
 
+
 def symulate_data_copying(tables, target_table, seed=None, frac_copied=1.0):
     table = tables[target_table]
-    table_perfect, table_original = train_test_split(
-        table, test_size=0.5, random_state=seed
-    )
-    table_copied = pd.concat(
-        [
-            table_original.sample(frac=frac_copied, replace=True),
-            table_perfect.sample(frac=1 - frac_copied),
-        ]
-    )
+    table_perfect, table_original = train_test_split(table,
+                                                     test_size=0.5,
+                                                     random_state=seed)
+    table_copied = pd.concat([
+        table_original.sample(frac=frac_copied, replace=True),
+        table_perfect.sample(frac=1 - frac_copied),
+    ])
     return table_perfect, table_original, table_copied
 
 
@@ -89,8 +88,7 @@ for dataset_name, target_table in zip(datasets, target_tables):
     for i in tqdm(range(100), desc=dataset_name):
         # "generate" data
         table_perfect, table_original, table_copied = symulate_data_copying(
-            tables, target_table, seed=seed + i
-        )
+            tables, target_table, seed=seed + i)
         # prepare metrics
         c2st_xgb, _ = initialize_metrics(seed + i)
         ld = LogisticDetection()
@@ -132,8 +130,7 @@ for dataset_name, target_table in zip(datasets, target_tables):
         accs = []
         for i in range(100):
             _, table_original, table_copied = symulate_data_copying(
-                tables, target_table, seed=seed + i, frac_copied=f
-            )
+                tables, target_table, seed=seed + i, frac_copied=f)
             results_c2st_xgb_copied = c2st_xgb.run(
                 table_original,
                 table_copied,
@@ -168,7 +165,11 @@ for i, dataset in enumerate(datasets):
         label1 = ""
         label2 = ""
 
-    plot(axes[0], results[dataset]["ld_copied"], 0 + i * 1.5, colormap(1), label=label2)
+    plot(axes[0],
+         results[dataset]["ld_copied"],
+         0 + i * 1.5,
+         colormap(1),
+         label=label2)
     plot(
         axes[0],
         results[dataset]["c2st_xgb_copied"],
@@ -177,13 +178,12 @@ for i, dataset in enumerate(datasets):
         label=label1,
     )
 
-
 axes[0].set_xticks([0.25, 1.75, 3.25, 4.75, 6.25])
-axes[0].set_xticklabels([dataset_names[dataset] for dataset in datasets], rotation=45)
+axes[0].set_xticklabels([dataset_names[dataset] for dataset in datasets],
+                        rotation=45)
 axes[0].hlines(0.5, -0.25, 6.8, color="red", linestyle="--")
 axes[0].legend(loc="upper right", bbox_to_anchor=(0.7, 1))
 axes[0].set_ylim(0, 1)
-
 
 axes[0].set_ylabel("Classification Accuracy")
 axes[0].set_title("Copied Data")

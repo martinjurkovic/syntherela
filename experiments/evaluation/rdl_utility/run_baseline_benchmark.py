@@ -2,11 +2,8 @@ import os
 import subprocess
 import json
 import ast
-from dotenv import load_dotenv
 
-load_dotenv()
-
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
 
 RUN_DATASETS = [
     "rossmann_subsampled",
@@ -18,12 +15,18 @@ RUN_DATASETS = [
 
 UTILITY_TASKS = [
     {
-        "dataset": "rossmann_subsampled",
-        "task_type": "REGRESSION",
-        "entity_table": "historical",
-        "entity_col": "Id",
-        "time_col": "Date",
-        "target_col": "Customers",
+        "dataset":
+        "rossmann_subsampled",
+        "task_type":
+        "REGRESSION",
+        "entity_table":
+        "historical",
+        "entity_col":
+        "Id",
+        "time_col":
+        "Date",
+        "target_col":
+        "Customers",
         "methods": [
             "ORIGINAL",
             "CLAVADDPM",
@@ -33,15 +36,22 @@ UTILITY_TASKS = [
             "RGCLD",
             "SDV",
         ],
-        "task": "autocomplete",
+        "task":
+        "autocomplete",
     },
     {
-        "dataset": "walmart_subsampled",
-        "task_type": "REGRESSION",
-        "entity_table": "depts",
-        "entity_col": None,
-        "time_col": "Date",
-        "target_col": "Weekly_Sales",
+        "dataset":
+        "walmart_subsampled",
+        "task_type":
+        "REGRESSION",
+        "entity_table":
+        "depts",
+        "entity_col":
+        None,
+        "time_col":
+        "Date",
+        "target_col":
+        "Weekly_Sales",
         "methods": [
             "ORIGINAL",
             "CLAVADDPM",
@@ -51,8 +61,10 @@ UTILITY_TASKS = [
             "RGCLD",
             "SDV",
         ],
-        "--lr": 0.1,
-        "task": "autocomplete",
+        "--lr":
+        0.1,
+        "task":
+        "autocomplete",
     },
     {
         "dataset": "f1_subsampled",
@@ -169,7 +181,9 @@ for task in UTILITY_TASKS:
                 if "target_col" in task:
                     command.extend(["--target_col", task["target_col"]])
 
-                result = subprocess.run(command, capture_output=True, text=True)
+                result = subprocess.run(command,
+                                        capture_output=True,
+                                        text=True)
 
                 # Parse the baseline results from the output
                 baseline_results = None
@@ -183,7 +197,9 @@ for task in UTILITY_TASKS:
                     # Look for baseline method lines (ending with ':')
                     for i, line in enumerate(lines):
                         line = line.strip()
-                        if line and line.endswith(':') and not line.startswith('Train:') and not line.startswith('Val:') and not line.startswith('Test:'):
+                        if line and line.endswith(':') and not line.startswith(
+                                'Train:') and not line.startswith(
+                                    'Val:') and not line.startswith('Test:'):
                             current_method = line[:-1]  # Remove the ':'
                             baseline_results[current_method] = {}
 
@@ -192,14 +208,23 @@ for task in UTILITY_TASKS:
                                 if j < len(lines):
                                     result_line = lines[j].strip()
                                     if result_line.startswith('Train:'):
-                                        metrics_str = result_line.split('Train: ')[1]
-                                        baseline_results[current_method]['Train'] = ast.literal_eval(metrics_str)
+                                        metrics_str = result_line.split(
+                                            'Train: ')[1]
+                                        baseline_results[current_method][
+                                            'Train'] = ast.literal_eval(
+                                                metrics_str)
                                     elif result_line.startswith('Val:'):
-                                        metrics_str = result_line.split('Val: ')[1]
-                                        baseline_results[current_method]['Val'] = ast.literal_eval(metrics_str)
+                                        metrics_str = result_line.split(
+                                            'Val: ')[1]
+                                        baseline_results[current_method][
+                                            'Val'] = ast.literal_eval(
+                                                metrics_str)
                                     elif result_line.startswith('Test:'):
-                                        metrics_str = result_line.split('Test: ')[1]
-                                        baseline_results[current_method]['Test'] = ast.literal_eval(metrics_str)
+                                        metrics_str = result_line.split(
+                                            'Test: ')[1]
+                                        baseline_results[current_method][
+                                            'Test'] = ast.literal_eval(
+                                                metrics_str)
 
                     print(f"BASELINE RESULTS: {baseline_results}")
                 except Exception as e:
@@ -210,7 +235,8 @@ for task in UTILITY_TASKS:
                     continue
 
                 # Store the results
-                existing_results[dataset][method][str(run_id)] = baseline_results
+                existing_results[dataset][method][str(
+                    run_id)] = baseline_results
 
                 # Save results to file after each run
                 with open(results_file, "w") as f:
@@ -223,8 +249,6 @@ for task in UTILITY_TASKS:
 
                 with open(results_file, "w") as f:
                     json.dump(existing_results, f, indent=4)
-
-
 
         except ValueError as e:
             print(f"Task: {task['dataset']}, Method: {method}, Error: {e}")

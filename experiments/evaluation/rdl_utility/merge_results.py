@@ -3,10 +3,6 @@
 import os
 import json
 import glob
-from dotenv import load_dotenv
-
-load_dotenv()
-
 """
 Merge Results Script
 
@@ -14,14 +10,16 @@ Merges individual dataset result files into a single combined results file.
 Run this after the tmux benchmark completes.
 """
 
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
+
 
 def merge_results():
     """Merge all dataset-specific result files into a single file"""
     results_dir = os.path.join(PROJECT_PATH, "results", "rdl_utility")
 
     # Find all dataset-specific result files
-    pattern = os.path.join(results_dir, "gnn_utility_results_*_subsampled.json")
+    pattern = os.path.join(results_dir,
+                           "gnn_utility_results_*_subsampled.json")
     result_files = glob.glob(pattern)
 
     if not result_files:
@@ -66,7 +64,8 @@ def merge_results():
             for method in merged_results[dataset]:
                 for gnn_arch in merged_results[dataset][method]:
                     for run_id in merged_results[dataset][method][gnn_arch]:
-                        if merged_results[dataset][method][gnn_arch][run_id] != {}:
+                        if merged_results[dataset][method][gnn_arch][
+                                run_id] != {}:
                             total_experiments += 1
 
         print(f"✓ Total experiments in merged file: {total_experiments}")
@@ -76,6 +75,7 @@ def merge_results():
         print(f"✗ Error saving merged file: {e}")
         return None
 
+
 def main():
     print("=== Merging GNN Benchmark Results ===")
     print()
@@ -83,14 +83,15 @@ def main():
     merged_file = merge_results()
 
     if merged_file:
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print("Merge completed successfully!")
         print(f"Combined results available at: {merged_file}")
-        print("="*50)
+        print("=" * 50)
     else:
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print("Merge failed!")
-        print("="*50)
+        print("=" * 50)
+
 
 if __name__ == "__main__":
     main()
