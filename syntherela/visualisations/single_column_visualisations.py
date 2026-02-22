@@ -165,7 +165,6 @@ def visualize_single_column_distance_metrics(
                 except Exception as e:
                     print(f"{base_metric_name} for dataset {dataset}, table {table}")
                     print(e)
-                    pass
 
 
 def visualize_single_column_detection_metrics(

@@ -24,7 +24,6 @@ from gnn_datasets import (
     AirbnbDataset,
     BerkaDataset,
 )
-from relbench.datasets import get_dataset
 
 DATASETS = {
     RossmannDataset.name: RossmannDataset,

@@ -4,23 +4,18 @@ import os
 from pathlib import Path
 from typing import Dict
 
-import numpy as np
 import pandas as pd
 import torch
 import torch_frame
-from text_embedder import GloveTextEmbedding
 from torch_frame import stype
-from torch_frame.config.text_embedder import TextEmbedderConfig
-from torch_frame.gbdt import LightGBM, XGBoost
+from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
-from tqdm import tqdm
 import featuretools as ft
-from torch_frame.utils import infer_df_stype
 
 
 from relbench.base import Dataset, TaskType, EntityTask, BaseTask, AutoCompleteTask
-from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
+from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
 from relbench.tasks.f1 import DriverPositionTask, DriverTop3Task, DriverDNFTask
 from gnn_datasets import (

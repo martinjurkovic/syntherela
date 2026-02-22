@@ -1,4 +1,3 @@
-import numpy as np
 import os
 import xgboost as xgb
 import seaborn as sns

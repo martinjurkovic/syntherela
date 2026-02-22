@@ -1,11 +1,8 @@
-from typing import Any, Dict, List, Optional, Callable
+from typing import Dict, List, Optional, Callable
 
 import torch
-import torch_frame
 from torch import Tensor
-from torch_frame.data.stats import StatType
-from torch_frame.nn.models import ResNet
-from torch_geometric.nn import HeteroConv, LayerNorm, PositionalEncoding, GINConv, GraphConv, GATConv, GATv2Conv
+from torch_geometric.nn import HeteroConv, LayerNorm, GINConv, GraphConv, GATConv, GATv2Conv
 from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.nn import MLP
 

@@ -39,10 +39,8 @@ import numpy as np
 import torch
 from model import Model, create_hetero_gin, create_hetero_graphconv, create_hetero_gat, create_hetero_gatv2
 from relgnn_nn import RelGNN_Model, get_atomic_routes
-from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, L1Loss, MSELoss
+from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame import stype
-from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm

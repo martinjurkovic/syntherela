@@ -6,7 +6,6 @@ Creates separate tables for each GNN architecture
 
 import json
 import os
-from typing import Dict, Any
 
 def load_hyperparameters():
     """Load hyperparameters from JSON files organized by GNN architecture and dataset"""
