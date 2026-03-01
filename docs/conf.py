@@ -2,7 +2,8 @@
 
 import os
 import sys
-from importlib.metadata import PackageNotFoundError, version as get_version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as get_version
 
 # Add the project root to the path
 sys.path.insert(0, os.path.abspath('..'))
@@ -13,10 +14,7 @@ project = 'SyntheRela'
 copyright = '2025, Martin Jurkovic, Valter Hudovernik, Erik Štrumbelj'
 author = 'Martin Jurkovic, Valter Hudovernik, Erik Štrumbelj'
 
-try:
-    release = get_version('syntherela')
-except PackageNotFoundError:
-    release = '0.3.0'
+release = get_version('syntherela')
 
 # The short X.Y version
 version = '.'.join(release.split('.')[:2])
