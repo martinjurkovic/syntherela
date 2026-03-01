@@ -177,5 +177,3 @@ def test_merge_results_with_existing():
     assert merged['single_table_metrics'] == {'MaximumMeanDiscrepancy': 0.6}
     # New metric type added
     assert merged['multi_table_metrics'] == {'CardinalityShape': 0.75}
-    assert merged['multi_table_metrics'] == {'CardinalityShape': 0.75}
-    assert merged['multi_table_metrics'] == {'CardinalityShape': 0.75}
