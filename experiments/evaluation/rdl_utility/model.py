@@ -13,6 +13,7 @@ from gnn_architectures import HeteroGNN, gin_conv_factory, graphconv_factory, ga
 
 
 class Model(torch.nn.Module):
+
     def __init__(
         self,
         data: HeteroData,
@@ -58,7 +59,8 @@ class Model(torch.nn.Module):
         )
         self.temporal_encoder = HeteroTemporalEncoder(
             node_types=[
-                node_type for node_type in data.node_types if "time" in data[node_type]
+                node_type for node_type in data.node_types
+                if "time" in data[node_type]
             ],
             channels=channels,
         )
@@ -89,12 +91,11 @@ class Model(torch.nn.Module):
             norm=norm,
             num_layers=mlp_layers,
         )
-        self.embedding_dict = ModuleDict(
-            {
-                node: Embedding(data.num_nodes_dict[node], channels)
-                for node in shallow_list
-            }
-        )
+        self.embedding_dict = ModuleDict({
+            node:
+            Embedding(data.num_nodes_dict[node], channels)
+            for node in shallow_list
+        })
 
         self.id_awareness_emb = None
         if id_awareness:
@@ -119,15 +120,15 @@ class Model(torch.nn.Module):
         seed_time = batch[entity_table].seed_time
         x_dict = self.encoder(batch.tf_dict)
 
-        rel_time_dict = self.temporal_encoder(
-            seed_time, batch.time_dict, batch.batch_dict
-        )
+        rel_time_dict = self.temporal_encoder(seed_time, batch.time_dict,
+                                              batch.batch_dict)
 
         for node_type, rel_time in rel_time_dict.items():
             x_dict[node_type] = x_dict[node_type] + rel_time
 
         for node_type, embedding in self.embedding_dict.items():
-            x_dict[node_type] = x_dict[node_type] + embedding(batch[node_type].n_id)
+            x_dict[node_type] = x_dict[node_type] + embedding(
+                batch[node_type].n_id)
 
         x_dict = self.gnn(
             x_dict,
@@ -136,7 +137,7 @@ class Model(torch.nn.Module):
             batch.num_sampled_edges_dict,
         )
 
-        return self.head(x_dict[entity_table][: seed_time.size(0)])
+        return self.head(x_dict[entity_table][:seed_time.size(0)])
 
     def forward_dst_readout(
         self,
@@ -146,22 +147,22 @@ class Model(torch.nn.Module):
     ) -> Tensor:
         if self.id_awareness_emb is None:
             raise RuntimeError(
-                "id_awareness must be set True to use forward_dst_readout"
-            )
+                "id_awareness must be set True to use forward_dst_readout")
         seed_time = batch[entity_table].seed_time
         x_dict = self.encoder(batch.tf_dict)
         # Add ID-awareness to the root node
-        x_dict[entity_table][: seed_time.size(0)] += self.id_awareness_emb.weight
+        x_dict[entity_table][:seed_time.size(0
+                                             )] += self.id_awareness_emb.weight
 
-        rel_time_dict = self.temporal_encoder(
-            seed_time, batch.time_dict, batch.batch_dict
-        )
+        rel_time_dict = self.temporal_encoder(seed_time, batch.time_dict,
+                                              batch.batch_dict)
 
         for node_type, rel_time in rel_time_dict.items():
             x_dict[node_type] = x_dict[node_type] + rel_time
 
         for node_type, embedding in self.embedding_dict.items():
-            x_dict[node_type] = x_dict[node_type] + embedding(batch[node_type].n_id)
+            x_dict[node_type] = x_dict[node_type] + embedding(
+                batch[node_type].n_id)
 
         x_dict = self.gnn(
             x_dict,
@@ -172,56 +173,52 @@ class Model(torch.nn.Module):
 
 
 # Factory functions for different GNN architectures
-def create_hetero_gin(node_types, edge_types, channels, aggr, num_layers, **kwargs):
+def create_hetero_gin(node_types, edge_types, channels, aggr, num_layers,
+                      **kwargs):
     """Factory function to create HeteroGNN with GIN convolution."""
-    return HeteroGNN(
-        node_types=node_types,
-        edge_types=edge_types,
-        channels=channels,
-        conv_factory=gin_conv_factory,
-        aggr=aggr,
-        num_layers=num_layers,
-        **kwargs
-    )
+    return HeteroGNN(node_types=node_types,
+                     edge_types=edge_types,
+                     channels=channels,
+                     conv_factory=gin_conv_factory,
+                     aggr=aggr,
+                     num_layers=num_layers,
+                     **kwargs)
 
 
-def create_hetero_graphconv(node_types, edge_types, channels, aggr, num_layers, **kwargs):
+def create_hetero_graphconv(node_types, edge_types, channels, aggr, num_layers,
+                            **kwargs):
     """Factory function to create HeteroGNN with GraphConv convolution."""
-    return HeteroGNN(
-        node_types=node_types,
-        edge_types=edge_types,
-        channels=channels,
-        conv_factory=graphconv_factory,
-        aggr=aggr,
-        num_layers=num_layers,
-        **kwargs
-    )
+    return HeteroGNN(node_types=node_types,
+                     edge_types=edge_types,
+                     channels=channels,
+                     conv_factory=graphconv_factory,
+                     aggr=aggr,
+                     num_layers=num_layers,
+                     **kwargs)
 
 
-def create_hetero_gat(node_types, edge_types, channels, aggr, num_layers, **kwargs):
+def create_hetero_gat(node_types, edge_types, channels, aggr, num_layers,
+                      **kwargs):
     """Factory function to create HeteroGNN with GAT convolution."""
-    return HeteroGNN(
-        node_types=node_types,
-        edge_types=edge_types,
-        channels=channels,
-        conv_factory=gat_conv_factory,
-        aggr=aggr,
-        num_layers=num_layers,
-        **kwargs
-    )
+    return HeteroGNN(node_types=node_types,
+                     edge_types=edge_types,
+                     channels=channels,
+                     conv_factory=gat_conv_factory,
+                     aggr=aggr,
+                     num_layers=num_layers,
+                     **kwargs)
 
 
-def create_hetero_gatv2(node_types, edge_types, channels, aggr, num_layers, **kwargs):
+def create_hetero_gatv2(node_types, edge_types, channels, aggr, num_layers,
+                        **kwargs):
     """Factory function to create HeteroGNN with GAT v2 convolution."""
-    return HeteroGNN(
-        node_types=node_types,
-        edge_types=edge_types,
-        channels=channels,
-        conv_factory=gatv2_conv_factory,
-        aggr=aggr,
-        num_layers=num_layers,
-        **kwargs
-    )
+    return HeteroGNN(node_types=node_types,
+                     edge_types=edge_types,
+                     channels=channels,
+                     conv_factory=gatv2_conv_factory,
+                     aggr=aggr,
+                     num_layers=num_layers,
+                     **kwargs)
 
 
 # Usage examples:

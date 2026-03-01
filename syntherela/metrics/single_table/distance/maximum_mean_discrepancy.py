@@ -58,7 +58,11 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
         return False
 
     @staticmethod
-    def compute(original_table, sythetic_table, metadata, kernel="linear", **kwargs):
+    def compute(original_table,
+                sythetic_table,
+                metadata,
+                kernel="linear",
+                **kwargs):
         """Compute the Maximum Mean Discrepancy (MMD) between two tables.
 
         Code for MaximumMeanDiscrepancy metric modified from:
@@ -81,12 +85,10 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
                 synth[col] = pd.to_numeric(synth[col])
 
         # standardize the values
-        pipe = Pipeline(
-            [
-                ("imputer", SimpleImputer(strategy="mean")),
-                ("scaler", StandardScaler()),
-            ]
-        )
+        pipe = Pipeline([
+            ("imputer", SimpleImputer(strategy="mean")),
+            ("scaler", StandardScaler()),
+        ])
 
         combined = pd.concat([orig, synth])
         pipe.fit(combined)

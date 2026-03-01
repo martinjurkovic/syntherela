@@ -24,8 +24,7 @@ from relbench.tasks import get_task
 from relbench.tasks.f1 import DriverTop3Task
 
 from gnn_datasets import (
-    F1Dataset,
-)
+    F1Dataset, )
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-f1")
@@ -47,7 +46,6 @@ parser.add_argument(
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
 args = parser.parse_args()
-
 
 device = torch.device("cuda:9" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
@@ -82,8 +80,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     dataset.get_db(),
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=256
-    ),
+        text_embedder=GloveTextEmbedding(device=device), batch_size=256),
     # cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
 
@@ -101,8 +98,7 @@ elif task.task_type == TaskType.REGRESSION:
     # Get the clamp value at inference time
     train_table = task.get_table("train")
     clamp_min, clamp_max = np.percentile(
-        train_table.df[task.target_col].to_numpy(), [2, 98]
-    )
+        train_table.df[task.target_col].to_numpy(), [2, 98])
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     out_channels = task.num_labels
     loss_fn = BCEWithLogitsLoss()
@@ -119,7 +115,9 @@ for split in ["train", "val", "test"]:
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         data,
-        num_neighbors=[int(args.num_neighbors / 2**i) for i in range(args.num_layers)],
+        num_neighbors=[
+            int(args.num_neighbors / 2**i) for i in range(args.num_layers)
+        ],
         time_attr="time",
         input_nodes=table_input.nodes,
         input_time=table_input.time,
@@ -179,8 +177,8 @@ def test(loader: NeighborLoader) -> np.ndarray:
             pred = torch.clamp(pred, clamp_min, clamp_max)
 
         if task.task_type in [
-            TaskType.BINARY_CLASSIFICATION,
-            TaskType.MULTILABEL_CLASSIFICATION,
+                TaskType.BINARY_CLASSIFICATION,
+                TaskType.MULTILABEL_CLASSIFICATION,
         ]:
             pred = torch.sigmoid(pred)
 
@@ -205,14 +203,15 @@ for epoch in range(1, args.epochs + 1):
     train_loss = train()
     val_pred = test(loader_dict["val"])
     val_metrics = task.evaluate(val_pred, task.get_table("val"))
-    print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}")
+    print(
+        f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}"
+    )
 
     if (higher_is_better and val_metrics[tune_metric] >= best_val_metric) or (
-        not higher_is_better and val_metrics[tune_metric] <= best_val_metric
-    ):
+            not higher_is_better
+            and val_metrics[tune_metric] <= best_val_metric):
         best_val_metric = val_metrics[tune_metric]
         state_dict = copy.deepcopy(model.state_dict())
-
 
 model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])

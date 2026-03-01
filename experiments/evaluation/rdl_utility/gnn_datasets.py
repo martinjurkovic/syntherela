@@ -1,6 +1,5 @@
 import os
 from typing import Optional
-from copy import deepcopy
 import json
 from pathlib import Path
 
@@ -13,7 +12,8 @@ from relbench.base import Database, Dataset, Table
 from syntherela.metadata import Metadata
 
 
-def update_stypes_cache(cache_dir: str, dataset_name: str, table_name: str, column_name: str):
+def update_stypes_cache(cache_dir: str, dataset_name: str, table_name: str,
+                        column_name: str):
     """Update stypes.json to remove specified column from specified table."""
     stypes_cache_path = Path(cache_dir) / dataset_name / "stypes.json"
 
@@ -24,39 +24,40 @@ def update_stypes_cache(cache_dir: str, dataset_name: str, table_name: str, colu
                 col_to_stype_dict = json.load(f)
 
             # Remove column from table if it exists
-            if table_name in col_to_stype_dict and column_name in col_to_stype_dict[table_name]:
+            if table_name in col_to_stype_dict and column_name in col_to_stype_dict[
+                    table_name]:
                 col_to_stype_dict[table_name].pop(column_name)
 
                 # Save updated stypes.json
                 with open(stypes_cache_path, "w") as f:
                     json.dump(col_to_stype_dict, f, indent=2)
 
-                print(f"Updated stypes.json: removed '{column_name}' column from '{table_name}' table")
+                print(
+                    f"Updated stypes.json: removed '{column_name}' column from '{table_name}' table"
+                )
 
         except (json.JSONDecodeError, IOError) as e:
-            print(f"Warning: Could not update stypes.json at {stypes_cache_path}: {e}")
+            print(
+                f"Warning: Could not update stypes.json at {stypes_cache_path}: {e}"
+            )
     else:
         print(f"Warning: stypes.json not found at {stypes_cache_path}")
 
 
-def append_test_set(
-    tables_train: Tables, tables_test: Tables, metadata: Metadata
-) -> Tables:
+def append_test_set(tables_train: Tables, tables_test: Tables,
+                    metadata: Metadata) -> Tables:
     tables = {}
     for table in tables_train.keys():
         id_columns = metadata.get_column_names(table, sdtype="id")
         # Add test and train prefix to the id columns
         for column in id_columns:
             tables_train[table][column] = tables_train[table][column].apply(
-                lambda x: f"train_{x}"
-            )
+                lambda x: f"train_{x}")
             tables_test[table][column] = tables_test[table][column].apply(
-                lambda x: f"test_{x}"
-            )
+                lambda x: f"test_{x}")
         # Add the concatenated dataframe to the tables dict
-        tables[table] = pd.concat(
-            [tables_train[table], tables_test[table]], ignore_index=True
-        )
+        tables[table] = pd.concat([tables_train[table], tables_test[table]],
+                                  ignore_index=True)
     return tables
 
 
@@ -72,21 +73,18 @@ def cut_off_set(
         tables[table] = tables_train[table]
         for column in datetime_columns:
             if before:
-                tables[table] = tables[table][
-                    (tables[table][column] < test_timestamp)
-                    | (tables[table][column].isna())
-                ]
+                tables[table] = tables[table][(
+                    tables[table][column] < test_timestamp)
+                                              | (tables[table][column].isna())]
             else:
-                tables[table] = tables[table][
-                    (tables[table][column] >= test_timestamp)
-                    | (tables[table][column].isna())
-                ]
+                tables[table] = tables[table][(
+                    tables[table][column] >= test_timestamp)
+                                              | (tables[table][column].isna())]
     return tables
 
 
-def get_tables_and_metadata(
-    dataset: str, method: str, run_id: int
-) -> tuple[Tables, Metadata]:
+def get_tables_and_metadata(dataset: str, method: str,
+                            run_id: int) -> tuple[Tables, Metadata]:
     data_type = "original" if method == "ORIGINAL" else "synthetic"
     path = os.path.join("data", data_type, dataset)
     if method != "ORIGINAL":
@@ -100,24 +98,21 @@ def get_tables_and_metadata(
     return tables, metadata
 
 
-def keep_only_seen_values(
-    tables: Tables, tables_test: Tables, metadata: Metadata
-) -> Tables:
+def keep_only_seen_values(tables: Tables, tables_test: Tables,
+                          metadata: Metadata) -> Tables:
     # no feature engineering necessary 🤡
     for table in tables.keys():
         for column in tables[table].columns:
             if column in metadata.get_column_names(
-                table_name=table, sdtype="categorical"
-            ) or column in metadata.get_column_names(
-                table_name=table, sdtype="boolean"
-            ):
+                    table_name=table, sdtype="categorical"
+            ) or column in metadata.get_column_names(table_name=table,
+                                                     sdtype="boolean"):
                 values = tables_test[table][column].unique()
                 # remove nan, na_values, and empty strings
                 values = [str(v) for v in values if v == v]
                 # set categories with pd.categorical from test to train
                 tables[table][column] = pd.Categorical(
-                    tables[table][column].astype(str), categories=values
-                )
+                    tables[table][column].astype(str), categories=values)
 
     return tables
 
@@ -136,7 +131,8 @@ class RossmannDataset(Dataset):
         method: str = "ORIGINAL",
         run_id: int = 0,
         type: str = "train",
-        cache_dir: Optional[str] = os.path.expanduser("~/.cache/relbench_examples"),
+        cache_dir: Optional[str] = os.path.expanduser(
+            "~/.cache/relbench_examples"),
     ):
         super().__init__(cache_dir)
         self.method = method
@@ -146,15 +142,14 @@ class RossmannDataset(Dataset):
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(
-            self.name, self.method, self.run_id
-        )
+            self.name, self.method, self.run_id)
 
-        tables_test = load_tables(
-            os.path.join("data", "original", "rossmann"), metadata
-        )
+        tables_test = load_tables(os.path.join("data", "original", "rossmann"),
+                                  metadata)
         tables_test, metadata = remove_sdv_columns(tables_test, metadata)
 
-        tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
+        tables_train = keep_only_seen_values(tables_train, tables_test,
+                                             metadata)
 
         if self.type == "test":
             tables = tables_test
@@ -163,16 +158,19 @@ class RossmannDataset(Dataset):
 
         store_df = tables["store"]
         historical_df = tables["historical"]
-        historical_df["Date"] = pd.to_datetime(historical_df["Date"], format="%Y-%m-%d")
+        historical_df["Date"] = pd.to_datetime(historical_df["Date"],
+                                               format="%Y-%m-%d")
 
         db = Database(
             table_dict={
-                "store": Table(
+                "store":
+                Table(
                     df=store_df,
                     fkey_col_to_pkey_table={},
                     pkey_col="Store",
                 ),
-                "historical": Table(
+                "historical":
+                Table(
                     df=historical_df,
                     fkey_col_to_pkey_table={
                         "Store": "store",
@@ -180,8 +178,7 @@ class RossmannDataset(Dataset):
                     pkey_col="Id",
                     time_col="Date",
                 ),
-            }
-        )
+            })
 
         db = db.from_(self.from_timestamp)
         db = db.upto(self.upto_timestamp)
@@ -197,14 +194,13 @@ class AirbnbDataset(Dataset):
     from_timestamp = pd.Timestamp("2014-01-01")
     upto_timestamp = pd.Timestamp("2014-07-01")
 
-    def __init__(
-        self,
-        predict_column_task_config: dict = {},
-        method: str = "ORIGINAL",
-        run_id: int = 0,
-        type: str = "train",
-        cache_dir: Optional[str] = os.path.expanduser("~/.cache/relbench_examples")
-    ):
+    def __init__(self,
+                 predict_column_task_config: dict = {},
+                 method: str = "ORIGINAL",
+                 run_id: int = 0,
+                 type: str = "train",
+                 cache_dir: Optional[str] = os.path.expanduser(
+                     "~/.cache/relbench_examples")):
         super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
@@ -212,22 +208,23 @@ class AirbnbDataset(Dataset):
 
         # Update stypes cache to remove columns that will be popped
         if cache_dir is not None:
-            update_stypes_cache(cache_dir, self.name, "users", "date_first_booking")
+            update_stypes_cache(cache_dir, self.name, "users",
+                                "date_first_booking")
         self.cache_dir = None
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(
-            self.name, self.method, self.run_id
-        )
+            self.name, self.method, self.run_id)
 
         tables_test = load_tables(
-            os.path.join("data", "original", self.name, "test"), metadata
-        )
+            os.path.join("data", "original", self.name, "test"), metadata)
 
         tables_test, metadata = remove_sdv_columns(tables_test, metadata)
-        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp, False)
+        tables_test = cut_off_set(tables_test, metadata, self.test_timestamp,
+                                  False)
 
-        tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
+        tables_train = keep_only_seen_values(tables_train, tables_test,
+                                             metadata)
         tables_train = cut_off_set(tables_train, metadata, self.test_timestamp)
 
         tables_test = append_test_set(tables_train, tables_test, metadata)
@@ -242,24 +239,26 @@ class AirbnbDataset(Dataset):
 
         users_df.pop("date_first_booking")
 
-        users_df["country_destination"] = users_df["country_destination"] == "NDF"
+        users_df["country_destination"] = users_df[
+            "country_destination"] == "NDF"
 
         db = Database(
             table_dict={
-                "users": Table(
+                "users":
+                Table(
                     df=users_df,
                     fkey_col_to_pkey_table={},
                     pkey_col="id",
                     time_col="date_account_created",
                 ),
-                "sessions": Table(
+                "sessions":
+                Table(
                     df=sessions_df,
                     fkey_col_to_pkey_table={
                         "user_id": "users",
                     },
                 ),
-            }
-        )
+            })
 
         db = db.from_(self.from_timestamp)
         db = db.upto(self.upto_timestamp)
@@ -281,7 +280,8 @@ class WalmartDataset(Dataset):
         method: str = "ORIGINAL",
         run_id: int = 0,
         type: str = "train",
-        cache_dir: Optional[str] = os.path.expanduser("~/.cache/relbench_examples"),
+        cache_dir: Optional[str] = os.path.expanduser(
+            "~/.cache/relbench_examples"),
     ):
         super().__init__(cache_dir)
         self.method = method
@@ -293,9 +293,9 @@ class WalmartDataset(Dataset):
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(
-            self.name, self.method, self.run_id
-        )
-        tables_test = load_tables(os.path.join("data", "original", "walmart"), metadata)
+            self.name, self.method, self.run_id)
+        tables_test = load_tables(os.path.join("data", "original", "walmart"),
+                                  metadata)
         tables_test, metadata = remove_sdv_columns(tables_test, metadata)
 
         # tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
@@ -312,10 +312,11 @@ class WalmartDataset(Dataset):
 
         depts_df["Date"] = pd.to_datetime(depts_df["Date"], format="%Y-%m-%d")
         # sort by Date
-        depts_df = depts_df.sort_values(by=["Store", "Dept", "Date"], ascending=True)
-        features_df = features_df.sort_values(by=["Store", "Date"], ascending=True)
+        depts_df = depts_df.sort_values(by=["Store", "Dept", "Date"],
+                                        ascending=True)
+        features_df = features_df.sort_values(by=["Store", "Date"],
+                                              ascending=True)
         depts_df["primary_key"] = range(len(depts_df))
-
 
         depts_df = depts_df.drop(columns=["Dept"])
         # features_df = features_df.drop(columns=["IsHoliday"])
@@ -323,7 +324,8 @@ class WalmartDataset(Dataset):
 
         db = Database(
             table_dict={
-                "depts": Table(
+                "depts":
+                Table(
                     df=depts_df,
                     fkey_col_to_pkey_table={
                         "Store": "stores",
@@ -331,20 +333,21 @@ class WalmartDataset(Dataset):
                     time_col="Date",
                     pkey_col="primary_key",
                 ),
-                "stores": Table(
+                "stores":
+                Table(
                     df=stores_df,
                     fkey_col_to_pkey_table={},
                     pkey_col="Store",
                 ),
-                "features": Table(
+                "features":
+                Table(
                     df=features_df,
                     fkey_col_to_pkey_table={
                         "Store": "stores",
                     },
                     time_col="Date",
                 ),
-            }
-        )
+            })
 
         db = db.from_(self.from_timestamp)
         db = db.upto(self.upto_timestamp)
@@ -360,14 +363,13 @@ class F1Dataset(Dataset):
     # from_timestamp = pd.Timestamp("1990-01-01")
     # upto_timestamp = pd.Timestamp("2010-01-01")
 
-    def __init__(
-        self,
-        predict_column_task_config: dict = {},
-        method: str = "ORIGINAL",
-        run_id: int = 0,
-        type: str = "train",
-        cache_dir: Optional[str] = os.path.expanduser("~/.cache/relbench_examples")
-    ):
+    def __init__(self,
+                 predict_column_task_config: dict = {},
+                 method: str = "ORIGINAL",
+                 run_id: int = 0,
+                 type: str = "train",
+                 cache_dir: Optional[str] = os.path.expanduser(
+                     "~/.cache/relbench_examples")):
         super().__init__(cache_dir)
         self.method = method
         self.run_id = run_id
@@ -381,12 +383,13 @@ class F1Dataset(Dataset):
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(
-            self.name, self.method, self.run_id
-        )
-        tables_test = load_tables(os.path.join("data", "original", "f1"), metadata)
+            self.name, self.method, self.run_id)
+        tables_test = load_tables(os.path.join("data", "original", "f1"),
+                                  metadata)
         tables_test, metadata = remove_sdv_columns(tables_test, metadata)
 
-        tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
+        tables_train = keep_only_seen_values(tables_train, tables_test,
+                                             metadata)
 
         if self.type == "test":
             tables = tables_test
@@ -410,9 +413,9 @@ class F1Dataset(Dataset):
         races.pop("year")
         races["date"] = pd.to_datetime(races.pop("datetime"))
 
-        qualifying = qualifying.merge(
-            races[["raceId", "date"]], on="raceId", how="left"
-        )
+        qualifying = qualifying.merge(races[["raceId", "date"]],
+                                      on="raceId",
+                                      how="left")
 
         # # Subtract a day from the date to account for the fact
         # # that the qualifying time is the day before the main race
@@ -431,13 +434,14 @@ class F1Dataset(Dataset):
         results["rank"] = pd.to_numeric(results["rank"], errors="coerce")
         results["number"] = pd.to_numeric(results["number"], errors="coerce")
         results["grid"] = pd.to_numeric(results["grid"], errors="coerce")
-        results["position"] = pd.to_numeric(results["position"], errors="coerce")
+        results["position"] = pd.to_numeric(results["position"],
+                                            errors="coerce")
         results["points"] = pd.to_numeric(results["points"], errors="coerce")
         results["laps"] = pd.to_numeric(results["laps"], errors="coerce")
-        results["milliseconds"] = pd.to_numeric(
-            results["milliseconds"], errors="coerce"
-        )
-        results["fastestLap"] = pd.to_numeric(results["fastestLap"], errors="coerce")
+        results["milliseconds"] = pd.to_numeric(results["milliseconds"],
+                                                errors="coerce")
+        results["fastestLap"] = pd.to_numeric(results["fastestLap"],
+                                              errors="coerce")
 
         # Convert drivers date of birth to datetime
         drivers["dob"] = pd.to_datetime(drivers["dob"])
@@ -480,7 +484,10 @@ class F1Dataset(Dataset):
 
         tables["standings"] = Table(
             df=pd.DataFrame(standings),
-            fkey_col_to_pkey_table={"raceId": "races", "driverId": "drivers"},
+            fkey_col_to_pkey_table={
+                "raceId": "races",
+                "driverId": "drivers"
+            },
             pkey_col="driverStandingsId",
             time_col="date",
         )
@@ -494,14 +501,20 @@ class F1Dataset(Dataset):
 
         tables["constructor_results"] = Table(
             df=pd.DataFrame(constructor_results),
-            fkey_col_to_pkey_table={"raceId": "races", "constructorId": "constructors"},
+            fkey_col_to_pkey_table={
+                "raceId": "races",
+                "constructorId": "constructors"
+            },
             pkey_col="constructorResultsId",
             time_col="date",
         )
 
         tables["constructor_standings"] = Table(
             df=pd.DataFrame(constructor_standings),
-            fkey_col_to_pkey_table={"raceId": "races", "constructorId": "constructors"},
+            fkey_col_to_pkey_table={
+                "raceId": "races",
+                "constructorId": "constructors"
+            },
             pkey_col="constructorStandingsId",
             time_col="date",
         )
@@ -536,7 +549,8 @@ class BerkaDataset(Dataset):
         method: str = "ORIGINAL",
         run_id: int = 0,
         type: str = "train",
-        cache_dir: Optional[str] = os.path.expanduser("~/.cache/relbench_examples"),
+        cache_dir: Optional[str] = os.path.expanduser(
+            "~/.cache/relbench_examples"),
     ):
         super().__init__(cache_dir)
         self.method = method
@@ -546,12 +560,13 @@ class BerkaDataset(Dataset):
 
     def make_db(self) -> Database:
         tables_train, metadata = get_tables_and_metadata(
-            self.name, self.method, self.run_id
-        )
-        tables_test = load_tables(os.path.join("data", "original", "Berka"), metadata)
+            self.name, self.method, self.run_id)
+        tables_test = load_tables(os.path.join("data", "original", "Berka"),
+                                  metadata)
         tables_test, metadata = remove_sdv_columns(tables_test, metadata)
 
-        tables_train = keep_only_seen_values(tables_train, tables_test, metadata)
+        tables_train = keep_only_seen_values(tables_train, tables_test,
+                                             metadata)
 
         if self.type == "test":
             tables = tables_test

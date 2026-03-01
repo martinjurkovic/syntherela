@@ -3,10 +3,6 @@ import subprocess
 import json
 import ast
 import argparse
-from dotenv import load_dotenv
-
-load_dotenv()
-
 """
 GNN Utility Benchmark Script
 
@@ -22,25 +18,36 @@ results[dataset][method][gnn_architecture][run_id] = metrics
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Run GNN utility benchmark')
-parser.add_argument('--dataset_filter', type=str, default=None,
-                    help='Filter to run only specific dataset (e.g., rossmann_subsampled)')
-parser.add_argument('--torch_device', type=str, default='cuda:9',
+parser.add_argument(
+    '--dataset_filter',
+    type=str,
+    default=None,
+    help='Filter to run only specific dataset (e.g., rossmann_subsampled)')
+parser.add_argument('--torch_device',
+                    type=str,
+                    default='cuda:9',
                     help='GPU device to use (e.g., cuda:7)')
-parser.add_argument('--use_tuned_hyperparameters', action='store_true',
-                    help='Use best hyperparameters from hyperparameter tuning results')
+parser.add_argument(
+    '--use_tuned_hyperparameters',
+    action='store_true',
+    help='Use best hyperparameters from hyperparameter tuning results')
 args = parser.parse_args()
 
-PROJECT_PATH = os.getenv("PROJECT_PATH")
+PROJECT_PATH = __file__.split("experiments")[0]
+
 
 def load_tuned_hyperparameters(dataset, gnn_architecture):
     """Load best hyperparameters for a specific dataset-architecture combination"""
 
     # Construct filename based on naming convention
     filename = f"hyperparameter_results_{gnn_architecture.replace('-', '_')}_{dataset.replace('-', '_')}.json"
-    filepath = os.path.join(PROJECT_PATH, "results", "hyperparameter_tuning_100", filename)
+    filepath = os.path.join(PROJECT_PATH, "results",
+                            "hyperparameter_tuning_100", filename)
 
     if not os.path.exists(filepath):
-        print(f"Warning: No tuned hyperparameters found for {gnn_architecture} + {dataset}")
+        print(
+            f"Warning: No tuned hyperparameters found for {gnn_architecture} + {dataset}"
+        )
         print(f"Expected file: {filepath}")
         return None
 
@@ -49,12 +56,15 @@ def load_tuned_hyperparameters(dataset, gnn_architecture):
             data = json.load(f)
 
         best_hyperparams = data.get('best_hyperparameters', {})
-        print(f"✓ Loaded tuned hyperparameters for {gnn_architecture} + {dataset}: {best_hyperparams}")
+        print(
+            f"✓ Loaded tuned hyperparameters for {gnn_architecture} + {dataset}: {best_hyperparams}"
+        )
         return best_hyperparams
 
     except Exception as e:
         print(f"Error loading hyperparameters from {filepath}: {e}")
         return None
+
 
 RUN_DATASETS = [
     "rossmann_subsampled",
@@ -76,12 +86,18 @@ GNN_ARCHITECTURES = [
 
 UTILITY_TASKS = [
     {
-        "dataset": "rossmann_subsampled",
-        "task_type": "REGRESSION",
-        "entity_table": "historical",
-        "entity_col": "Id",
-        "time_col": "Date",
-        "target_col": "Customers",
+        "dataset":
+        "rossmann_subsampled",
+        "task_type":
+        "REGRESSION",
+        "entity_table":
+        "historical",
+        "entity_col":
+        "Id",
+        "time_col":
+        "Date",
+        "target_col":
+        "Customers",
         "methods": [
             "ORIGINAL",
             "CLAVADDPM",
@@ -91,15 +107,22 @@ UTILITY_TASKS = [
             "RGCLD",
             "SDV",
         ],
-        "task": "autocomplete",
+        "task":
+        "autocomplete",
     },
     {
-        "dataset": "walmart_subsampled",
-        "task_type": "REGRESSION",
-        "entity_table": "depts",
-        "entity_col": None,
-        "time_col": "Date",
-        "target_col": "Weekly_Sales",
+        "dataset":
+        "walmart_subsampled",
+        "task_type":
+        "REGRESSION",
+        "entity_table":
+        "depts",
+        "entity_col":
+        None,
+        "time_col":
+        "Date",
+        "target_col":
+        "Weekly_Sales",
         "methods": [
             "ORIGINAL",
             "CLAVADDPM",
@@ -109,8 +132,10 @@ UTILITY_TASKS = [
             "RGCLD",
             "SDV",
         ],
-        "--lr": 0.1,
-        "task": "autocomplete",
+        "--lr":
+        0.1,
+        "task":
+        "autocomplete",
     },
     # {
     #     "dataset": "f1_subsampled",
@@ -184,9 +209,11 @@ os.makedirs(results_dir, exist_ok=True)
 
 # Create dataset-specific results file name
 if args.dataset_filter:
-    results_file = os.path.join(results_dir, f"gnn_utility_results_{args.dataset_filter}.json")
+    results_file = os.path.join(
+        results_dir, f"gnn_utility_results_{args.dataset_filter}.json")
 else:
-    results_file = os.path.join(results_dir, "gnn_utility_results_multi_arch.json")
+    results_file = os.path.join(results_dir,
+                                "gnn_utility_results_multi_arch.json")
 
 if not os.path.exists(results_file):
     with open(results_file, "w") as f:
@@ -199,10 +226,13 @@ with open(results_file, "r") as f:
 
 print(f"=== GNN Utility Benchmark ===")
 print(f"Device: {args.torch_device}")
-print(f"Dataset filter: {args.dataset_filter if args.dataset_filter else 'All datasets'}")
+print(
+    f"Dataset filter: {args.dataset_filter if args.dataset_filter else 'All datasets'}"
+)
 print(f"Use tuned hyperparameters: {args.use_tuned_hyperparameters}")
 print(f"Testing {len(RUN_DATASETS)} datasets: {RUN_DATASETS}")
-print(f"Testing {len(GNN_ARCHITECTURES)} GNN architectures: {GNN_ARCHITECTURES}")
+print(
+    f"Testing {len(GNN_ARCHITECTURES)} GNN architectures: {GNN_ARCHITECTURES}")
 print(f"Results will be saved to: {results_file}")
 print(f"{'='*50}")
 
@@ -229,14 +259,17 @@ for task in UTILITY_TASKS:
 
                 for run_id in (1, 2, 3):
                     # check if the result already exists
-                    if str(run_id) in existing_results[dataset][method][gnn_arch]:
-                        if existing_results[dataset][method][gnn_arch][str(run_id)] != {}:
+                    if str(run_id
+                           ) in existing_results[dataset][method][gnn_arch]:
+                        if existing_results[dataset][method][gnn_arch][str(
+                                run_id)] != {}:
                             print(
                                 f"SKIPPING: {task['dataset']}, Method: {method}, GNN: {gnn_arch}, Run ID: {run_id}"
                             )
                             continue
 
-                    existing_results[dataset][method][gnn_arch][str(run_id)] = {}
+                    existing_results[dataset][method][gnn_arch][str(
+                        run_id)] = {}
 
                     print(
                         f"Running task: {task['dataset']}, Method: {method}, GNN: {gnn_arch}, Run ID: {run_id}"
@@ -261,7 +294,8 @@ for task in UTILITY_TASKS:
                         task["task"],
                     ]
                     if "entity_table" in task:
-                        command.extend(["--entity_table", task["entity_table"]])
+                        command.extend(
+                            ["--entity_table", task["entity_table"]])
                     # if "time_col" in task:
                     #     command.extend(["--time_col", task["time_col"]])
                     if "target_col" in task:
@@ -271,42 +305,70 @@ for task in UTILITY_TASKS:
 
                     # Handle hyperparameters - use tuned ones if available and requested
                     if args.use_tuned_hyperparameters:
-                        tuned_params = load_tuned_hyperparameters(dataset, gnn_arch)
+                        tuned_params = load_tuned_hyperparameters(
+                            dataset, gnn_arch)
                         if tuned_params:
                             # Use tuned hyperparameters
                             if "lr" in tuned_params:
-                                command.extend(["--lr", str(tuned_params["lr"])])
+                                command.extend(
+                                    ["--lr", str(tuned_params["lr"])])
                             if "num_layers" in tuned_params:
-                                command.extend(["--num_layers", str(tuned_params["num_layers"])])
+                                command.extend([
+                                    "--num_layers",
+                                    str(tuned_params["num_layers"])
+                                ])
                             if "num_neighbors" in tuned_params:
-                                command.extend(["--num_neighbors", str(tuned_params["num_neighbors"])])
+                                command.extend([
+                                    "--num_neighbors",
+                                    str(tuned_params["num_neighbors"])
+                                ])
                             if "weight_decay" in tuned_params:
-                                command.extend(["--weight_decay", str(tuned_params["weight_decay"])])
+                                command.extend([
+                                    "--weight_decay",
+                                    str(tuned_params["weight_decay"])
+                                ])
                             if "aggr" in tuned_params:
-                                command.extend(["--aggr", str(tuned_params["aggr"])])
-                            print(f"Using tuned hyperparameters: lr={tuned_params.get('lr')}, "
-                                  f"layers={tuned_params.get('num_layers')}, "
-                                  f"neighbors={tuned_params.get('num_neighbors')}, "
-                                  f"decay={tuned_params.get('weight_decay')}")
+                                command.extend(
+                                    ["--aggr",
+                                     str(tuned_params["aggr"])])
+                            print(
+                                f"Using tuned hyperparameters: lr={tuned_params.get('lr')}, "
+                                f"layers={tuned_params.get('num_layers')}, "
+                                f"neighbors={tuned_params.get('num_neighbors')}, "
+                                f"decay={tuned_params.get('weight_decay')}")
                         else:
                             # Fall back to default hyperparameters from task
-                            print(f"No tuned hyperparameters found, using defaults for {gnn_arch} + {dataset}")
+                            print(
+                                f"No tuned hyperparameters found, using defaults for {gnn_arch} + {dataset}"
+                            )
                             if "--lr" in task:
                                 command.extend(["--lr", str(task["--lr"])])
                             if "--batch_size" in task:
-                                command.extend(["--batch_size", str(task["--batch_size"])])
+                                command.extend([
+                                    "--batch_size",
+                                    str(task["--batch_size"])
+                                ])
                             if "--num_layers" in task:
-                                command.extend(["--num_layers", str(task["--num_layers"])])
+                                command.extend([
+                                    "--num_layers",
+                                    str(task["--num_layers"])
+                                ])
                     else:
                         # Use default hyperparameters from task configuration
                         if "--lr" in task:
                             command.extend(["--lr", str(task["--lr"])])
                         if "--batch_size" in task:
-                            command.extend(["--batch_size", str(task["--batch_size"])])
+                            command.extend(
+                                ["--batch_size",
+                                 str(task["--batch_size"])])
                         if "--num_layers" in task:
-                            command.extend(["--num_layers", str(task["--num_layers"])])
+                            command.extend(
+                                ["--num_layers",
+                                 str(task["--num_layers"])])
 
-                    result = subprocess.run(command, capture_output=True, text=True)
+                    result = subprocess.run(command,
+                                            capture_output=True,
+                                            text=True)
 
                     # Clean up temporary torch_geometric files
                     subprocess.run(["rm", "-f", "torch_geometric.*"])
@@ -317,7 +379,8 @@ for task in UTILITY_TASKS:
                         lines = result.stdout.splitlines()
                         final_line = lines[-1]
 
-                        best_test_metrics = final_line.split("Best test metrics: ")[1]
+                        best_test_metrics = final_line.split(
+                            "Best test metrics: ")[1]
                         print(f"BEST TEST METRICS: {best_test_metrics}")
                     except Exception as e:
                         print(
@@ -329,14 +392,17 @@ for task in UTILITY_TASKS:
                     # convert string to dictionary
                     best_test_metrics = ast.literal_eval(best_test_metrics)
                     # print(f"JSON TEST METRICS: {best_test_metrics}")
-                    existing_results[dataset][method][gnn_arch][str(run_id)] = best_test_metrics
+                    existing_results[dataset][method][gnn_arch][str(
+                        run_id)] = best_test_metrics
 
                     with open(results_file, "w") as f:
                         json.dump(existing_results, f, indent=4)
 
                     if method == "ORIGINAL":
-                        existing_results[dataset][method][gnn_arch]["2"] = best_test_metrics
-                        existing_results[dataset][method][gnn_arch]["3"] = best_test_metrics
+                        existing_results[dataset][method][gnn_arch][
+                            "2"] = best_test_metrics
+                        existing_results[dataset][method][gnn_arch][
+                            "3"] = best_test_metrics
                         break
 
                     with open(results_file, "w") as f:

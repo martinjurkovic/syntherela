@@ -27,7 +27,9 @@ from syntherela.metrics.multi_table.detection import AggregationDetection
 from syntherela.metrics.multi_table.statistical import CardinalityShapeSimilarity
 
 args = argparse.ArgumentParser()
-args.add_argument("--dataset-name", type=str, default="airbnb-simplified_subsampled")
+args.add_argument("--dataset-name",
+                  type=str,
+                  default="airbnb-simplified_subsampled")
 args.add_argument("--methods", "-m", action="append", default=None)
 args.add_argument("--run-id", type=str, default="1")
 args = args.parse_args()
@@ -59,20 +61,26 @@ single_column_metrics = [
     JensenShannonDistance(),
     WassersteinDistance(),
     SingleColumnDetection(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
+        classifier_cls=xgb_cls,
+        classifier_args=xgb_args,
+        random_state=42,
     ),
 ]
 single_table_metrics = [
     MaximumMeanDiscrepancy(),
     PairwiseCorrelationDifference(),
     SingleTableDetection(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
+        classifier_cls=xgb_cls,
+        classifier_args=xgb_args,
+        random_state=42,
     ),
 ]
 multi_table_metrics = [
     CardinalityShapeSimilarity(),
     AggregationDetection(
-        classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=42
+        classifier_cls=xgb_cls,
+        classifier_args=xgb_args,
+        random_state=42,
     ),
 ]
 

@@ -34,6 +34,42 @@ To install only the benchmark package, run the following command:
 ```bash
 pip install syntherela
 ```
+## Using SyntheRela
+
+To evaluate your synthetic relational data, configure the `Benchmark` class with your desired metrics and run the evaluation pipeline:
+
+```python
+from syntherela.benchmark import Benchmark
+from syntherela.metrics.single_column.statistical import ChiSquareTest
+from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
+from syntherela.metrics.multi_table.statistical import CardinalityShapeSimilarity
+from syntherela.metrics.multi_table.detection import AggregationDetection
+from xgboost import XGBClassifier
+
+# Initialize the benchmark with specific metrics
+benchmark = Benchmark(
+    real_data_dir="path/to/real_data",
+    synthetic_data_dir="path/to/synthetic_data",
+    results_dir="results",
+    single_column_metrics=[ChiSquareTest()],
+    single_table_metrics=[MaximumMeanDiscrepancy()],
+    multi_table_metrics=[
+        CardinalityShapeSimilarity(),
+        AggregationDetection(classifier_cls=XGBClassifier, random_state=42)
+    ],
+    datasets=["your_dataset_name"],
+    methods=["your_method_name"]
+)
+
+# Execute evaluation
+benchmark.run()
+```
+
+## Examples
+
+We provide example notebooks to help you get started with `syntherela` in the [examples/](examples/) directory.
+
+- [Evaluating Rossmann Subsampled Dataset](examples/evaluate_rossmann_subsampled.ipynb): A step-by-step guide to evaluating a subsampled version of the Rossmann dataset using various metrics.
 
 ## Replicating the paper's results
 
@@ -45,6 +81,24 @@ The documentation for adding a new metric can be found in [docs/ADDING_A_METRIC.
 
 
 \* Denotes the method does not have a public implementation available.
+
+## 🏆 Leaderboard Submission
+
+We maintain an official leaderboard to benchmark synthetic relational data generation methods. To ensure fairness and reproducibility, **all evaluations are performed by the SyntheRela maintainers** on standardized hardware.
+
+### Evaluation Overview
+| Feature | Specification |
+| :--- | :--- |
+| **Compute** | Single NVIDIA H100 (80GB) |
+| **Time Limit** | 48 hours execution time **per dataset** |
+| **Submission Frequency** | 1 submission per 30-day period |
+| **Capacity** | Up to 2 model variants/checkpoints per submission |
+
+### How to Submit
+1. **Prepare your code:** Ensure your method is reproducible and includes a clear `README` and `requirements.txt`.
+2. **Open an Issue:** Create a new [GitHub Issue](https://github.com/martinjurkovic/syntherela/issues) using the title prefix `[Model Submission]`.
+
+For the complete requirements regarding environment setup, logging, and our privacy/confidentiality policy, please refer to our **[Full Submission Guidelines](https://docs.google.com/document/d/1ae16L_vvT5PFt2OeN7FJauA_ayd_A6xCkhVJFoYcx04)**.
 
 ## Conflicts of Interest
 The authors declare no conflict of interest and are not associated with any of the evaluated commercial synthetic data providers.
@@ -63,4 +117,4 @@ If you use SyntheRela in your work, please cite our paper:
 ```
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](/LICENSE) file for details.
+This project is licensed under the [MIT License](/LICENSE).

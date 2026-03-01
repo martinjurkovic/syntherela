@@ -12,7 +12,6 @@ faulthandler.enable()
 
 # Set CUDA_LAUNCH_BLOCKING=1 to get better error messages
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-
 """
 Usage examples for different GNN architectures:
 
@@ -39,10 +38,8 @@ import numpy as np
 import torch
 from model import Model, create_hetero_gin, create_hetero_graphconv, create_hetero_gat, create_hetero_gatv2
 from relgnn_nn import RelGNN_Model, get_atomic_routes
-from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, L1Loss, MSELoss
+from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame import stype
-from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
@@ -60,7 +57,6 @@ from gnn_datasets import (
     AirbnbDataset,
     BerkaDataset,
 )
-
 
 DATASETS = {
     RossmannDataset.name: RossmannDataset,
@@ -87,7 +83,9 @@ parser.add_argument(
     "--task_type",
     type=str,
     default="REGRESSION",
-    choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
+    choices=[
+        "BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"
+    ],
 )
 parser.add_argument("--dataset", type=str, default="walmart_subsampled")
 parser.add_argument("--entity_table", type=str, default="depts")
@@ -99,8 +97,13 @@ parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
-parser.add_argument("--gnn_architecture", type=str, default="hetero-gin",
-                    choices=["hetero-graphsage", "hetero-gin", "hetero-graphconv", "hetero-gat", "hetero-gatv2", "relgnn"],
+parser.add_argument("--gnn_architecture",
+                    type=str,
+                    default="hetero-gin",
+                    choices=[
+                        "hetero-graphsage", "hetero-gin", "hetero-graphconv",
+                        "hetero-gat", "hetero-gatv2", "relgnn"
+                    ],
                     help="GNN architecture to use")
 parser.add_argument("--num_neighbors", type=int, default=-1)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
@@ -117,12 +120,11 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-
-device = torch.device(args.torch_device if torch.cuda.is_available() else "cpu")
+device = torch.device(
+    args.torch_device if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
-
 
 predict_column_task_config = {
     "task_type": TaskType[args.task_type],
@@ -131,10 +133,11 @@ predict_column_task_config = {
 }
 
 # dataset: Dataset = get_dataset(args.dataset, download=False)
-dataset: Dataset = DATASETS[args.dataset](method=args.method, run_id=args.run_id)
-dataset_test: Dataset = DATASETS[args.dataset](
-    method=args.method, run_id=args.run_id, type="test"
-)
+dataset: Dataset = DATASETS[args.dataset](method=args.method,
+                                          run_id=args.run_id)
+dataset_test: Dataset = DATASETS[args.dataset](method=args.method,
+                                               run_id=args.run_id,
+                                               type="test")
 
 # task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
 if args.task == "autocomplete":
@@ -142,19 +145,16 @@ if args.task == "autocomplete":
     dataset.entity_table = args.entity_table
     dataset_test.target_col = args.target_col
     dataset_test.entity_table = args.entity_table
-    task: AutoCompleteTask = TASKS[args.task](
-        dataset=dataset, **predict_column_task_config
-    )
+    task: AutoCompleteTask = TASKS[args.task](dataset=dataset,
+                                              **predict_column_task_config)
     task_test: AutoCompleteTask = TASKS[args.task](
-        dataset=dataset_test, **predict_column_task_config
-    )
+        dataset=dataset_test, **predict_column_task_config)
 else:
     task: BaseTask = TASKS[args.task](dataset=dataset)
     # task_test: BaseTask = TASKS[args.task](dataset=dataset_test)
     task_test: EntityTask = get_task("rel-f1", args.task, download=False)
 
 # task_test.get_table("test", mask_input_cols=False)
-
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
@@ -169,7 +169,9 @@ try:
         col_to_stype_dict[args.entity_table].pop(args.target_col)
 except FileNotFoundError:
     print(f"No stypes.json found for {args.dataset}, generating new ones.")
-    print(f"Please consider generating them with the metadata_sdv_to_relbench.py script.")
+    print(
+        f"Please consider generating them with the metadata_sdv_to_relbench.py script."
+    )
     col_to_stype_dict = get_stype_proposal(dataset.get_db())
     # Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     # with open(stypes_cache_path, "w") as f:
@@ -177,8 +179,7 @@ except FileNotFoundError:
 
 data, col_stats_dict_train = make_pkey_fkey_graph(
     dataset.get_db(
-        upto_test_timestamp=False if args.task == "autocomplete" else True,
-    ),
+        upto_test_timestamp=False if args.task == "autocomplete" else True, ),
     col_to_stype_dict=col_to_stype_dict,
     # text_embedder_cfg=TextEmbedderConfig(
     #     text_embedder=GloveTextEmbedding(device=device), batch_size=256
@@ -187,8 +188,7 @@ data, col_stats_dict_train = make_pkey_fkey_graph(
 )
 data_test, col_stats_dict_test = make_pkey_fkey_graph(
     dataset_test.get_db(
-        upto_test_timestamp=False if args.task == "autocomplete" else True,
-    ),
+        upto_test_timestamp=False if args.task == "autocomplete" else True, ),
     col_to_stype_dict=col_to_stype_dict,
     # text_embedder_cfg=TextEmbedderConfig(
     #     text_embedder=GloveTextEmbedding(device=device), batch_size=256
@@ -210,8 +210,7 @@ elif task.task_type == TaskType.REGRESSION:
     # Get the clamp value at inference time
     train_table = task.get_table("train")
     clamp_min, clamp_max = np.percentile(
-        train_table.df[task.target_col].to_numpy(), [2, 98]
-    )
+        train_table.df[task.target_col].to_numpy(), [2, 98])
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     out_channels = task.num_labels
     loss_fn = BCEWithLogitsLoss()
@@ -231,7 +230,9 @@ for split in ["train", "val", "test"]:
     tmp_data = data if split in ("train", "val") else data_test
     loader_dict[split] = NeighborLoader(
         tmp_data,
-        num_neighbors=[int(args.num_neighbors / 2**i) for i in range(args.num_layers)],
+        num_neighbors=[
+            int(args.num_neighbors / 2**i) for i in range(args.num_layers)
+        ],
         # num_neighbors=[-1 for i in range(args.num_layers)],
         time_attr="time",
         input_nodes=table_input.nodes,
@@ -293,8 +294,8 @@ def test(loader: NeighborLoader) -> np.ndarray:
         #     pred = torch.clamp(pred, clamp_min, clamp_max)
 
         if task.task_type in [
-            TaskType.BINARY_CLASSIFICATION,
-            TaskType.MULTILABEL_CLASSIFICATION,
+                TaskType.BINARY_CLASSIFICATION,
+                TaskType.MULTILABEL_CLASSIFICATION,
         ]:
             pred = torch.sigmoid(pred)
 
@@ -351,7 +352,9 @@ else:
 
 print(f"Using GNN architecture: {args.gnn_architecture}")
 
-optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+optimizer = torch.optim.Adam(model.parameters(),
+                             lr=args.lr,
+                             weight_decay=args.weight_decay)
 state_dict = None
 best_val_metric = -math.inf if higher_is_better else math.inf
 for epoch in range(1, args.epochs + 1):
@@ -360,13 +363,14 @@ for epoch in range(1, args.epochs + 1):
     val_metrics = task.evaluate(val_pred, task.get_table("val"))
     test_pred = test(loader_dict["test"])
     test_metrics = task_test.evaluate(test_pred)
-    print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}, Test metrics: {test_metrics}")
+    print(
+        f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}, Test metrics: {test_metrics}"
+    )
     if (higher_is_better and val_metrics[tune_metric] >= best_val_metric) or (
-        not higher_is_better and val_metrics[tune_metric] <= best_val_metric
-    ):
+            not higher_is_better
+            and val_metrics[tune_metric] <= best_val_metric):
         best_val_metric = val_metrics[tune_metric]
         state_dict = copy.deepcopy(model.state_dict())
-
 
 model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])

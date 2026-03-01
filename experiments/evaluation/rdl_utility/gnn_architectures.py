@@ -1,16 +1,14 @@
-from typing import Any, Dict, List, Optional, Callable
+from typing import Dict, List, Optional, Callable
 
 import torch
-import torch_frame
 from torch import Tensor
-from torch_frame.data.stats import StatType
-from torch_frame.nn.models import ResNet
-from torch_geometric.nn import HeteroConv, LayerNorm, PositionalEncoding, GINConv, GraphConv, GATConv, GATv2Conv
+from torch_geometric.nn import HeteroConv, LayerNorm, GINConv, GraphConv, GATConv, GATv2Conv
 from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.nn import MLP
 
 
 class HeteroGNN(torch.nn.Module):
+
     def __init__(
         self,
         node_types: List[NodeType],
@@ -76,7 +74,10 @@ class HeteroGNN(torch.nn.Module):
 
 
 # Convenience factory functions for common GNN types
-def gin_conv_factory(in_channels: int, out_channels: int, aggr: str = "mean", **kwargs):
+def gin_conv_factory(in_channels: int,
+                     out_channels: int,
+                     aggr: str = "mean",
+                     **kwargs):
     """Factory function for GIN convolution layers."""
     mlp = MLP([in_channels, out_channels, out_channels])
     return GINConv(mlp, aggr=aggr, **kwargs)
@@ -88,7 +89,11 @@ def graphconv_factory(in_channels: int, out_channels: int, **kwargs):
     return GraphConv(in_channels, out_channels, **kwargs)
 
 
-def gat_conv_factory(in_channels: int, out_channels: int, heads: int = 4, concat: bool = True, **kwargs):
+def gat_conv_factory(in_channels: int,
+                     out_channels: int,
+                     heads: int = 4,
+                     concat: bool = True,
+                     **kwargs):
     """Factory function for GAT convolution layers."""
     # Set add_self_loops=False for heterogeneous graphs to avoid HeteroConv issues
     kwargs.setdefault('add_self_loops', False)
@@ -97,10 +102,18 @@ def gat_conv_factory(in_channels: int, out_channels: int, heads: int = 4, concat
         head_out_channels = out_channels // heads
     else:
         head_out_channels = out_channels
-    return GATConv(in_channels, head_out_channels, heads=heads, concat=concat, **kwargs)
+    return GATConv(in_channels,
+                   head_out_channels,
+                   heads=heads,
+                   concat=concat,
+                   **kwargs)
 
 
-def gatv2_conv_factory(in_channels: int, out_channels: int, heads: int = 4, concat: bool = True, **kwargs):
+def gatv2_conv_factory(in_channels: int,
+                       out_channels: int,
+                       heads: int = 4,
+                       concat: bool = True,
+                       **kwargs):
     """Factory function for GAT v2 convolution layers."""
     # Set add_self_loops=False for heterogeneous graphs to avoid HeteroConv issues
     kwargs.setdefault('add_self_loops', False)
@@ -109,7 +122,11 @@ def gatv2_conv_factory(in_channels: int, out_channels: int, heads: int = 4, conc
         head_out_channels = out_channels // heads
     else:
         head_out_channels = out_channels
-    return GATv2Conv(in_channels, head_out_channels, heads=heads, concat=concat, **kwargs)
+    return GATv2Conv(in_channels,
+                     head_out_channels,
+                     heads=heads,
+                     concat=concat,
+                     **kwargs)
 
 
 # Usage examples:

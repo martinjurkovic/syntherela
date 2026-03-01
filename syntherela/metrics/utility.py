@@ -50,7 +50,10 @@ class MachineLearningEfficacyMetric(BaseMetric):
             probs = model.predict_proba(X)
             if probs.shape[1] > 2:
                 # calculate AUCROC
-                return roc_auc_score(y, probs, multi_class="ovr", average="macro")
+                return roc_auc_score(y,
+                                     probs,
+                                     multi_class="ovr",
+                                     average="macro")
             else:
                 return roc_auc_score(y, probs[:, 1])
         else:
@@ -61,13 +64,11 @@ class MachineLearningEfficacyMetric(BaseMetric):
     def compute(self, X_train, y_train, X_test, y_test, m=100, **kwargs):
         """Compute the ML-E metric."""
         np.random.seed(self.random_state)
-        model_full_train_set = Pipeline(
-            [
-                ("imputer", SimpleImputer()),
-                ("scaler", StandardScaler()),
-                ("clf", self.classifier_cls(**self.classifier_args)),
-            ]
-        )
+        model_full_train_set = Pipeline([
+            ("imputer", SimpleImputer()),
+            ("scaler", StandardScaler()),
+            ("clf", self.classifier_cls(**self.classifier_args)),
+        ])
         model_full_train_set.fit(X_train, y_train)
         score_full_train_set = self.score(model_full_train_set, X_test, y_test)
 
@@ -76,14 +77,14 @@ class MachineLearningEfficacyMetric(BaseMetric):
         models = []
         for bootstrap_idx in range(m):
             np.random.seed(self.random_state + bootstrap_idx)
-            indices = np.random.choice(len(X_train), len(X_train), replace=m > 1)
-            model = Pipeline(
-                [
-                    ("imputer", SimpleImputer()),
-                    ("scaler", StandardScaler()),
-                    ("clf", self.classifier_cls(**self.classifier_args)),
-                ]
-            )
+            indices = np.random.choice(len(X_train),
+                                       len(X_train),
+                                       replace=m > 1)
+            model = Pipeline([
+                ("imputer", SimpleImputer()),
+                ("scaler", StandardScaler()),
+                ("clf", self.classifier_cls(**self.classifier_args)),
+            ])
 
             X_train_boot = X_train.iloc[indices]
             y_train_boot = y_train.iloc[indices]
@@ -126,17 +127,19 @@ class MachineLearningEfficacyMetric(BaseMetric):
     ):
         """Compute the ML-E using train-on-sythetic test-on-real approach."""
         if self.feature_engineering_function:
-            X_real, y_real = self.feature_engineering_function(real_data, metadata)
+            X_real, y_real = self.feature_engineering_function(
+                real_data, metadata)
             X_synthetic, y_synthetic = self.feature_engineering_function(
-                synthetic_data, metadata
-            )
-            X_test, y_test = self.feature_engineering_function(test_data, metadata)
+                synthetic_data, metadata)
+            X_test, y_test = self.feature_engineering_function(
+                test_data, metadata)
         else:
-            X_real, y_real = self.get_target_table(real_data, self.target, metadata)
+            X_real, y_real = self.get_target_table(real_data, self.target,
+                                                   metadata)
             X_synthetic, y_synthetic = self.get_target_table(
-                synthetic_data, self.target, metadata
-            )
-            X_test, y_test = self.get_target_table(test_data, self.target, metadata)
+                synthetic_data, self.target, metadata)
+            X_test, y_test = self.get_target_table(test_data, self.target,
+                                                   metadata)
         X_real = X_real[X_test.columns]
         X_synthetic = X_synthetic[X_test.columns]
 
@@ -155,9 +158,11 @@ class MachineLearningEfficacyMetric(BaseMetric):
         compute_real = score_real is None or se_real is None
 
         if compute_real:
-            model_real, _, _, score_real, se_real = self.compute(
-                X_real, y_real, X_test, y_test, m=m
-            )
+            model_real, _, _, score_real, se_real = self.compute(X_real,
+                                                                 y_real,
+                                                                 X_test,
+                                                                 y_test,
+                                                                 m=m)
         (
             model_synthetic,
             models_synthetic,
@@ -170,14 +175,15 @@ class MachineLearningEfficacyMetric(BaseMetric):
         importances_syn = []
         if feature_importance:
             if compute_real:
-                full_feature_importance_real, _ = self.feature_importance(model_real)
+                full_feature_importance_real, _ = self.feature_importance(
+                    model_real)
             else:
                 full_feature_importance_real = feature_importance_real
             full_feature_importance_syn, feature_names = self.feature_importance(
-                model_synthetic
-            )
+                model_synthetic)
             for model_synthetic in models_synthetic:
-                importance_syn, feature_names = self.feature_importance(model_synthetic)
+                importance_syn, feature_names = self.feature_importance(
+                    model_synthetic)
                 importances_syn.append(importance_syn)
         else:
             feature_names = []
@@ -205,7 +211,6 @@ class MachineLearningEfficacyMetric(BaseMetric):
             importance = model["clf"].coef_
         else:
             raise NotImplementedError(
-                f"Feature importance not supported for {type(model['clf'])}"
-            )
+                f"Feature importance not supported for {type(model['clf'])}")
 
         return importance, self.X_real.columns.tolist()

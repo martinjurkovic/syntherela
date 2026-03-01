@@ -67,8 +67,9 @@ class Metadata(MultiTableMetadata):
         return table_meta.primary_key
 
     def get_table_meta(
-        self, table_name: str, to_dict: bool = True
-    ) -> Union[dict, SingleTableMetadata]:
+            self,
+            table_name: str,
+            to_dict: bool = True) -> Union[dict, SingleTableMetadata]:
         """Get metadata for a specific table.
 
         Parameters
@@ -129,7 +130,8 @@ class Metadata(MultiTableMetadata):
                 parents.add(relation["parent_table_name"])
         return parents
 
-    def get_foreign_keys(self, parent_table_name: str, child_table_name: str) -> list:
+    def get_foreign_keys(self, parent_table_name: str,
+                         child_table_name: str) -> list:
         """Get foreign keys between parent and child tables.
 
         Parameters
@@ -147,9 +149,8 @@ class Metadata(MultiTableMetadata):
         """
         return self._get_foreign_keys(parent_table_name, child_table_name)
 
-    def rename_column(
-        self, table_name: str, old_column_name: str, new_column_name: str
-    ):
+    def rename_column(self, table_name: str, old_column_name: str,
+                      new_column_name: str):
         """Rename a column in a table.
 
         Parameters
@@ -163,8 +164,7 @@ class Metadata(MultiTableMetadata):
 
         """
         self.tables[table_name].columns[new_column_name] = self.tables[
-            table_name
-        ].columns.pop(old_column_name)
+            table_name].columns.pop(old_column_name)
         if self.tables[table_name].columns[new_column_name]["sdtype"] != "id":
             return self
 
@@ -172,15 +172,11 @@ class Metadata(MultiTableMetadata):
             self.tables[table_name].primary_key = new_column_name
 
         for relationship in self.relationships:
-            if (
-                relationship["parent_table_name"] == table_name
-                and relationship["parent_primary_key"] == old_column_name
-            ):
+            if (relationship["parent_table_name"] == table_name
+                    and relationship["parent_primary_key"] == old_column_name):
                 relationship["parent_primary_key"] = new_column_name
-            if (
-                relationship["child_table_name"] == table_name
-                and relationship["child_foreign_key"] == old_column_name
-            ):
+            if (relationship["child_table_name"] == table_name
+                    and relationship["child_foreign_key"] == old_column_name):
                 relationship["child_foreign_key"] = new_column_name
         return self
 
@@ -220,8 +216,7 @@ class Metadata(MultiTableMetadata):
             relationship = relationships.pop(0)
             if relationship["parent_table_name"] in table_levels:
                 table_levels[relationship["child_table_name"]] = (
-                    table_levels[relationship["parent_table_name"]] + 1
-                )
+                    table_levels[relationship["parent_table_name"]] + 1)
             else:
                 relationships.append(relationship)
         return table_levels
@@ -241,14 +236,17 @@ class Metadata(MultiTableMetadata):
 
         """
         try:
-            filename, graphviz_extension = _get_graphviz_extension(output_filename)
+            filename, graphviz_extension = _get_graphviz_extension(
+                output_filename)
         except ValueError:
             raise ValueError(
                 "Unable to save a visualization with this file type. Try a supported file type like "
                 "'png', 'jpg' or 'pdf'. For a full list, see 'https://graphviz.org/docs/outputs/'"
             )
 
-        def create_table_node(table_name: str, metadata: Metadata, font: str = "Arial"):
+        def create_table_node(table_name: str,
+                              metadata: Metadata,
+                              font: str = "Arial"):
             """Create a node for a table in the graph.
 
             Parameters
@@ -283,7 +281,10 @@ class Metadata(MultiTableMetadata):
             return table_label
 
         dot = graphviz.Digraph(
-            graph_attr={"splines": "ortho", "ranksep": "0.8"},
+            graph_attr={
+                "splines": "ortho",
+                "ranksep": "0.8"
+            },
             node_attr={"shape": "plaintext"},
         )
 
@@ -308,7 +309,9 @@ class Metadata(MultiTableMetadata):
             )
 
         if filename:
-            dot.render(filename=filename, cleanup=True, format=graphviz_extension)
+            dot.render(filename=filename,
+                       cleanup=True,
+                       format=graphviz_extension)
         else:
             try:
                 graphviz.version()
@@ -371,36 +374,37 @@ def convert_metadata_to_v0(metadata: Metadata) -> dict:
             if column_info["sdtype"] == "boolean":
                 # convert boolean to categorical
                 metadata_v0["tables"][table_name]["fields"][column]["type"] = (
-                    "categorical"
-                )
+                    "categorical")
             if column_info["sdtype"] == "datetime":
-                metadata_v0["tables"][table_name]["fields"][column]["format"] = (
-                    column_info["datetime_format"]
-                )
+                metadata_v0["tables"][table_name]["fields"][column][
+                    "format"] = (column_info["datetime_format"])
 
         if "primary_key" in table_info:
-            metadata_v0["tables"][table_name]["fields"][table_info["primary_key"]] = {
-                "type": "id",
-                "subtype": "string",
-            }
-            metadata_v0["tables"][table_name]["primary_key"] = table_info["primary_key"]
+            metadata_v0["tables"][table_name]["fields"][
+                table_info["primary_key"]] = {
+                    "type": "id",
+                    "subtype": "string",
+                }
+            metadata_v0["tables"][table_name]["primary_key"] = table_info[
+                "primary_key"]
 
     for relationship in metadata_v1["relationships"]:
         parent_table_name = relationship["parent_table_name"]
         child_table_name = relationship["child_table_name"]
         parent_primary_key = relationship["parent_primary_key"]
         child_foreign_key = relationship["child_foreign_key"]
-        metadata_v0["tables"][child_table_name]["fields"][child_foreign_key]["ref"] = {
-            "table": parent_table_name,
-            "field": parent_primary_key,
-        }
         metadata_v0["tables"][child_table_name]["fields"][child_foreign_key][
-            "subtype"
-        ] = "string"
+            "ref"] = {
+                "table": parent_table_name,
+                "field": parent_primary_key,
+            }
+        metadata_v0["tables"][child_table_name]["fields"][child_foreign_key][
+            "subtype"] = "string"
     return metadata_v0
 
 
-def convert_and_save_metadata_v0(metadata: Metadata, path: Union[str, os.PathLike]):
+def convert_and_save_metadata_v0(metadata: Metadata, path: Union[str,
+                                                                 os.PathLike]):
     """Convert Metadata object to v0 format and save it to a file.
 
     Parameters
