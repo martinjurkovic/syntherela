@@ -54,6 +54,7 @@ Basic Usage
        real_data_dir="path/to/real_data",
        synthetic_data_dir="path/to/synthetic_data",
        results_dir="results",
+       benchmark_name="my_benchmark",
        single_column_metrics=[ChiSquareTest()],
        single_table_metrics=[MaximumMeanDiscrepancy()],
        multi_table_metrics=[
