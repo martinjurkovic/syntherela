@@ -16,6 +16,4 @@ The list is in alphabetical order.
 - [syndata](https://syndata.co)
 - [ydata](https://ydata.ai)
 
-
-
 This list is based on the [Ethical AI Database](https://www.eaidb.org/). To add a tool to the list, please submit a pull request.

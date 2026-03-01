@@ -3,12 +3,12 @@ import zipfile
 
 import gdown
 
-PROJECT_PATH = __file__.split("experiments")[0]
+PROJECT_PATH = __file__.split('experiments')[0]
 
 
 def download_and_extract(url, filename):
     # Path to the directory where the file will be extracted
-    extract_dir = os.path.join(PROJECT_PATH, "results")
+    extract_dir = os.path.join(PROJECT_PATH, 'results')
 
     # Create the download directory if it doesn't exist
     os.makedirs(extract_dir, exist_ok=True)
@@ -17,7 +17,7 @@ def download_and_extract(url, filename):
     gdown.download(url, file_path, quiet=False)
 
     # Extract the file
-    with zipfile.ZipFile(file_path, "r") as zip_ref:
+    with zipfile.ZipFile(file_path, 'r') as zip_ref:
         zip_ref.extractall(extract_dir)
 
     # Clean up the downloaded zip file
@@ -25,8 +25,8 @@ def download_and_extract(url, filename):
 
 
 # URL of the file to download
-results_url = "https://drive.google.com/uc?id=1mrY4o6xFZZ-DW9jKwBGEq56tTC3AcVvW"
+results_url = 'https://drive.google.com/uc?id=1mrY4o6xFZZ-DW9jKwBGEq56tTC3AcVvW'
 
-download_and_extract(results_url, "results.zip")
+download_and_extract(results_url, 'results.zip')
 
-print("Results downloaded and extracted successfully!")
+print('Results downloaded and extracted successfully!')

@@ -4,7 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "syntherela"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
     "sdv>=1.9.0,<2",
     "seaborn==0.13.2",
@@ -17,10 +17,9 @@ authors = [
 ]
 description = "SyntheRela - Synthetic Relational Data Generation Benchmark"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["python", "syntherela", "synthetic data", "relational data", "evaluation", "benchmark"]
 classifiers = [
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -61,4 +60,44 @@ Issues = "https://github.com/martinjurkovic/syntherela/issues"
 where = ["."]
 
 [tool.ruff]
-extend-exclude = ["experiments"]
+line-length = 80
+target-version = "py310"
+src = ["syntherela"]
+
+[tool.ruff.lint]
+select = [
+  "E",  # Flake8/PEP8
+  "W",  # Flake8/PEP8
+  "F",  # Pyflakes
+  "I",  # isort (Import sorting)
+  "B",  # Bugbear
+  "D",  # pydocstyle
+  "UP",  # pyupgrade
+]
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D107",
+    "D205",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+split-on-trailing-comma = true
+
+[tool.ruff.lint.per-file-ignores]
+"experiments/**/*.py" = ["E501"]
+
+[tool.ruff.format]
+# Matches your current YAPF/PyG style
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

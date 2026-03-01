@@ -6,7 +6,7 @@ from scipy.spatial.distance import jensenshannon
 from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 
-from syntherela.metrics.base import SingleColumnMetric, DistanceBaseMetric
+from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
 from syntherela.metrics.single_column.distance.utils import get_histograms
 
 
@@ -14,8 +14,8 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
     """Jensen-Shannon distance metric for comparing distributions.
 
     This metric computes the Jensen-Shannon distance between the distributions
-    of real and synthetic data columns. It is applicable to categorical, numerical,
-    datetime, and boolean columns.
+    of real and synthetic data columns. It is applicable to categorical,
+    numerical, datetime, and boolean columns.
 
     Parameters
     ----------
@@ -39,7 +39,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
 
     def __init__(self, base=np.e, **kwargs):
         super().__init__(**kwargs)
-        self.name = "JensenShannonDistance"
+        self.name = 'JensenShannonDistance'
         self.goal = Goal.MINIMIZE
         self.base = base
         self.min_value = 0.0
@@ -57,20 +57,25 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         Returns
         -------
         bool
-            True if the metric is applicable to the column type, False otherwise.
+            Whether the metric is applicable to the column type.
 
         """
         return column_type in [
-            "categorical", "numerical", "datetime", "boolean"
+            'categorical',
+            'numerical',
+            'datetime',
+            'boolean',
         ]
 
     @staticmethod
-    def compute(orig_col,
-                synth_col,
-                bins,
-                normalize_histograms=True,
-                base=np.e,
-                **kwargs):
+    def compute(
+        orig_col,
+        synth_col,
+        bins,
+        normalize_histograms=True,
+        base=np.e,
+        **kwargs,
+    ):
         """Compute the Jensen-Shannon distance between two columns.
 
         Parameters
@@ -94,10 +99,9 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
             The Jensen-Shannon distance between the two columns.
 
         """
-        gt_freq, synth_freq = get_histograms(orig_col,
-                                             synth_col,
-                                             normalize=normalize_histograms,
-                                             bins=bins)
+        gt_freq, synth_freq = get_histograms(
+            orig_col, synth_col, normalize=normalize_histograms, bins=bins
+        )
         return jensenshannon(gt_freq, synth_freq, base=base)
 
     def run(self, real_data, synthetic_data, **kwargs):
@@ -124,28 +128,26 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         """
         if self.is_constant(real_data):
             return {
-                "value": 0,
-                "reference_ci": [0, 0],
-                "bootstrap_mean": 0,
-                "bootstrap_se": 0,
+                'value': 0,
+                'reference_ci': [0, 0],
+                'bootstrap_mean': 0,
+                'bootstrap_se': 0,
             }
         # check for datetime
         if is_datetime(real_data):
-            real_data = pd.to_numeric(real_data,
-                                      errors="coerce",
-                                      downcast="integer")
-            synthetic_data = pd.to_numeric(synthetic_data,
-                                           errors="coerce",
-                                           downcast="integer")
+            real_data = pd.to_numeric(
+                real_data, errors='coerce', downcast='integer'
+            )
+            synthetic_data = pd.to_numeric(
+                synthetic_data, errors='coerce', downcast='integer'
+            )
         # compute bin values on the original data
-        if real_data.dtype.name in ("object", "category", "bool"):
+        if real_data.dtype.name in ('object', 'category', 'bool'):
             bins = None
         else:
             real_data = real_data.dropna()
             synthetic_data = synthetic_data.dropna()
             bins = np.histogram_bin_edges(real_data)
-        return super().run(real_data,
-                           synthetic_data,
-                           bins=bins,
-                           base=self.base,
-                           **kwargs)
+        return super().run(
+            real_data, synthetic_data, bins=bins, base=self.base, **kwargs
+        )

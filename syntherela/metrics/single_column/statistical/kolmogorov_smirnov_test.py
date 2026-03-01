@@ -3,8 +3,8 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import ks_2samp
-from sdmetrics.utils import is_datetime
 from sdmetrics.goal import Goal
+from sdmetrics.utils import is_datetime
 
 from syntherela.metrics.base import SingleColumnMetric, StatisticalBaseMetric
 
@@ -12,8 +12,9 @@ from syntherela.metrics.base import SingleColumnMetric, StatisticalBaseMetric
 class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
     """Kolmogorov-Smirnov test metric for comparing marginal distributions.
 
-    This metric computes the Kolmogorov-Smirnov test statistic between the distributions
-    of real and synthetic data columns. It is applicable to numerical and datetime columns.
+    This metric computes the Kolmogorov-Smirnov test statistic between the
+    distributions of real and synthetic data columns. It is applicable to
+    numerical and datetime columns.
 
     Parameters
     ----------
@@ -31,7 +32,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = "KolmogorovSmirnovTest"
+        self.name = 'KolmogorovSmirnovTest'
         self.goal = Goal.MINIMIZE
 
     @staticmethod
@@ -46,10 +47,10 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         Returns
         -------
         bool
-            True if the metric is applicable to the column type, False otherwise.
+            Whether the metric is applicable to the column type.
 
         """
-        return column_type == "numerical" or column_type == "datetime"
+        return column_type == 'numerical' or column_type == 'datetime'
 
     def validate(self, column):
         """Validate that the column is numerical or datetime.
@@ -67,11 +68,13 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         """
         column_dtype = column.dtypes
         if np.issubdtype(column_dtype, np.number) or np.issubdtype(
-                column_dtype, np.datetime64):
+            column_dtype, np.datetime64
+        ):
             return
 
         raise ValueError(
-            f"{self.name} can only be applied to numerical columns, but column {column.name} is of type {column.dtype}"
+            f'{self.name} can only be applied to numerical columns, but '
+            f'column {column.name} is of type {column.dtype}'
         )
 
     @staticmethod
@@ -102,4 +105,4 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
 
         statistic, p_val = ks_2samp(real_data, synthetic_data)
 
-        return {"statistic": statistic, "p_val": p_val}
+        return {'statistic': statistic, 'p_val': p_val}
