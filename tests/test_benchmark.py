@@ -134,3 +134,48 @@ def test_load_results_from_finished_benchmark():
     assert 'Trends' in single_col
     assert 'Trends' in single_tbl
     assert 'Trends' in multi_tbl
+
+
+def test_merge_results_with_existing():
+    """merge_results updates existing dict metrics and adds new metric types."""
+    real_data, metadata = generate_real_data()
+    synthetic_data = generate_synthetic_data()
+    save_tables(real_data, path='tests/tmp/original/TEST')
+    if not os.path.isfile('tests/tmp/original/TEST/metadata.json'):
+        metadata.save_to_json('tests/tmp/original/TEST/metadata.json')
+    save_tables(synthetic_data, path='tests/tmp/synthetic/TEST/m1')
+
+    benchmark = Benchmark(
+        real_data_dir='tests/tmp/original',
+        synthetic_data_dir='tests/tmp/synthetic',
+        results_dir='tests/tmp/results',
+        benchmark_name='merge_test',
+        datasets=['TEST'],
+        methods=['m1'],
+    )
+    # Existing: dict metric types get updated; non-dict gets replaced
+    benchmark.all_results['TEST'] = {
+        'm1': {
+            'single_column_metrics': {'ChiSquareTest': 0.8, 'KSTest': 0.7},
+            'single_table_metrics': 'legacy_value',  # will be replaced
+        }
+    }
+    new_results = {
+        'single_column_metrics': {'KSTest': 0.9, 'NewMetric': 0.5},
+        'single_table_metrics': {'MaximumMeanDiscrepancy': 0.6},
+        'multi_table_metrics': {'CardinalityShape': 0.75},
+    }
+    merged = benchmark.merge_results('TEST', 'm1', new_results)
+
+    # Dict update: existing keys kept, KSTest updated, NewMetric added
+    assert merged['single_column_metrics'] == {
+        'ChiSquareTest': 0.8,
+        'KSTest': 0.9,
+        'NewMetric': 0.5,
+    }
+    # Non-dict existing value replaced entirely
+    assert merged['single_table_metrics'] == {'MaximumMeanDiscrepancy': 0.6}
+    # New metric type added
+    assert merged['multi_table_metrics'] == {'CardinalityShape': 0.75}
+    assert merged['multi_table_metrics'] == {'CardinalityShape': 0.75}
+    assert merged['multi_table_metrics'] == {'CardinalityShape': 0.75}
