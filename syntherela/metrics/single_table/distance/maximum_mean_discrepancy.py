@@ -1,5 +1,6 @@
 """Maximum Mean Discrepancy (MMD) metric for single tables."""
 
+import numpy as np
 import pandas as pd
 from sdmetrics.goal import Goal
 from sklearn import metrics
@@ -143,16 +144,17 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
                 gamma,
                 coef0,
             )
+            synth_arr = np.asarray(synth)
             YY = metrics.pairwise.polynomial_kernel(
-                synth.numpy().reshape(len(sythetic_table), -1),
-                synth.numpy().reshape(len(sythetic_table), -1),
+                synth_arr.reshape(len(sythetic_table), -1),
+                synth_arr.reshape(len(sythetic_table), -1),
                 degree,
                 gamma,
                 coef0,
             )
             XY = metrics.pairwise.polynomial_kernel(
                 orig.reshape(len(original_table), -1),
-                synth.numpy().reshape(len(sythetic_table), -1),
+                synth_arr.reshape(len(sythetic_table), -1),
                 degree,
                 gamma,
                 coef0,

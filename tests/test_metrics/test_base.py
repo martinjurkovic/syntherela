@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-import pytest
 from sklearn.ensemble import RandomForestClassifier
 from syntherela.metrics.base import (
     DetectionBaseMetric,
@@ -85,43 +84,13 @@ class TestDetectionMetric(DetectionBaseMetric):
         return super().prepare_data(real_data, synthetic_data)
 
 
-@pytest.fixture
-def column_data():
-    """Generate column data for testing."""
-    np.random.seed(42)
-    real_data = pd.Series(np.random.normal(0, 1, 100))
-    synthetic_data = pd.Series(np.random.normal(0.1, 1.1, 100))
-    return real_data, synthetic_data
-
-
-@pytest.fixture
-def table_data():
-    """Generate table data for testing."""
-    np.random.seed(42)
-    real_data = pd.DataFrame(
-        {
-            'col1': np.random.normal(0, 1, 100),
-            'col2': np.random.choice(['A', 'B', 'C'], size=100),
-            'col3': np.random.uniform(0, 1, 100),
-        }
-    )
-    synthetic_data = pd.DataFrame(
-        {
-            'col1': np.random.normal(0.1, 1.1, 100),
-            'col2': np.random.choice(['A', 'B', 'C'], size=100),
-            'col3': np.random.uniform(0.1, 1.1, 100),
-        }
-    )
-    return real_data, synthetic_data
-
-
 def test_single_column_is_constant():
     """Test is_constant method of SingleColumnMetric."""
     constant_column = pd.Series([5] * 100)
     varying_column = pd.Series(range(100))
 
-    assert SingleColumnMetric.is_constant(constant_column) is True
-    assert SingleColumnMetric.is_constant(varying_column) is False
+    assert SingleColumnMetric.is_constant(constant_column)
+    assert not SingleColumnMetric.is_constant(varying_column)
 
 
 def test_distance_base_metric(column_data):
@@ -156,3 +125,34 @@ def test_detection_base_metric(table_data):
     scores = metric.stratified_kfold(X, y)
     assert isinstance(scores, list)
     assert len(scores) == len(X)
+
+
+def test_single_table_metric_is_applicable():
+    """Test SingleTableMetric.is_applicable with metadata dict."""
+    only_id = {'columns': {'pk': {'sdtype': 'id'}}}
+    assert not SingleTableMetric.is_applicable(only_id)
+    with_non_id = {
+        'columns': {'pk': {'sdtype': 'id'}, 'x': {'sdtype': 'numerical'}},
+    }
+    assert SingleTableMetric.is_applicable(with_non_id)
+
+
+def test_detection_base_baseline(table_data):
+    """Test DetectionBaseMetric.baseline returns mean and se."""
+    real_data, synthetic_data = table_data
+    metric = TestDetectionMetric(random_state=42)
+    mean_acc, se = metric.baseline(real_data, metadata=None, m=3)
+    assert 0 <= mean_acc <= 1
+    assert se >= 0
+
+
+def test_detection_base_binomial_test():
+    """Test DetectionBaseMetric.binomial_test."""
+    stat_g, p_g = DetectionBaseMetric.binomial_test(
+        8, 10, p=0.5, alternative='greater'
+    )
+    assert 0 <= p_g <= 1
+    stat_l, p_l = DetectionBaseMetric.binomial_test(
+        2, 10, p=0.5, alternative='less'
+    )
+    assert 0 <= p_l <= 1

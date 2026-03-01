@@ -1,19 +1,10 @@
 """Tests for multi-table detection metrics."""
 
-import pytest
-from data.data_generators import generate_real_data
 from sklearn.ensemble import RandomForestClassifier
 from syntherela.metrics.multi_table.detection import (
     AggregationDetection,
     ParentChildDetection,
 )
-
-
-@pytest.fixture
-def sample_data():
-    """Generate sample data for testing."""
-    data, metadata = generate_real_data()
-    return data, metadata
 
 
 def test_aggregation_detection_initialization():

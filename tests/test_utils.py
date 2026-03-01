@@ -41,5 +41,28 @@ def test_hyper_transformer():
     assert 'dates_Year' in X.columns
     assert 'dates_Month' in X.columns
     assert 'dates_Day' in X.columns
-    assert 'dates_Day' in X.columns
-    assert 'dates_Day' in X.columns
+
+
+def test_hyper_transformer_datetime_with_time_components():
+    """CustomHyperTransformer expands datetime to Y/M/D/H/M/S."""
+    df = pd.DataFrame(
+        {
+            'dt': pd.to_datetime(
+                [
+                    '2020-01-15 10:30:45',
+                    '2021-06-20 14:22:00',
+                    '2019-12-01 00:00:01',
+                ]
+            ),
+        }
+    )
+    ht = CustomHyperTransformer()
+    X = ht.fit_transform(df)
+    assert 'dt_Year' in X.columns
+    assert 'dt_Month' in X.columns
+    assert 'dt_Day' in X.columns
+    assert 'dt_Hour' in X.columns
+    assert 'dt_Minute' in X.columns
+    assert 'dt_Second' in X.columns
+    assert 'dt_Second' in X.columns
+    assert 'dt_Second' in X.columns

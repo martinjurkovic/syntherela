@@ -2,21 +2,8 @@
 
 import numpy as np
 import pandas as pd
-import pytest
-from data.data_generators import generate_real_data
 from sklearn.ensemble import RandomForestClassifier
 from syntherela.metrics.single_table.detection import SingleTableDetection
-
-
-@pytest.fixture
-def sample_data():
-    """Generate sample data for testing."""
-    data, metadata = generate_real_data()
-    return (
-        data['table1'],
-        data['table1'].copy(),
-        metadata.get_table_meta('table1'),
-    )
 
 
 def test_single_table_detection_initialization():
@@ -41,9 +28,9 @@ def test_single_table_detection_initialization():
     assert metric.random_state == 42
 
 
-def test_single_table_detection_prepare_data(sample_data):
+def test_single_table_detection_prepare_data(detection_data):
     """Test data preparation for SingleTableDetection metric."""
-    real_data, synthetic_data, metadata = sample_data
+    real_data, synthetic_data, metadata = detection_data
 
     # Create the metric
     metric = SingleTableDetection(
@@ -64,9 +51,9 @@ def test_single_table_detection_prepare_data(sample_data):
     assert primary_key not in X.columns
 
 
-def test_single_table_detection_run(sample_data):
+def test_single_table_detection_run(detection_data):
     """Test running SingleTableDetection metric."""
-    real_data, synthetic_data, metadata = sample_data
+    real_data, synthetic_data, metadata = detection_data
 
     # Create the metric
     metric = SingleTableDetection(

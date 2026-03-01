@@ -121,7 +121,13 @@ markers = [
 
 [tool.coverage.run]
 source = ["syntherela"]
-omit = ["*tests*", "*docs*", "experiments/*", "*.ipynb"]
+omit = [
+    "*tests*",
+    "*docs*",
+    "experiments/*",
+    "*.ipynb",
+    "syntherela/visualisations/*",
+]
 
 [tool.coverage.report]
 exclude_lines = [
