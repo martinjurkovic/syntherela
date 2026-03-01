@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from shutil import rmtree
 
 from data.data_generators import generate_real_data, generate_synthetic_data
 from syntherela.metrics.multi_table.statistical import (
@@ -55,8 +54,6 @@ def test_report(capsys):
     report.load_from_json(path=saved_path)
 
     assert report.results.keys() == results.keys()
-
-    rmtree('tests/tmp')
 
     # Test metric instance retrieval
     chisquare = report.get_metric_instance('ChiSquareTest')

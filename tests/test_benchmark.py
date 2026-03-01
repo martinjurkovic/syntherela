@@ -1,5 +1,4 @@
 import os
-from shutil import rmtree
 
 from data.data_generators import generate_real_data, generate_synthetic_data
 from syntherela.benchmark import Benchmark
@@ -32,8 +31,6 @@ def test_benchmark():
     # TODO: available methods are hard-coded in the Benchmark class
     benchmark.visualize_single_table_metrics()
 
-    rmtree('tests/tmp')
-
 
 def test_benchmark_datasets_inferred_when_none():
     """Benchmark with datasets=None infers datasets from synthetic_data_dir."""
@@ -52,7 +49,6 @@ def test_benchmark_datasets_inferred_when_none():
         datasets=None,
     )
     assert benchmark.datasets == ['TEST']
-    rmtree('tests/tmp')
 
 
 def test_benchmark_methods_as_list():
@@ -73,7 +69,6 @@ def test_benchmark_methods_as_list():
         methods=['m1'],
     )
     assert benchmark.methods == {'TEST': ['m1']}
-    rmtree('tests/tmp')
 
 
 def test_benchmark_methods_as_dict():
@@ -94,7 +89,6 @@ def test_benchmark_methods_as_dict():
         methods={'TEST': ['m1']},
     )
     assert benchmark.methods == {'TEST': ['m1']}
-    rmtree('tests/tmp')
 
 
 def test_load_results_from_finished_benchmark():
@@ -140,7 +134,3 @@ def test_load_results_from_finished_benchmark():
     assert 'Trends' in single_col
     assert 'Trends' in single_tbl
     assert 'Trends' in multi_tbl
-
-    rmtree('tests/tmp')
-    rmtree('tests/tmp')
-    rmtree('tests/tmp')

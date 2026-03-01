@@ -1,5 +1,4 @@
 import os
-from shutil import rmtree
 from unittest.mock import patch
 
 import numpy as np
@@ -37,7 +36,6 @@ def test_dataset_download():
     first_call_kwargs = mock_download.call_args_list[0][1]
     path_created = first_call_kwargs['output_folder_name']
     assert os.path.exists(path_created)
-    rmtree('tests/tmp')
 
 
 def test_loading_and_saving():
@@ -62,7 +60,6 @@ def test_loading_and_saving():
                     tables[table_name][column]
                     == loaded_tables[table_name][column]
                 ).all()
-    rmtree('tests/tmp')
 
 
 def test_get_dataset_stats():
@@ -104,7 +101,6 @@ def test_save_tables_with_metadata_and_save_metadata():
     save_tables(tables, path=path, metadata=metadata, save_metadata=True)
     assert os.path.isfile(os.path.join(path, 'metadata.json'))
     assert os.path.isfile(os.path.join(path, 'table1.csv'))
-    rmtree('tests/tmp')
 
 
 def test_save_and_load_tables_with_datetime_column():
@@ -131,7 +127,6 @@ def test_save_and_load_tables_with_datetime_column():
         check_names=True,
         check_dtype=False,
     )
-    rmtree('tests/tmp')
 
 
 def test_load_tables_raises_when_datetime_format_missing():
@@ -158,4 +153,3 @@ def test_load_tables_raises_when_datetime_format_missing():
             delattr(col_info, 'datetime_format')
     with pytest.raises(ValueError, match='datetime_format.*not found'):
         load_tables(path, metadata)
-    rmtree('tests/tmp')
