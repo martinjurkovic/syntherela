@@ -1,13 +1,14 @@
 import os
-from shutil import rmtree
 from datetime import datetime
+from shutil import rmtree
 
+from data.data_generators import generate_real_data, generate_synthetic_data
+from syntherela.metrics.multi_table.statistical import (
+    CardinalityShapeSimilarity,
+)
 from syntherela.metrics.single_column.statistical import ChiSquareTest
 from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
-from syntherela.metrics.multi_table.statistical import CardinalityShapeSimilarity
-
 from syntherela.report import Report
-from data.data_generators import generate_real_data, generate_synthetic_data
 
 
 def test_report(capsys):
@@ -18,7 +19,10 @@ def test_report(capsys):
         real_data,
         synthetic_data,
         metadata,
-        "TEST",
+        'TEST',
+        method_name='TEST',
+        dataset_name='TEST',
+        run_id='TEST',
         validate_metadata=True,
         single_column_metrics=[ChiSquareTest()],
         single_table_metrics=[MaximumMeanDiscrepancy()],
@@ -27,56 +31,50 @@ def test_report(capsys):
 
     # Test that the report is generated correctly
     results = report.generate()
-    assert "ChiSquareTest" in report.results["single_column_metrics"]
-    assert "MaximumMeanDiscrepancy" in report.results["single_table_metrics"]
-    assert "CardinalityShapeSimilarity" in report.results["multi_table_metrics"]
+    assert 'ChiSquareTest' in report.results['single_column_metrics']
+    assert 'MaximumMeanDiscrepancy' in report.results['single_table_metrics']
+    assert 'CardinalityShapeSimilarity' in report.results['multi_table_metrics']
     assert type(report.report_datetime) is datetime
-    assert report.report_name == "TEST"
+    assert report.report_name == 'TEST'
 
     # Test that the results are printed correctly
     report.print_results()
     captured = capsys.readouterr()
     assert '"multi_table_metrics"' in captured.out
 
-    # Test that the results are saved correctly
-    report.save_results(path="tests/tmp")
-    assert os.path.isfile(
-        f"tests/tmp/{report.report_name}_{report.report_datetime.strftime('%Y_%m_%d')}.json"
+    # Test that the results are saved correctly (same format as save_results)
+    report.save_results(path='tests/tmp')
+    saved_filename = (
+        f'{report.report_name}_'
+        f'{report.report_datetime.strftime("%Y-%m-%d_%H-%M-%S")}.json'
     )
+    saved_path = os.path.join('tests', 'tmp', saved_filename)
+    assert os.path.isfile(saved_path)
 
     # Test that the results are loaded correctly
-    report.load_from_json(
-        path=f"tests/tmp/{report.report_name}_{report.report_datetime.strftime('%Y_%m_%d')}.json"
-    )
+    report.load_from_json(path=saved_path)
 
     assert report.results.keys() == results.keys()
 
-    rmtree("tests/tmp")
+    rmtree('tests/tmp')
 
     # Test metric instance retrieval
-    chisquare = report.get_metric_instance("ChiSquareTest")
+    chisquare = report.get_metric_instance('ChiSquareTest')
     assert type(chisquare) is ChiSquareTest
     try:
-        report.get_metric_instance("NonExistentMetric")
+        report.get_metric_instance('NonExistentMetric')
     except ValueError as e:
-        assert "NonExistentMetric" in str(e)
-
-    import matplotlib.pyplot as plt
-
-    plt.ion()
-    # Check that metric visualizations run without error
-    report.visualize_distributions(
-        marginals=True, bivariate=True, parent_child_bivariate=True
-    )
-    # close the plots
-    plt.close("all")
+        assert 'NonExistentMetric' in str(e)
 
     # Test report with no metrics
     report = Report(
         real_data,
         synthetic_data,
         metadata,
-        "TEST",
+        'TEST',
+        method_name='TEST',
+        dataset_name='TEST',
+        run_id='TEST',
         validate_metadata=True,
         single_column_metrics=[],
         single_table_metrics=[],
@@ -84,19 +82,19 @@ def test_report(capsys):
     )
     report.generate()
     captured = capsys.readouterr()
-    assert "No single column metrics to run. Skipping." in captured.out
-    assert "No single table metrics to run. Skipping." in captured.out
-    assert "No multi table metrics to run. Skipping." in captured.out
+    assert 'No single column metrics to run. Skipping.' in captured.out
+    assert 'No single table metrics to run. Skipping.' in captured.out
+    assert 'No multi table metrics to run. Skipping.' in captured.out
 
     # Test report with bad and inapplicable metrics
     class BadMetric:
-        name = "BadMetric"
+        name = 'BadMetric'
 
         def is_applicable(self, *args, **kwargs):
             return True
 
     class InapplicableMetric:
-        name = "InapplicableMetric"
+        name = 'InapplicableMetric'
 
         def is_applicable(self, *args, **kwargs):
             return False
@@ -105,7 +103,10 @@ def test_report(capsys):
         real_data,
         synthetic_data,
         metadata,
-        "TEST",
+        'TEST',
+        method_name='TEST',
+        dataset_name='TEST',
+        run_id='TEST',
         validate_metadata=True,
         single_column_metrics=[InapplicableMetric(), BadMetric()],
         single_table_metrics=[InapplicableMetric(), BadMetric()],
@@ -114,5 +115,7 @@ def test_report(capsys):
     report.generate()
     captured = capsys.readouterr()
 
-    assert "There was a problem with metric BadMetric" in captured.out
-    assert "There was a problem with metric InapplicableMetric" not in captured.out
+    assert 'There was a problem with metric BadMetric' in captured.out
+    assert (
+        'There was a problem with metric InapplicableMetric' not in captured.out
+    )

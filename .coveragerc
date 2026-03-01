@@ -1,3 +1,0 @@
-[run]
-source = syntherela
-omit = *tests* *docs*
