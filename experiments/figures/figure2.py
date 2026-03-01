@@ -10,22 +10,22 @@ datasets = [
     'airbnb-simplified_subsampled',
     'rossmann_subsampled',
     'walmart_subsampled',
-    "Berka_subsampled",
-    "f1_subsampled",
+    'Berka_subsampled',
+    'f1_subsampled',
     'imdb_MovieLens_v1',
     'Biodegradability_v1',
     'CORA_v1',
 ]
 
 dataset_names = {
-    "airbnb-simplified_subsampled": "Airbnb",
-    "Berka_subsampled": "Berka",
-    "Biodegradability_v1": "Biodegradability",
-    "CORA_v1": "Cora",
-    "imdb_MovieLens_v1": "IMDB",
-    "rossmann_subsampled": "Rossmann",
-    "walmart_subsampled": "Walmart",
-    "f1_subsampled": "F1",
+    'airbnb-simplified_subsampled': 'Airbnb',
+    'Berka_subsampled': 'Berka',
+    'Biodegradability_v1': 'Biodegradability',
+    'CORA_v1': 'Cora',
+    'imdb_MovieLens_v1': 'IMDB',
+    'rossmann_subsampled': 'Rossmann',
+    'walmart_subsampled': 'Walmart',
+    'f1_subsampled': 'F1',
 }
 
 methods = [
@@ -38,12 +38,12 @@ methods = [
 ]
 
 names = {
-    'CLAVADDPM': "CLAVADDPM\n2024",
-    'RGCLD': "RGCLD\n2024",
-    'MOSTLYAI': "TabularARGN\n2025",
-    'RCTGAN': "RCTGAN\n2023",
-    'REALTABFORMER': "REALTABFORMER\n2023",
-    'SDV': "SDV\n2016",
+    'CLAVADDPM': 'CLAVADDPM\n2024',
+    'RGCLD': 'RGCLD\n2024',
+    'MOSTLYAI': 'TabularARGN\n2025',
+    'RCTGAN': 'RCTGAN\n2023',
+    'REALTABFORMER': 'REALTABFORMER\n2023',
+    'SDV': 'SDV\n2016',
 }
 
 runs = [1, 2, 3]
@@ -64,7 +64,7 @@ for run in runs:
                 ) as f:
                     run_results[dataset][method] = json.load(f)
             except FileNotFoundError:
-                print(f"Missing {dataset} {method}")
+                print(f'Missing {dataset} {method}')
 
     multi_table_results[run] = {}
     single_table_results[run] = {}
@@ -85,10 +85,11 @@ for run in runs:
             if method not in results[run][dataset]:
                 continue
             for table, single_results in results[run][dataset][method][
-                'single_table_metrics']['SingleTableDetection-XGBClassifier'
-                                        ].items():
+                'single_table_metrics'
+            ]['SingleTableDetection-XGBClassifier'].items():
                 multi_results = results[run][dataset][method][
-                    'multi_table_metrics']['AggregationDetection-XGBClassifier']
+                    'multi_table_metrics'
+                ]['AggregationDetection-XGBClassifier']
                 if table in multi_results:
                     multi_run[dataset_name][method].append(
                         multi_results[table]['accuracy']
@@ -111,7 +112,7 @@ def multi_comparison_chart(
     capsize=4,
     scalex=1.25,
     aspect=0.75,
-    save_path=None
+    save_path=None,
 ):
     if runs is None:
         runs = list(single_table_results.keys())
@@ -149,7 +150,9 @@ def multi_comparison_chart(
     # Calculate delta values
     deltas = [
         multi_mean - single_mean
-        for multi_mean, single_mean in zip(multi_means, single_means)
+        for multi_mean, single_mean in zip(
+            multi_means, single_means, strict=False
+        )
     ]
 
     # # Create bars
@@ -160,7 +163,7 @@ def multi_comparison_chart(
         fmt='o',
         label='Avg. Multi Table',
         color='seagreen',
-        capsize=capsize
+        capsize=capsize,
     )
     ax.errorbar(
         x,
@@ -169,7 +172,7 @@ def multi_comparison_chart(
         fmt='o',
         label='Avg. Single Table',
         color='slateblue',
-        capsize=capsize
+        capsize=capsize,
     )
 
     # Add dashed lines and delta values
@@ -181,36 +184,41 @@ def multi_comparison_chart(
             if delta == 0:
                 delta = deltas[i].round(3)  # Round to 3 decimal places
             ax.text(
-                x[i] + d, (single_means[i] + multi_means[i]) / 2,
+                x[i] + d,
+                (single_means[i] + multi_means[i]) / 2,
                 f' Δ = {delta}',
                 va='center',
                 color='gray',
-                fontweight='bold'
+                fontweight='bold',
             )
         else:
             ax.text(
-                x[i] + d, (single_means[i] + multi_means[i]) / 2,
+                x[i] + d,
+                (single_means[i] + multi_means[i]) / 2,
                 f' Δ = {deltas[i]:.2f}',
                 va='center',
-                color='gray'
+                color='gray',
             )
         ax.plot(
-            [x[i] + d, x[i] + d], [single_means[i], multi_means[i]],
+            [x[i] + d, x[i] + d],
+            [single_means[i], multi_means[i]],
             '--',
             color='gray',
-            zorder=3
+            zorder=3,
         )
         ax.plot(
-            [x[i], x[i] + d], [single_means[i], single_means[i]],
+            [x[i], x[i] + d],
+            [single_means[i], single_means[i]],
             '--',
             color='gray',
-            zorder=3
+            zorder=3,
         )
         ax.plot(
-            [x[i], x[i] + d], [multi_means[i], multi_means[i]],
+            [x[i], x[i] + d],
+            [multi_means[i], multi_means[i]],
             '--',
             color='gray',
-            zorder=3
+            zorder=3,
         )
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
@@ -233,7 +241,7 @@ def multi_comparison_chart(
             mean - std,
             mean + std,
             color='C4',
-            alpha=0.1
+            alpha=0.1,
         )
         ax.text(
             0,
@@ -243,7 +251,7 @@ def multi_comparison_chart(
             ha='left',
             color='C4',
             fontsize=12,
-            alpha=0.8
+            alpha=0.8,
         )
     ax.axhline(
         y=0.5, color='C3', linestyle='--', alpha=0.8
@@ -256,7 +264,7 @@ def multi_comparison_chart(
         ha='left',
         color='C3',
         fontsize=12,
-        alpha=0.8
+        alpha=0.8,
     )
 
     ax.legend(fontsize=12)
@@ -287,5 +295,5 @@ multi_comparison_chart(
     aspect=0.6,
     names=names,
     scalex=1.4,
-    save_path='results/figures/figure2.png'
+    save_path='results/figures/figure2.png',
 )

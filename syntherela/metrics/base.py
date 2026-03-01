@@ -7,7 +7,6 @@ and functionality for all metrics used in synthetic data evaluation.
 import re
 import warnings
 from copy import deepcopy
-from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -60,7 +59,7 @@ class SingleColumnMetric(BaseMetric):
         column : pd.Series
             The column to check.
 
-        Returns:
+        Returns
         -------
         bool
             True if the column has only one unique value, False otherwise.
@@ -68,7 +67,7 @@ class SingleColumnMetric(BaseMetric):
         """
         constant = column.nunique() == 1
         if constant:
-            warnings.warn(f"Column {column.name} is constant.", stacklevel=2)
+            warnings.warn(f'Column {column.name} is constant.', stacklevel=2)
         return constant
 
     @staticmethod
@@ -80,12 +79,12 @@ class SingleColumnMetric(BaseMetric):
         column_type : str
             The type of the column.
 
-        Returns:
+        Returns
         -------
         bool
             Whether the metric is applicable to the column type.
 
-        Raises:
+        Raises
         ------
         NotImplementedError
             This method must be implemented by subclasses.
@@ -127,14 +126,14 @@ class SingleTableMetric(BaseMetric):
         metadata : dict
             Metadata dictionary for the table.
 
-        Returns:
+        Returns
         -------
         bool
             True if the table has at least one non-id column, False otherwise.
 
         """
-        for column_name in metadata["columns"].keys():
-            if metadata["columns"][column_name]["sdtype"] != "id":
+        for column_name in metadata['columns'].keys():
+            if metadata['columns'][column_name]['sdtype'] != 'id':
                 return True
         return False
 
@@ -197,7 +196,7 @@ class StatisticalBaseMetric(BaseMetric):
         data
             The data to validate.
 
-        Raises:
+        Raises
         ------
         NotImplementedError
             This method must be implemented by subclasses.
@@ -218,12 +217,12 @@ class StatisticalBaseMetric(BaseMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns:
+        Returns
         -------
         Union[float, tuple[float]]
             Metric output or outputs.
 
-        Raises:
+        Raises
         ------
         NotImplementedError
             This method must be implemented by subclasses.
@@ -241,7 +240,7 @@ class StatisticalBaseMetric(BaseMetric):
         synthetic_data:
             The values from the synthetic dataset.
 
-        Returns:
+        Returns
         -------
             Union[float, tuple[float]]:
                 Metric output or outputs.
@@ -255,11 +254,11 @@ class StatisticalBaseMetric(BaseMetric):
 class DistanceBaseMetric(BaseMetric):
     """Base class for distance-based metrics.
 
-    Attributes:
+    Attributes
     ----------
         alpha (float): Significance level for confidence intervals.
 
-    Methods:
+    Methods
     -------
         compute(real_data, synthetic_data, **kwargs):
             Compute the metric value between two samples. Must be implemented
@@ -298,12 +297,12 @@ class DistanceBaseMetric(BaseMetric):
         )
         value = self.compute(real_data, synthetic_data, **kwargs)
         return {
-            "value": value,
-            "reference_mean": reference_mean,
-            "reference_variance": reference_variance,
-            "reference_ci": reference_standard_ci,
-            "bootstrap_mean": bootstrap_mean,
-            "bootstrap_se": bootstrap_se,
+            'value': value,
+            'reference_mean': reference_mean,
+            'reference_variance': reference_variance,
+            'reference_ci': reference_standard_ci,
+            'bootstrap_mean': bootstrap_mean,
+            'bootstrap_se': bootstrap_se,
         }
 
     def boostrap_metric_values(
@@ -345,7 +344,7 @@ class DistanceBaseMetric(BaseMetric):
         m = len(values)
         mean = np.mean(values)
         bias_adjusted_variance = np.sqrt(
-            (1 / (m - 1)) * np.sum((values - mean)**2)
+            (1 / (m - 1)) * np.sum((values - mean) ** 2)
         )
 
         if self.goal == Goal.MAXIMIZE:
@@ -378,7 +377,7 @@ class DetectionBaseMetric(BaseMetric):
     using the binomial test, and plotting feature importance and partial
     dependence.
 
-    Attributes:
+    Attributes
     ----------
     classifier_cls : class
         The classifier class to be used.
@@ -394,7 +393,7 @@ class DetectionBaseMetric(BaseMetric):
     name : str
         Name of the metric.
 
-    Methods:
+    Methods
     -------
     prepare_data(real_data, synthetic_data, **kwargs)
         Prepare the data for the classifier.
@@ -437,12 +436,12 @@ class DetectionBaseMetric(BaseMetric):
         self.folds = folds
         self.classifiers = []
         self.models = []
-        self.name = f"{type(self).__name__}-{classifier_cls.__name__}"
+        self.name = f'{type(self).__name__}-{classifier_cls.__name__}'
 
     def prepare_data(
         self,
-        real_data: Union[pd.DataFrame, pd.Series],
-        synthetic_data: Union[pd.DataFrame, pd.Series],
+        real_data: pd.DataFrame | pd.Series,
+        synthetic_data: pd.DataFrame | pd.Series,
         **kwargs,
     ):
         """Prepare the data for the classifier.
@@ -456,7 +455,7 @@ class DetectionBaseMetric(BaseMetric):
         **kwargs:
             Additional keyword arguments.
 
-        Returns:
+        Returns
         -------
         X: pd.DataFrame
             The combined data with transformed features.
@@ -465,16 +464,15 @@ class DetectionBaseMetric(BaseMetric):
 
         """
         if isinstance(real_data, pd.DataFrame):
-            assert real_data.columns.equals(
-                synthetic_data.columns
-            ), ("Columns of real and synthetic data do not match")
+            assert real_data.columns.equals(synthetic_data.columns), (
+                'Columns of real and synthetic data do not match'
+            )
 
         # sample the same number of rows from the real and synthetic data
         n = min(len(real_data), len(synthetic_data))
         real_data = real_data.sample(n, random_state=self.random_state)
         synthetic_data = synthetic_data.sample(
-            n,
-            random_state=self.random_state + 1 if self.random_state else None
+            n, random_state=self.random_state + 1 if self.random_state else None
         )
 
         ht = CustomHyperTransformer()
@@ -512,9 +510,9 @@ class DetectionBaseMetric(BaseMetric):
                 np.random.seed(i)
             model = Pipeline(
                 [
-                    ("imputer", SimpleImputer()),
-                    ("scaler", StandardScaler()),
-                    ("clf", self.classifier_cls(**self.classifier_args)),
+                    ('imputer', SimpleImputer()),
+                    ('scaler', StandardScaler()),
+                    ('clf', self.classifier_cls(**self.classifier_args)),
                 ]
             )
             model.fit(X.iloc[train_index], y[train_index])
@@ -522,7 +520,7 @@ class DetectionBaseMetric(BaseMetric):
             y_pred = probs.argmax(axis=1)
             scores.extend(list((y[test_index] == y_pred).astype(int)))
             if save_models:
-                self.classifiers.append(deepcopy(model["clf"]))
+                self.classifiers.append(deepcopy(model['clf']))
                 self.models.append(model)
         return scores
 
@@ -538,7 +536,7 @@ class DetectionBaseMetric(BaseMetric):
         metadata:
             Metadata containing information about the tables / table / column.
 
-        Returns:
+        Returns
         -------
         dict:
             Metric output.
@@ -578,7 +576,7 @@ class DetectionBaseMetric(BaseMetric):
         **kwargs:
             Keyword arguments to be passed to the prepare_data method.
 
-        Returns:
+        Returns
         -------
         tuple: A tuple containing the mean and standard error of the bootstrap
         accuracies.
@@ -601,7 +599,7 @@ class DetectionBaseMetric(BaseMetric):
         return np.mean(bootstrap_scores), np.std(bootstrap_scores) / np.sqrt(m)
 
     @staticmethod
-    def binomial_test(x, n, p=0.5, alternative="greater"):
+    def binomial_test(x, n, p=0.5, alternative='greater'):
         """Compute the p-value of the metric using the binomial test."""
         test = binomtest(x, n, p, alternative=alternative)
         return test.statistic, test.pvalue
@@ -618,7 +616,7 @@ class DetectionBaseMetric(BaseMetric):
         metadata:
             Metadata containing information about the tables / table / column.
 
-        Returns:
+        Returns
         -------
             dict:
                 Metric output.
@@ -628,17 +626,17 @@ class DetectionBaseMetric(BaseMetric):
             real_data, synthetic_data, metadata=metadata, **kwargs
         )
         _, bin_test_p_val = self.binomial_test(
-            sum(scores), len(scores), p=0.5, alternative="greater"
+            sum(scores), len(scores), p=0.5, alternative='greater'
         )
         _, copying_p_val = self.binomial_test(
-            sum(scores), len(scores), p=0.5, alternative="less"
+            sum(scores), len(scores), p=0.5, alternative='less'
         )
         standard_error = np.std(scores) / np.sqrt(len(scores))
         return {
-            "accuracy": np.mean(scores),
-            "SE": standard_error,
-            "bin_test_p_val": np.round(bin_test_p_val, decimals=16),
-            "copying_p_val": np.round(copying_p_val, decimals=16),
+            'accuracy': np.mean(scores),
+            'SE': standard_error,
+            'bin_test_p_val': np.round(bin_test_p_val, decimals=16),
+            'copying_p_val': np.round(copying_p_val, decimals=16),
         }
 
     def feature_importance(
@@ -655,31 +653,30 @@ class DetectionBaseMetric(BaseMetric):
             If True, combine datetime features (Year, Month, Day, Hour, Minute,
             Second) into a single feature.
 
-        Returns:
+        Returns
         -------
         dict: A dictionary where keys are feature names and values are arrays
         of feature importance scores, sorted by the mean importance score in
         descending order.
 
-        Raises:
+        Raises
         ------
         ValueError: If no classifiers have been trained or if the classifier
         does not have a feature_importances_ attribute.
 
         """
         if not len(self.classifiers):
-            raise ValueError("No classifiers have been trained.")
-        if not hasattr(self.classifiers[0], "feature_importances_"):
+            raise ValueError('No classifiers have been trained.')
+        if not hasattr(self.classifiers[0], 'feature_importances_'):
             raise ValueError(
-                "The classifier does not have a feature_importances_ "
-                "attribute."
+                'The classifier does not have a feature_importances_ attribute.'
             )
 
         features = dict()
         feature_names = self.X.columns
         for model in self.classifiers:
             for feature, importance in zip(
-                feature_names, model.feature_importances_
+                feature_names, model.feature_importances_, strict=False
             ):
                 if feature not in features:
                     features[feature] = []
@@ -690,9 +687,9 @@ class DetectionBaseMetric(BaseMetric):
             feature_names = dict()
             for feature in features.keys():
                 # check if the feature is one-hot encoded
-                if not re.search("_[0-9]+$", feature):
+                if not re.search('_[0-9]+$', feature):
                     continue
-                feature_name = "_".join(feature.split("_")[:-1])
+                feature_name = '_'.join(feature.split('_')[:-1])
                 if feature_name not in feature_names:
                     feature_names[feature_name] = []
                 feature_names[feature_name].append(feature)
@@ -709,12 +706,15 @@ class DetectionBaseMetric(BaseMetric):
             for feature in features.keys():
                 # check if the feature is one-hot encoded
                 if not (
-                    feature.endswith("_Year") or feature.endswith("_Month")
-                    or feature.endswith("_Day") or feature.endswith("_Hour") or
-                    feature.endswith("_Minute") or feature.endswith("_Second")
+                    feature.endswith('_Year')
+                    or feature.endswith('_Month')
+                    or feature.endswith('_Day')
+                    or feature.endswith('_Hour')
+                    or feature.endswith('_Minute')
+                    or feature.endswith('_Second')
                 ):
                     continue
-                feature_name = "_".join(feature.split("_")[:-1])
+                feature_name = '_'.join(feature.split('_')[:-1])
                 if feature_name not in feature_names:
                     feature_names[feature_name] = []
                 feature_names[feature_name].append(feature)
@@ -757,7 +757,7 @@ class DetectionBaseMetric(BaseMetric):
         fontsize : int, optional
             Font size for the y-axis tick labels. Default is 23.
 
-        Returns:
+        Returns
         -------
         ax : matplotlib.axes._subplots.AxesSubplot
             The axes object containing the plot.
@@ -765,46 +765,48 @@ class DetectionBaseMetric(BaseMetric):
         """
         features = self.feature_importance(
             combine_categorical=combine_categorical,
-            combine_datetime=combine_datetime
+            combine_datetime=combine_datetime,
         )
 
         def find_column_type(feature_name, column_info):
             for column, values in column_info.items():
-                if values["sdtype"] == "id":
+                if values['sdtype'] == 'id':
                     continue
                 if column == feature_name:
-                    return values["sdtype"]
+                    return values['sdtype']
                 elif not combine_categorical and feature_name in column:
-                    return values["sdtype"]
+                    return values['sdtype']
             return None
 
         def get_feature_type(feature_name, metadata):
             if (
-                "_counts" in feature_name or "_mean" in feature_name
-                or "_sum" in feature_name or "_nunique" in feature_name
+                '_counts' in feature_name
+                or '_mean' in feature_name
+                or '_sum' in feature_name
+                or '_nunique' in feature_name
             ):
-                return "aggregate"
+                return 'aggregate'
 
             feature_type = None
             # TODO: check if the object is single or multi table metadata
             if isinstance(metadata, dict):
-                return find_column_type(feature_name, metadata["columns"])
+                return find_column_type(feature_name, metadata['columns'])
             else:
-                for table_data in metadata.to_dict()["tables"].values():
+                for table_data in metadata.to_dict()['tables'].values():
                     feature_type = find_column_type(
-                        feature_name, table_data["columns"]
+                        feature_name, table_data['columns']
                     )
                     if feature_type is not None:
                         break
             return str(feature_type)
 
         colors = {
-            "aggregate": "#d7191c",
-            "numerical": "#fdae61",
-            "datetime": "#e3d36b",
-            "boolean": "#abd9e9",
-            "categorical": "#2c7bb6",
-            "None": "#000000",
+            'aggregate': '#d7191c',
+            'numerical': '#fdae61',
+            'datetime': '#e3d36b',
+            'boolean': '#abd9e9',
+            'categorical': '#2c7bb6',
+            'None': '#000000',
         }
 
         if ax is None:
@@ -830,9 +832,9 @@ class DetectionBaseMetric(BaseMetric):
                 xerr=se * 1.96,
                 c=color,
                 capsize=3,
-                ls="None"
+                ls='None',
             )
-            ax.scatter(np.mean(importance), y, s=120, marker="v", color=color)
+            ax.scatter(np.mean(importance), y, s=120, marker='v', color=color)
 
         xlim = ax.get_xlim()
         ax.set_xlim(0, xlim[1])
@@ -841,18 +843,18 @@ class DetectionBaseMetric(BaseMetric):
             prettify_feature_name(feature) for feature in features.keys()
         ][::-1]
         ax.set_yticklabels(pretty_feature_names)
-        ax.set_xlabel("Feature importance", fontsize=lab_fontsize)
-        ax.tick_params(axis="x", labelsize=fontsize - 2)
-        ax.tick_params(axis="y", labelsize=fontsize)
+        ax.set_xlabel('Feature importance', fontsize=lab_fontsize)
+        ax.tick_params(axis='x', labelsize=fontsize - 2)
+        ax.tick_params(axis='y', labelsize=fontsize)
         labels = ax.get_legend_handles_labels()
-        unique_labels = {label: h for h, label in zip(*labels)}
-        labels_handles = [*zip(*unique_labels.items())]
+        unique_labels = {label: h for h, label in zip(*labels, strict=False)}
+        labels_handles = [*zip(*unique_labels.items(), strict=False)]
         legend = labels_handles[::-1]
         ax.legend(
             *legend,
-            fontsize="x-small",
-            loc="lower right",
-            title="Feature type",
+            fontsize='x-small',
+            loc='lower right',
+            title='Feature type',
             markerscale=2,
         )
 
@@ -873,7 +875,7 @@ class DetectionBaseMetric(BaseMetric):
         seed : int, optional, default=0
             Random seed for reproducibility.
 
-        Returns:
+        Returns
         -------
         ax : matplotlib.axes._subplots.AxesSubplot
             The axes object containing the plot.
@@ -882,13 +884,10 @@ class DetectionBaseMetric(BaseMetric):
         from matplotlib import rc
 
         rc(
-            "font", **{
-                "family": "serif",
-                "serif": ["Times"],
-                "size": lab_fontsize
-            }
+            'font',
+            **{'family': 'serif', 'serif': ['Times'], 'size': lab_fontsize},
         )
-        rc("text", usetex=True)
+        rc('text', usetex=True)
         from sklearn.inspection import PartialDependenceDisplay
 
         def get_average_pds(feature, seed=0, num_ice=30, subsample_avg=0.5):
@@ -900,16 +899,16 @@ class DetectionBaseMetric(BaseMetric):
                         model,
                         self.X.sample(num_ice, random_state=seed + i),
                         [feature],
-                        kind="individual",
-                        response_method="predict_proba",
+                        kind='individual',
+                        response_method='predict_proba',
                     )
                     np.random.seed(seed + i)
                     disp = PartialDependenceDisplay.from_estimator(
                         model,
                         self.X,
                         [feature],
-                        kind="average",
-                        response_method="predict_proba",
+                        kind='average',
+                        response_method='predict_proba',
                         subsample=subsample_avg,
                         percentiles=(0, 1),
                     )
@@ -922,7 +921,7 @@ class DetectionBaseMetric(BaseMetric):
                     elif i > 0 and y.shape == ys[0].shape:
                         ys.append(y)
                     plt.clf()
-            plt.close("all")
+            plt.close('all')
             return x, np.array(ys), disps_ind
 
         x, ys, disps = get_average_pds(feature, seed=seed)
@@ -936,24 +935,24 @@ class DetectionBaseMetric(BaseMetric):
         y_mean = ys.mean(axis=0)
         y_se = ys.std(axis=0) / np.sqrt(ys.shape[0])
 
-        ax.plot(x, y_mean, color="C0", label="Individual CEs")
-        ax.plot(x, y_mean, color="C1", label="Average")
+        ax.plot(x, y_mean, color='C0', label='Individual CEs')
+        ax.plot(x, y_mean, color='C1', label='Average')
         ax.fill_between(
             x,
             y_mean - y_se,
             y_mean + y_se,
             alpha=0.4,
-            color="C1",
+            color='C1',
             zorder=1,
-            label="SE"
+            label='SE',
         )
 
         if all([x_.is_integer() for x_ in x]):
             ax.set_xticks(x)
             ax.set_xticklabels(x.astype(int))
         ax.set_xlabel(prettify_feature_name(feature), fontsize=lab_fontsize)
-        ax.set_ylabel("Partial dependence", fontsize=lab_fontsize)
-        ax.legend(fontsize="xx-small", loc="lower left")
+        ax.set_ylabel('Partial dependence', fontsize=lab_fontsize)
+        ax.legend(fontsize='xx-small', loc='lower left')
 
         return ax
 
@@ -970,7 +969,7 @@ def prepare_classifier_data(real_data, synthetic_data, **kwargs):
     **kwargs
         Additional keyword arguments.
 
-    Returns:
+    Returns
     -------
     X: pd.DataFrame
         The combined data with transformed features.

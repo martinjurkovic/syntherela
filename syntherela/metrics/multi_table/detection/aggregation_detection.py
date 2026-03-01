@@ -6,7 +6,6 @@ real and synthetic tables with aggregations.
 """
 
 from copy import deepcopy
-from typing import Optional
 
 import pandas as pd
 from sklearn.base import ClassifierMixin
@@ -44,7 +43,7 @@ class BaseAggregationDetection(DetectionBaseMetric):
         add_child_counts : bool, optional
             Whether to add child relationship counts, by default True.
 
-        Returns:
+        Returns
         -------
         dict[str, pd.DataFrame]
             The data with the added aggregations.
@@ -56,68 +55,72 @@ class BaseAggregationDetection(DetectionBaseMetric):
         # order relationships
         ordered_relationships = sorted(
             metadata.relationships,
-            key=lambda x: table_levels[x["parent_table_name"]]
+            key=lambda x: table_levels[x['parent_table_name']],
         )
 
         for relationship in ordered_relationships:
-            parent_table_name = relationship["parent_table_name"]
-            child_table_name = relationship["child_table_name"]
-            parent_column = relationship["parent_primary_key"]
-            child_fk = relationship["child_foreign_key"]
+            parent_table_name = relationship['parent_table_name']
+            child_table_name = relationship['child_table_name']
+            parent_column = relationship['parent_primary_key']
+            child_fk = relationship['child_foreign_key']
 
             # only add counts for the first level
             if level == 0 and add_child_counts:
                 # add child counts
                 child_df = pd.DataFrame(
                     {
-                        f"{child_table_name}_{child_fk}_counts":
-                        data[child_table_name][child_fk].value_counts()
+                        f'{child_table_name}_{child_fk}_counts': data[
+                            child_table_name
+                        ][child_fk].value_counts()
                     }
                 )
                 cardinality_df = (
                     pd.DataFrame(
-                        {
-                            "parent": data[parent_table_name][parent_column]
-                        }
-                    ).join(child_df, on="parent").fillna(0)
+                        {'parent': data[parent_table_name][parent_column]}
+                    )
+                    .join(child_df, on='parent')
+                    .fillna(0)
                 )
                 aggregated_data[parent_table_name] = (
-                    aggregated_data[parent_table_name].merge(
+                    aggregated_data[parent_table_name]
+                    .merge(
                         cardinality_df,
-                        how="left",
+                        how='left',
                         left_on=parent_column,
-                        right_on="parent",
-                    ).drop(columns="parent")
+                        right_on='parent',
+                    )
+                    .drop(columns='parent')
                 )
 
                 if update_metadata:
                     metadata.add_column(
                         parent_table_name,
-                        f"{child_table_name}_{child_fk}_counts",
-                        sdtype="numerical",
+                        f'{child_table_name}_{child_fk}_counts',
+                        sdtype='numerical',
                     )
 
             # add categorical counts
             categorical_columns = metadata.get_column_names(
-                child_table_name, sdtype="categorical"
+                child_table_name, sdtype='categorical'
             )
             # aggregation columns are always numerical, so we need to add them
             # only when we are at the first level
             if len(categorical_columns) > 0 and level == 0:
-                categorical_df = data[child_table_name][categorical_columns +
-                                                        [child_fk]]
+                categorical_df = data[child_table_name][
+                    categorical_columns + [child_fk]
+                ]
                 categorical_column_names = [
-                    f"{child_table_name}_{child_fk}_{column}_nunique"
+                    f'{child_table_name}_{child_fk}_{column}_nunique'
                     for column in categorical_columns
                 ]
                 categorical_df.columns = categorical_column_names + [child_fk]
 
                 merged_data = aggregated_data[parent_table_name].merge(
                     categorical_df.groupby(child_fk).nunique(),
-                    how="left",
+                    how='left',
                     left_on=parent_column,
                     right_index=True,
-                    suffixes=("", "_nunique"),
+                    suffixes=('', '_nunique'),
                 )
                 merged_data[categorical_column_names].fillna(0, inplace=True)
                 aggregated_data[parent_table_name] = merged_data
@@ -125,37 +128,39 @@ class BaseAggregationDetection(DetectionBaseMetric):
                 if update_metadata:
                     for column in categorical_column_names:
                         metadata.add_column(
-                            parent_table_name, column, sdtype="numerical"
+                            parent_table_name, column, sdtype='numerical'
                         )
 
             # add numerical means
             numerical_columns = []
             for column_name in metadata.get_column_names(
-                child_table_name, sdtype="numerical"
+                child_table_name, sdtype='numerical'
             ):
                 # When level is greater than 0,
                 # skip columns that have already been aggregated
-                already_aggregated = column_name in aggregated_data[
-                    parent_table_name]
+                already_aggregated = (
+                    column_name in aggregated_data[parent_table_name]
+                )
                 if level > 0 and already_aggregated:
                     continue
                 numerical_columns.append(column_name)
 
             if len(numerical_columns) > 0:
-                numerical_df = data[child_table_name][numerical_columns +
-                                                      [child_fk]]
+                numerical_df = data[child_table_name][
+                    numerical_columns + [child_fk]
+                ]
                 numerical_column_names = [
-                    f"{child_table_name}_{child_fk}_{column}_mean"
+                    f'{child_table_name}_{child_fk}_{column}_mean'
                     for column in numerical_columns
                 ]
                 numerical_df.columns = numerical_column_names + [child_fk]
 
                 merged_data = aggregated_data[parent_table_name].merge(
                     numerical_df.groupby(child_fk).mean(),
-                    how="left",
+                    how='left',
                     left_on=parent_column,
                     right_index=True,
-                    suffixes=("", "_mean"),
+                    suffixes=('', '_mean'),
                 )
 
                 aggregated_data[parent_table_name] = merged_data
@@ -163,7 +168,7 @@ class BaseAggregationDetection(DetectionBaseMetric):
                 if update_metadata:
                     for column in numerical_column_names:
                         metadata.add_column(
-                            parent_table_name, column, sdtype="numerical"
+                            parent_table_name, column, sdtype='numerical'
                         )
 
         return aggregated_data, metadata
@@ -178,7 +183,7 @@ class AggregationDetection(
         self,
         classifier_cls: ClassifierMixin,
         classifier_args: dict | None = None,
-        random_state: Optional[int] = None,
+        random_state: int | None = None,
         folds: int = 5,
         levels: int = 1,
         add_child_counts: bool = True,
@@ -201,8 +206,8 @@ class AggregationDetection(
         """
         nonid = False
         table_metadata = metadata.tables[table].to_dict()
-        for column_name in table_metadata["columns"].keys():
-            if table_metadata["columns"][column_name]["sdtype"] != "id":
+        for column_name in table_metadata['columns'].keys():
+            if table_metadata['columns'][column_name]['sdtype'] != 'id':
                 nonid = True
                 break
         has_children = len(metadata.get_children(table)) > 0
@@ -213,7 +218,7 @@ class AggregationDetection(
         real_data: Tables,
         synthetic_data: Tables,
         metadata: Metadata,
-        target_table: Optional[str] = None,
+        target_table: str | None = None,
         **kwargs,
     ):
         """Run the C2ST-Agg metric.
@@ -231,7 +236,7 @@ class AggregationDetection(
         kwargs : dict
             Additional keyword arguments.
 
-        Returns:
+        Returns
         -------
         dict
             The C2ST-Agg metric results.
@@ -336,7 +341,7 @@ class ParentChildAggregationDetection(
         pair_metadata : Metadata
             The metadata for the parent-child pair.
 
-        Returns:
+        Returns
         -------
         X: pd.DataFrame
             The joined synthetic and real data matrix.

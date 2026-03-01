@@ -17,5 +17,5 @@ class ColumnShapesReport(BaseMultiTableReport):
     def __init__(self):
         super().__init__()
         self._properties = {
-            "Column Shapes": ColumnShapes(),
+            'Column Shapes': ColumnShapes(),
         }

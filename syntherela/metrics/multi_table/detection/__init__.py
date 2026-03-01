@@ -7,7 +7,7 @@ from .aggregation_detection import (
 from .parent_child import ParentChildDetection
 
 __all__ = [
-    "AggregationDetection",
-    "ParentChildDetection",
-    "ParentChildAggregationDetection",
+    'AggregationDetection',
+    'ParentChildDetection',
+    'ParentChildAggregationDetection',
 ]

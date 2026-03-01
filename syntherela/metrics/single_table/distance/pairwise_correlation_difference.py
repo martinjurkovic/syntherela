@@ -19,10 +19,10 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
     """Pairwise correlation difference (PCD) metric."""
 
     def __init__(
-        self, norm_order="fro", correlation_method="pearson", **kwargs
+        self, norm_order='fro', correlation_method='pearson', **kwargs
     ):
         super().__init__(**kwargs)
-        self.name = "PairwiseCorrelationDifference"
+        self.name = 'PairwiseCorrelationDifference'
         self.goal = Goal.MINIMIZE
         self.norm_order = norm_order
         self.correlation_method = correlation_method
@@ -33,10 +33,10 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
     def is_applicable(metadata):
         """Check if the table contains at least one non-id column."""
         numeric_count = 0
-        for column_name in metadata["columns"].keys():
+        for column_name in metadata['columns'].keys():
             if (
-                metadata["columns"][column_name]["sdtype"] == "numerical"
-                or metadata["columns"][column_name]["sdtype"] == "datetime"
+                metadata['columns'][column_name]['sdtype'] == 'numerical'
+                or metadata['columns'][column_name]['sdtype'] == 'datetime'
             ):
                 numeric_count += 1
         return numeric_count > 1
@@ -58,7 +58,7 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         metadata : dict
             Table metadata.
 
-        Returns:
+        Returns
         -------
         float
             The pairwise correlation difference between the original and
@@ -73,16 +73,16 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
 
         zero_variance_columns = []
         for col in orig.columns:
-            if orig[col].dtype.name in ("object", "category"):
+            if orig[col].dtype.name in ('object', 'category'):
                 orig.drop(col, axis=1, inplace=True)
                 synth.drop(col, axis=1, inplace=True)
                 continue
             elif is_datetime(orig[col]):
                 orig[col] = pd.to_numeric(
-                    orig[col], errors="coerce", downcast="integer"
+                    orig[col], errors='coerce', downcast='integer'
                 )
                 synth[col] = pd.to_numeric(
-                    synth[col], errors="coerce", downcast="integer"
+                    synth[col], errors='coerce', downcast='integer'
                 )
 
         # drop nan values
@@ -94,8 +94,9 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         zero_variance_columns = std_orig[std_orig == 0].index.tolist()
         orig.drop(columns=zero_variance_columns, inplace=True)
         synth.drop(columns=zero_variance_columns, inplace=True)
-        assert (synth.std() > 0).all(
-        ), ("Synthetic data includes invalid columns with zero variance.")
+        assert (synth.std() > 0).all(), (
+            'Synthetic data includes invalid columns with zero variance.'
+        )
 
         # compute the correlation matrix
         orig_corr = orig.corr(method=self.correlation_method)

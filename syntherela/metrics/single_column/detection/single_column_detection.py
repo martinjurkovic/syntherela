@@ -28,7 +28,7 @@ class SingleColumnDetection(DetectionBaseMetric, SingleColumnMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes:
+    Attributes
     ----------
     name : str
         Name of the metric.
@@ -48,12 +48,15 @@ class SingleColumnDetection(DetectionBaseMetric, SingleColumnMetric):
         column_type : str
             The type of the column.
 
-        Returns:
+        Returns
         -------
         bool
             Whether the metric is applicable to the column type.
 
         """
         return column_type in [
-            "categorical", "datetime", "numerical", "boolean"
+            'categorical',
+            'datetime',
+            'numerical',
+            'boolean',
         ]

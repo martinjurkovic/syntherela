@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 from ClavaDDPM.preprocess_utils import reconstruct_dates, table_label_decode
-
 from syntherela.data import load_tables, remove_sdv_columns, save_tables
 from syntherela.metadata import Metadata
 
@@ -14,16 +13,16 @@ from syntherela.metadata import Metadata
 def revert_ids(df, metadata, table_name):
     primary_key = metadata.get_primary_key(table_name)
     if primary_key is not None:
-        pk = df.pop(f"{table_name}_id")
+        pk = df.pop(f'{table_name}_id')
         df[primary_key] = pk
     else:
-        df.drop(columns=[f"{table_name}_id"], inplace=True)
+        df.drop(columns=[f'{table_name}_id'], inplace=True)
 
     for parent in metadata.get_parents(table_name):
         foreign_keys = metadata.get_foreign_keys(parent, table_name)
         assert len(foreign_keys) == 1
         foreign_key = foreign_keys[0]
-        fk = df.pop(f"{parent}_id")
+        fk = df.pop(f'{parent}_id')
         df[foreign_key] = fk
 
     return df
@@ -31,19 +30,19 @@ def revert_ids(df, metadata, table_name):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("dataset_name", type=str, help="Name of the dataset")
-    parser.add_argument("--run-id", type=int, default=1, help="Run id")
+    parser.add_argument('dataset_name', type=str, help='Name of the dataset')
+    parser.add_argument('--run-id', type=int, default=1, help='Run id')
     parser.add_argument(
-        "--real-data-path",
+        '--real-data-path',
         type=str,
-        default="data/original/",
-        help="Path to the original data.",
+        default='data/original/',
+        help='Path to the original data.',
     )
     parser.add_argument(
-        "--synthetic-data-path",
+        '--synthetic-data-path',
         type=str,
-        default="data/synthetic/",
-        help="Path to the original data.",
+        default='data/synthetic/',
+        help='Path to the original data.',
     )
 
     return parser.parse_args()
@@ -55,48 +54,50 @@ def main(args):
     real_data_path = args.real_data_path
     synthetic_data_path = args.synthetic_data_path
 
-    model_name = "CLAVADDPM"
+    model_name = 'CLAVADDPM'
 
     metadata = Metadata().load_from_json(
-        Path(real_data_path) / f"{dataset_name}/metadata.json"
+        Path(real_data_path) / f'{dataset_name}/metadata.json'
     )
 
-    tables = load_tables(Path(real_data_path) / f"{dataset_name}", metadata)
+    tables = load_tables(Path(real_data_path) / f'{dataset_name}', metadata)
 
     tables, metadata = remove_sdv_columns(tables, metadata)
 
     processed_data_path = os.path.join(
-        "ClavaDDPM", "complex_data", dataset_name
+        'ClavaDDPM', 'complex_data', dataset_name
     )
     generated_data_path = os.path.join(
-        "ClavaDDPM", f"clavaDDPM_workspace_run{run}", dataset_name
+        'ClavaDDPM', f'clavaDDPM_workspace_run{run}', dataset_name
     )
     synthetic_data_path = os.path.join(synthetic_data_path, dataset_name)
 
-    if os.path.exists(os.path.join(processed_data_path, "first_dates.json")):
-        with open(os.path.join(processed_data_path, "first_dates.json")) as f:
+    if os.path.exists(os.path.join(processed_data_path, 'first_dates.json')):
+        with open(os.path.join(processed_data_path, 'first_dates.json')) as f:
             first_dates = json.load(f)
 
     tables_synthetic = dict()
     for table_name in metadata.get_tables():
-        table_meta = metadata.get_table_meta(table_name)["columns"]
+        table_meta = metadata.get_table_meta(table_name)['columns']
         table_path = os.path.join(
-            generated_data_path, table_name, "_final",
-            f"{table_name}_synthetic.csv"
+            generated_data_path,
+            table_name,
+            '_final',
+            f'{table_name}_synthetic.csv',
         )
         df = pd.read_csv(table_path)
 
         datetime_columns = metadata.get_column_names(
-            table_name, sdtype="datetime"
+            table_name, sdtype='datetime'
         )
         numerical_columns = metadata.get_column_names(
-            table_name, sdtype="numerical"
+            table_name, sdtype='numerical'
         )
 
         le_path = os.path.join(
-            processed_data_path, f"{table_name}_label_encoders.pkl"
+            processed_data_path, f'{table_name}_label_encoders.pkl'
         )
-        with open(le_path, "rb") as f:
+        with open(le_path, 'rb') as f:
             label_encoders = pickle.load(f)
 
         for column in label_encoders.keys():
@@ -109,26 +110,26 @@ def main(args):
             for col in datetime_columns:
                 first_date_str = first_dates[table_name][col]
                 df[col] = reconstruct_dates(df[col], first_date_str)
-                df[col] = pd.to_datetime(df[col], format="%y%m%d")
+                df[col] = pd.to_datetime(df[col], format='%y%m%d')
                 column_format = table_meta[col].get(
-                    "datetime_format", "%Y-%m-%d"
+                    'datetime_format', '%Y-%m-%d'
                 )
                 df[col] = df[col].dt.strftime(column_format)
 
         for col in numerical_columns:
-            dtype = table_meta[col]["computer_representation"]
-            if dtype == "Int64":
+            dtype = table_meta[col]['computer_representation']
+            if dtype == 'Int64':
                 df[col] = df[col].round().astype(dtype)
 
         df = revert_ids(df, metadata, table_name)
         tables_synthetic[table_name] = df
 
     save_data_path = os.path.join(
-        synthetic_data_path, model_name, run, "sample1"
+        synthetic_data_path, model_name, run, 'sample1'
     )
     save_tables(tables_synthetic, save_data_path)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     args = parse_args()
     main(args)

@@ -25,7 +25,7 @@ class PairTrendsReport(BaseReport):
     in a single table. It uses the ColumnPairTrends property to measure how
     well the synthetic data preserves relationships between columns.
 
-    Attributes:
+    Attributes
     ----------
     _properties : dict
         Dictionary containing the properties to evaluate, with 'Column Pair
@@ -35,7 +35,7 @@ class PairTrendsReport(BaseReport):
 
     def __init__(self):
         super().__init__()
-        self._properties = {"Column Pair Trends": ColumnPairTrends()}
+        self._properties = {'Column Pair Trends': ColumnPairTrends()}
 
 
 def recursive_merge(
@@ -55,7 +55,7 @@ def recursive_merge(
         List of key pairs for merging. Each pair consists of
         (foreign_key, primary_key).
 
-    Returns:
+    Returns
     -------
     pd.DataFrame
         The merged DataFrame containing data from all input dataframes.
@@ -70,9 +70,9 @@ def recursive_merge(
         result_df = pd.merge(
             left=result_df,
             right=dataframes[i],
-            how="left",
+            how='left',
             left_on=fk,
-            right_on=pk
+            right_on=pk,
         )
     return result_df
 
@@ -97,7 +97,7 @@ def get_joint_table(
         Metadata object containing information about the tables and their
         relationships.
 
-    Returns:
+    Returns
     -------
     tuple
         A tuple containing:
@@ -112,7 +112,8 @@ def get_joint_table(
         child = long_path[i]
         pk = dataset_meta.get_primary_key(parent)
         fk = dataset_meta.get_foreign_keys(parent, child)[
-            0]  # ClavaDDPM assumes only 1 fk between tables
+            0
+        ]  # ClavaDDPM assumes only 1 fk between tables
         path_keys.append((fk, pk))
     long_path_joined = recursive_merge(path_tables, path_keys)
 
@@ -120,7 +121,7 @@ def get_joint_table(
     for i in range(1, len(long_path) - 1):
         in_between_table = long_path[i]
         single_table_meta = dataset_meta.get_table_meta(in_between_table)
-        for column in single_table_meta["columns"].keys():
+        for column in single_table_meta['columns'].keys():
             if column in long_path_joined:
                 long_path_joined.pop(column)
 
@@ -130,7 +131,7 @@ def get_joint_table(
     metadata.detect_from_dataframe(long_path_joined)
     for table in final_tables:
         single_table_meta = dataset_meta.get_table_meta(table)
-        for column, info in single_table_meta["columns"].items():
+        for column, info in single_table_meta['columns'].items():
             if column in long_path_joined.columns:
                 metadata.update_column(column, **info)
 
@@ -171,7 +172,7 @@ def evaluate_long_path(
     verbose : bool, default=True
         Whether to print verbose output.
 
-    Returns:
+    Returns
     -------
     dict
         Dictionary mapping column pairs to trend scores.
@@ -182,17 +183,17 @@ def evaluate_long_path(
         real_joined, syn_joined, metadata.to_dict(), verbose=verbose
     )
 
-    column_pair_quality = quality.get_details("Column Pair Trends")
-    if "Error" in column_pair_quality.columns:
-        errors = column_pair_quality["Error"]
-        error_types = {str(e).split(":")[0] for e in errors if e}
+    column_pair_quality = quality.get_details('Column Pair Trends')
+    if 'Error' in column_pair_quality.columns:
+        errors = column_pair_quality['Error']
+        error_types = {str(e).split(':')[0] for e in errors if e}
         warnings.warn(
-            f"Found the following error types in the column pair trends: "
-            f"{error_types}",
+            f'Found the following error types in the column pair trends: '
+            f'{error_types}',
             stacklevel=2,
         )
         mask = errors == errors  # Select rows with errors (not None)
-        column_pair_quality.loc[mask.values, "Score"] = 0
+        column_pair_quality.loc[mask.values, 'Score'] = 0
         # set scores
     top_table_cols = set(top_table_cols)
     bottom_table_cols = set(bottom_table_cols)
@@ -200,15 +201,17 @@ def evaluate_long_path(
     res = {}
 
     for _, row in column_pair_quality.iterrows():
-        col_1 = row["Column 1"]
-        col_2 = row["Column 2"]
+        col_1 = row['Column 1']
+        col_2 = row['Column 2']
 
         if (
-            col_1 in top_table_cols and col_2 in bottom_table_cols
-            or col_1 in bottom_table_cols and col_2 in top_table_cols
+            col_1 in top_table_cols
+            and col_2 in bottom_table_cols
+            or col_1 in bottom_table_cols
+            and col_2 in top_table_cols
         ):
-            res[f"{top_table} - {bottom_table} : {col_1} {col_2}"] = row[
-                "Score"  #
+            res[f'{top_table} - {bottom_table} : {col_1} {col_2}'] = row[
+                'Score'  #
             ]
     return res
 
@@ -225,7 +228,7 @@ def find_paths_with_length_greater_than_one(metadata: Metadata) -> list[str]:
         Metadata object containing information about the tables and their
         relationships.
 
-    Returns:
+    Returns
     -------
     list[str]
         List of paths with length greater than one, where each path is a list
@@ -235,8 +238,8 @@ def find_paths_with_length_greater_than_one(metadata: Metadata) -> list[str]:
     # Build adjacency list while skipping edges that start with None
     graph = defaultdict(list)
     for relationship in metadata.relationships:
-        parent = relationship["parent_table_name"]
-        child = relationship["child_table_name"]
+        parent = relationship['parent_table_name']
+        child = relationship['child_table_name']
         if parent is not None:
             graph[parent].append(child)
 
@@ -286,7 +289,7 @@ def get_long_range(
     verbose : bool, default=True
         Whether to print verbose output during evaluation.
 
-    Returns:
+    Returns
     -------
     dict
         Dictionary mapping hop counts to dictionaries of column pair scores.
@@ -342,7 +345,7 @@ def get_avg_long_range_scores(res: dict) -> tuple:
     res : dict
         Dictionary mapping hop counts to dictionaries of column pair scores.
 
-    Returns:
+    Returns
     -------
     tuple
         A tuple containing two dictionaries:
@@ -386,7 +389,7 @@ def multi_table_trends(
     verbose : bool, default=True
         Whether to print verbose output during evaluation.
 
-    Returns:
+    Returns
     -------
     dict
         Dictionary containing evaluation results with the following keys:
@@ -411,13 +414,15 @@ def multi_table_trends(
     multi_report = MultiTableTrendsReport()
     multi_report.generate(tables, syn_tables, metadata.to_dict(), verbose)
 
-    one_hop = multi_report.get_details("Intertable Trends").dropna(
-        subset=["Score"]
+    one_hop = multi_report.get_details('Intertable Trends').dropna(
+        subset=['Score']
     )
     one_hop_dict = {}
     for _, row in one_hop.iterrows():
-        one_hop_dict[f"{row['Parent Table']} - {row['Child Table']} : "
-                     f"{row['Column 1']} {row['Column 2']}"] = row["Score"]
+        one_hop_dict[
+            f'{row["Parent Table"]} - {row["Child Table"]} : '
+            f'{row["Column 1"]} {row["Column 2"]}'
+        ] = row['Score']
 
     hop_relation[1] = one_hop_dict
 
@@ -433,14 +438,15 @@ def multi_table_trends(
     all_avg_score /= num_scores
 
     if verbose:
-        print("Long Range Scores:", avg_scores)
-        print("All avg scores: ", all_avg_score)
+        print('Long Range Scores:', avg_scores)
+        print('All avg scores: ', all_avg_score)
 
     result = {}
-    result["hop_relation"] = hop_relation
-    result["avg_scores"] = avg_scores
-    result["scores_se"] = scores_se
-    result["all_avg_score"] = all_avg_score
-    result["cardinality"] = multi_report.get_details("Cardinality"
-                                                     )["Score"].values.mean()
+    result['hop_relation'] = hop_relation
+    result['avg_scores'] = avg_scores
+    result['scores_se'] = scores_se
+    result['all_avg_score'] = all_avg_score
+    result['cardinality'] = multi_report.get_details('Cardinality')[
+        'Score'
+    ].values.mean()
     return result

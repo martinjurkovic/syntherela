@@ -2,14 +2,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import xgboost as xgb
 from matplotlib import rc
-
 from syntherela.data import load_tables, remove_sdv_columns
 from syntherela.metadata import Metadata
 from syntherela.metrics.multi_table.detection import AggregationDetection
 
 sns.set_theme()
-rc("font", **{"family": "serif", "serif": ["Times"], "size": 30})
-rc("text", usetex=True)
+rc('font', **{'family': 'serif', 'serif': ['Times'], 'size': 30})
+rc('text', usetex=True)
 
 
 def reproduce_figure(
@@ -18,8 +17,8 @@ def reproduce_figure(
     # Compute the metric
     xgb_cls = xgb.XGBClassifier
     xgb_args = {
-        "seed": 0,
-        "importance_type": "gain",
+        'seed': 0,
+        'importance_type': 'gain',
     }
 
     metric = AggregationDetection(
@@ -29,8 +28,8 @@ def reproduce_figure(
     for table in tables.keys():
         tables_synthetic[table] = tables_synthetic[table][tables[table].columns]
 
-    if dataset_name == "imdb_MovieLens_v1":
-        target_table = "movies"
+    if dataset_name == 'imdb_MovieLens_v1':
+        target_table = 'movies'
 
     metric.run(
         tables,
@@ -44,22 +43,23 @@ def reproduce_figure(
     fig, ax = plt.subplots(figsize=(7, 7))
     metric.plot_feature_importance(metadata, ax=ax, combine_categorical=True)
     plt.savefig(
-        f"results/figures/figure3{figure_name}.png",
-        bbox_inches="tight",
-        dpi=600
+        f'results/figures/figure3{figure_name}.png',
+        bbox_inches='tight',
+        dpi=600,
     )
 
 
 # FIGURE 3a
-dataset_name = "imdb_MovieLens_v1"
-method = "CLAVADDPM"
+dataset_name = 'imdb_MovieLens_v1'
+method = 'CLAVADDPM'
 
-metadata = Metadata(
-).load_from_json(f"data/original/{dataset_name}/metadata.json")
+metadata = Metadata().load_from_json(
+    f'data/original/{dataset_name}/metadata.json'
+)
 
-tables = load_tables(f"data/original/{dataset_name}/", metadata)
+tables = load_tables(f'data/original/{dataset_name}/', metadata)
 tables_synthetic = load_tables(
-    f"data/synthetic/{dataset_name}/{method}/1/sample1", metadata
+    f'data/synthetic/{dataset_name}/{method}/1/sample1', metadata
 )
 
 tables, metadata = remove_sdv_columns(tables, metadata)
@@ -67,4 +67,4 @@ tables_synthetic, metadata = remove_sdv_columns(
     tables_synthetic, metadata, update_metadata=False
 )
 
-reproduce_figure(tables, tables_synthetic, metadata, dataset_name, "a")
+reproduce_figure(tables, tables_synthetic, metadata, dataset_name, 'a')

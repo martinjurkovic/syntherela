@@ -4,8 +4,6 @@ import sys
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from xgboost import XGBClassifier
-
 from syntherela.benchmark import Benchmark
 from syntherela.metrics.multi_table.detection import (
     AggregationDetection,
@@ -31,34 +29,35 @@ from syntherela.metrics.single_table.distance import (
     MaximumMeanDiscrepancy,
     PairwiseCorrelationDifference,
 )
+from xgboost import XGBClassifier
 
 args = argparse.ArgumentParser()
 args.add_argument(
-    "--dataset-name", type=str, default="airbnb-simplified_subsampled"
+    '--dataset-name', type=str, default='airbnb-simplified_subsampled'
 )
-args.add_argument("--methods", "-m", action="append", default=None)
-args.add_argument("--run-id", type=str, default="1")
+args.add_argument('--methods', '-m', action='append', default=None)
+args.add_argument('--run-id', type=str, default='1')
 args = args.parse_args()
 dataset_name = args.dataset_name
 methods = args.methods
 run_id = args.run_id
 
-logger = logging.getLogger(f"{dataset_name}_logger")
+logger = logging.getLogger(f'{dataset_name}_logger')
 
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler = logging.StreamHandler(stream=sys.stdout)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-logger.info(f"START LOGGING Dataset: {dataset_name}")
+logger.info(f'START LOGGING Dataset: {dataset_name}')
 
 xgb_cls = XGBClassifier
-xgb_args = {"seed": 0}
+xgb_args = {'seed': 0}
 rf_cls = RandomForestClassifier
-rf_args = {"random_state": 0, "n_estimators": 100}
+rf_args = {'random_state': 0, 'n_estimators': 100}
 logistic = LogisticRegression
-logistic_args = {"random_state": 0}
+logistic_args = {'random_state': 0}
 single_column_metrics = [
     ChiSquareTest(),
     KolmogorovSmirnovTest(),
@@ -109,15 +108,15 @@ multi_table_metrics = [
 ]
 
 benchmark = Benchmark(
-    real_data_dir="data/original",
-    synthetic_data_dir="data/synthetic",
-    results_dir=f"results/{run_id}",
-    benchmark_name="Benchmark",
+    real_data_dir='data/original',
+    synthetic_data_dir='data/synthetic',
+    results_dir=f'results/{run_id}',
+    benchmark_name='Benchmark',
     single_column_metrics=single_column_metrics,
     single_table_metrics=single_table_metrics,
     multi_table_metrics=multi_table_metrics,
     run_id=run_id,
-    sample_id="sample1",
+    sample_id='sample1',
     datasets=None,
     methods=methods,
     validate_metadata=False,
@@ -126,8 +125,8 @@ benchmark = Benchmark(
 benchmark.read_results()
 
 benchmark.visualize_single_column_metrics(
-    save_figs=True, save_figs_path="results/figures"
+    save_figs=True, save_figs_path='results/figures'
 )
 benchmark.visualize_single_table_metrics(
-    save_figs=True, save_figs_path="results/figures"
+    save_figs=True, save_figs_path='results/figures'
 )

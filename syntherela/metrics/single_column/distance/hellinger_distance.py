@@ -16,7 +16,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = "HellingerDistance"
+        self.name = 'HellingerDistance'
         self.goal = Goal.MINIMIZE
         self.min_value = 0.0
         self.max_value = 1
@@ -25,13 +25,16 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
     def is_applicable(column_type):
         """Check if the metric is applicable to the given column type."""
         return column_type in [
-            "categorical", "numerical", "datetime", "boolean"
+            'categorical',
+            'numerical',
+            'datetime',
+            'boolean',
         ]
 
     @staticmethod
     def hellinger(p, q):
         """Hellinger distance between two histograms."""
-        return np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q))**2)) / _SQRT2
+        return np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2)) / _SQRT2
 
     @classmethod
     def compute(
@@ -51,7 +54,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
             Whether to normalize the histograms.
 
 
-        Returns:
+        Returns
         -------
             Union[float, tuple[float]]:
                 Metric output or outputs.
@@ -66,21 +69,21 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
         """Run the Hellinger distance metric."""
         if self.is_constant(real_data):
             return {
-                "value": 0,
-                "reference_ci": [0, 0],
-                "bootstrap_mean": 0,
-                "bootstrap_se": 0,
+                'value': 0,
+                'reference_ci': [0, 0],
+                'bootstrap_mean': 0,
+                'bootstrap_se': 0,
             }
         # check for datetime
         if is_datetime(real_data):
             real_data = pd.to_numeric(
-                real_data, errors="coerce", downcast="integer"
+                real_data, errors='coerce', downcast='integer'
             )
             synthetic_data = pd.to_numeric(
-                synthetic_data, errors="coerce", downcast="integer"
+                synthetic_data, errors='coerce', downcast='integer'
             )
         # compute bin values on the original data
-        if real_data.dtype.name in ("object", "category", "bool"):
+        if real_data.dtype.name in ('object', 'category', 'bool'):
             bins = None
         else:
             real_data = real_data.dropna()

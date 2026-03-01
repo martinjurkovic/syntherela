@@ -1,7 +1,5 @@
 """Utility functions for distance metrics in single columns."""
 
-from typing import Union
-
 import numpy as np
 import pandas as pd
 from sdmetrics.utils import is_datetime
@@ -11,7 +9,7 @@ def get_histograms(
     original: pd.Series,
     synthetic: pd.Series,
     normalize: bool = True,
-    bins: Union[str, np.array] = "doane",
+    bins: str | np.array = 'doane',
     return_keys: bool = False,
 ) -> tuple:
     """Compute histograms for the given data.
@@ -32,18 +30,18 @@ def get_histograms(
     return_keys: bool
         Whether to return the keys.
 
-    Returns:
+    Returns
     -------
         The observed and expected frequencies, and keys if return_keys is True.
 
     """
     if is_datetime(original):
-        original = pd.to_numeric(original, errors="coerce", downcast="integer")
+        original = pd.to_numeric(original, errors='coerce', downcast='integer')
         synthetic = pd.to_numeric(
-            synthetic, errors="coerce", downcast="integer"
+            synthetic, errors='coerce', downcast='integer'
         )
 
-    if original.dtype.name in ("object", "category", "bool"):  # categorical
+    if original.dtype.name in ('object', 'category', 'bool'):  # categorical
         gt = original.value_counts().to_dict()
         synth = synthetic.value_counts().to_dict()
         all_keys = gt.keys() | synth.keys()
@@ -58,16 +56,16 @@ def get_histograms(
             bins = np.histogram_bin_edges(combined, bins=bins)
         gt_vals, _ = np.histogram(original, bins=bins)
         synth_vals, _ = np.histogram(synthetic, bins=bins)
-        gt = {k: v for k, v in zip(bins, gt_vals)}
-        synth = {k: v for k, v in zip(bins, synth_vals)}
+        gt = {k: v for k, v in zip(bins, gt_vals, strict=False)}
+        synth = {k: v for k, v in zip(bins, synth_vals, strict=False)}
     else:
-        raise ValueError("Column is not categorical or continouous")
+        raise ValueError('Column is not categorical or continouous')
 
     # order the keys
     gt = {k: v for k, v in sorted(gt.items(), key=lambda item: item[0])}
     synth = {k: v for k, v in sorted(synth.items(), key=lambda item: item[0])}
 
-    assert gt.keys() == synth.keys(), "Keys do not match for column"
+    assert gt.keys() == synth.keys(), 'Keys do not match for column'
 
     if normalize:
         gt_sum = sum(gt.values())

@@ -24,7 +24,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes:
+    Attributes
     ----------
     name : str
         Name of the metric.
@@ -39,7 +39,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
 
     def __init__(self, base=np.e, **kwargs):
         super().__init__(**kwargs)
-        self.name = "JensenShannonDistance"
+        self.name = 'JensenShannonDistance'
         self.goal = Goal.MINIMIZE
         self.base = base
         self.min_value = 0.0
@@ -54,14 +54,17 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         column_type : str
             The type of the column.
 
-        Returns:
+        Returns
         -------
         bool
             Whether the metric is applicable to the column type.
 
         """
         return column_type in [
-            "categorical", "numerical", "datetime", "boolean"
+            'categorical',
+            'numerical',
+            'datetime',
+            'boolean',
         ]
 
     @staticmethod
@@ -71,7 +74,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         bins,
         normalize_histograms=True,
         base=np.e,
-        **kwargs
+        **kwargs,
     ):
         """Compute the Jensen-Shannon distance between two columns.
 
@@ -90,7 +93,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns:
+        Returns
         -------
         float
             The Jensen-Shannon distance between the two columns.
@@ -113,7 +116,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns:
+        Returns
         -------
         dict
             Dictionary containing the metric results, including:
@@ -125,21 +128,21 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         """
         if self.is_constant(real_data):
             return {
-                "value": 0,
-                "reference_ci": [0, 0],
-                "bootstrap_mean": 0,
-                "bootstrap_se": 0,
+                'value': 0,
+                'reference_ci': [0, 0],
+                'bootstrap_mean': 0,
+                'bootstrap_se': 0,
             }
         # check for datetime
         if is_datetime(real_data):
             real_data = pd.to_numeric(
-                real_data, errors="coerce", downcast="integer"
+                real_data, errors='coerce', downcast='integer'
             )
             synthetic_data = pd.to_numeric(
-                synthetic_data, errors="coerce", downcast="integer"
+                synthetic_data, errors='coerce', downcast='integer'
             )
         # compute bin values on the original data
-        if real_data.dtype.name in ("object", "category", "bool"):
+        if real_data.dtype.name in ('object', 'category', 'bool'):
             bins = None
         else:
             real_data = real_data.dropna()

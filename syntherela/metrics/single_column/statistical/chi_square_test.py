@@ -10,12 +10,12 @@ from syntherela.metrics.base import SingleColumnMetric, StatisticalBaseMetric
 class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
     """ChiSquare test metric.
 
-    Attributes:
+    Attributes
     ----------
         name (str): The name of the metric, set to "ChiSquareTest".
         goal (Goal): The goal of the metric, set to Goal.MINIMIZE.
 
-    Methods:
+    Methods
     -------
         is_applicable(column_type):
             Checks if the metric is applicable to the given column type.
@@ -30,20 +30,20 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = "ChiSquareTest"
+        self.name = 'ChiSquareTest'
         self.goal = Goal.MINIMIZE
 
     @staticmethod
     def is_applicable(column_type):
         """Check if the metric is applicable to the given column type."""
-        return column_type == "categorical" or column_type == "boolean"
+        return column_type == 'categorical' or column_type == 'boolean'
 
     def validate(self, column):
         """Validate if the data can be used with the chi-square test."""
-        if column.dtype.name not in ("object", "category", "bool"):
+        if column.dtype.name not in ('object', 'category', 'bool'):
             raise ValueError(
-                f"{self.name} can only be applied to categorical columns, but "
-                f"column {column.name} is of type {column.dtype}"
+                f'{self.name} can only be applied to categorical columns, but '
+                f'column {column.name} is of type {column.dtype}'
             )
 
     @staticmethod
@@ -57,13 +57,13 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         synthetic_data : pd.Series
             The synthetic data as a pandas Series.
 
-        Returns:
+        Returns
         -------
             dict: A dictionary containing the test statistic and p-value.
                 - "statistic" (float): The chi-square test statistic.
                 - "p_value" (float): The p-value of the chi-square test.
 
-        Raises:
+        Raises
         ------
             AssertionError: If the indexes of frequency counts do not match.
 
@@ -75,11 +75,12 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         freq_orig = orig_col.value_counts()
         freq_synth = synth_col.value_counts()
         if freq_synth.sum() == 0:
-            return {"statistic": -1, "p_value": 0}
+            return {'statistic': -1, 'p_value': 0}
         freq_synth = freq_synth / freq_synth.sum() * freq_orig.sum()
-        assert (freq_orig.index == freq_synth.index
-                ).all(), ("Indexes do not match for column")
+        assert (freq_orig.index == freq_synth.index).all(), (
+            'Indexes do not match for column'
+        )
         # calculate the chi-square test
         statistic, pval, _, _ = chi2_contingency([freq_orig, freq_synth])
 
-        return {"statistic": statistic, "p_value": pval}
+        return {'statistic': statistic, 'p_value': pval}

@@ -21,7 +21,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes:
+    Attributes
     ----------
     name : str
         Name of the metric.
@@ -36,10 +36,10 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = "TotalVariationDistance"
+        self.name = 'TotalVariationDistance'
         self.goal = Goal.MINIMIZE
         self.min_value = 0.0
-        self.max_value = float("inf")
+        self.max_value = float('inf')
 
     @staticmethod
     def is_applicable(column_type):
@@ -50,14 +50,17 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         column_type : str
             The type of the column.
 
-        Returns:
+        Returns
         -------
         bool
             Whether the metric is applicable to the column type.
 
         """
         return column_type in [
-            "categorical", "numerical", "datetime", "boolean"
+            'categorical',
+            'numerical',
+            'datetime',
+            'boolean',
         ]
 
     @staticmethod
@@ -75,7 +78,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns:
+        Returns
         -------
         float
             The Total Variation Distance between the two columns.
@@ -102,7 +105,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns:
+        Returns
         -------
         dict
             Dictionary containing the metric results, including:
@@ -114,20 +117,20 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         """
         if self.is_constant(real_data):
             return {
-                "value": 0,
-                "reference_ci": [0, 0],
-                "bootstrap_mean": 0,
-                "bootstrap_se": 0,
+                'value': 0,
+                'reference_ci': [0, 0],
+                'bootstrap_mean': 0,
+                'bootstrap_se': 0,
             }
         # check for datetime
         if is_datetime(real_data):
             real_data = pd.to_numeric(
-                real_data, errors="coerce", downcast="integer"
+                real_data, errors='coerce', downcast='integer'
             )
             synthetic_data = pd.to_numeric(
-                synthetic_data, errors="coerce", downcast="integer"
+                synthetic_data, errors='coerce', downcast='integer'
             )
-        if real_data.dtype.name in ("object", "category", "bool"):
+        if real_data.dtype.name in ('object', 'category', 'bool'):
             bins = None
         else:
             real_data = real_data.dropna()

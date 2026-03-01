@@ -34,7 +34,7 @@ class ParentChildDetection(DetectionBaseMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes:
+    Attributes
     ----------
     name : str
         Name of the metric.
@@ -61,7 +61,7 @@ class ParentChildDetection(DetectionBaseMetric):
         table2 : str
             Name of the second table.
 
-        Returns:
+        Returns
         -------
         bool
             True if the metric is applicable to the tables, False otherwise.
@@ -69,14 +69,14 @@ class ParentChildDetection(DetectionBaseMetric):
         """
         nonid1 = False
         table_metadata = metadata.tables[table1].to_dict()
-        for column_name in table_metadata["columns"].keys():
-            if table_metadata["columns"][column_name]["sdtype"] != "id":
+        for column_name in table_metadata['columns'].keys():
+            if table_metadata['columns'][column_name]['sdtype'] != 'id':
                 nonid1 = True
                 break
         nonid2 = False
         table_metadata = metadata.tables[table2].to_dict()
-        for column_name in table_metadata["columns"].keys():
-            if table_metadata["columns"][column_name]["sdtype"] != "id":
+        for column_name in table_metadata['columns'].keys():
+            if table_metadata['columns'][column_name]['sdtype'] != 'id':
                 nonid2 = True
                 break
         return nonid1 and nonid2
@@ -107,7 +107,7 @@ class ParentChildDetection(DetectionBaseMetric):
         pair_metadata : Metadata
             Metadata object for the parent-child table pair.
 
-        Returns:
+        Returns
         -------
         tuple
             A tuple containing:
@@ -150,7 +150,7 @@ class ParentChildDetection(DetectionBaseMetric):
 
             n = min(
                 denormalized_real_data.shape[0],
-                denormalized_synthetic_data.shape[0]
+                denormalized_synthetic_data.shape[0],
             )
             idx_real = np.random.choice(
                 denormalized_real_data.index, n, replace=False
@@ -162,7 +162,8 @@ class ParentChildDetection(DetectionBaseMetric):
                 drop=True
             )
             synthetic_data = denormalized_synthetic_data.loc[
-                idx_synthetic].reset_index(drop=True)
+                idx_synthetic
+            ].reset_index(drop=True)
             real_ids = real_ids.loc[idx_real].reset_index(drop=True)
             synthetic_ids = synthetic_ids.loc[idx_synthetic].reset_index(
                 drop=True
@@ -182,7 +183,7 @@ class ParentChildDetection(DetectionBaseMetric):
             ids_train_synthetic = np.random.choice(
                 unique_synthetic_ids,
                 len(unique_synthetic_ids) // 2,
-                replace=False
+                replace=False,
             )
             mask_train_real = real_ids.isin(ids_train_real).values
             mask_train_syn = synthetic_ids.isin(ids_train_synthetic).values
@@ -195,18 +196,19 @@ class ParentChildDetection(DetectionBaseMetric):
             X_train = pd.concat([X_train_real, X_train_synthetic])
             X_test = pd.concat([X_test_real, X_test_synthetic])
             y_train = np.hstack(
-                [np.ones(len(X_train_real)),
-                 np.zeros(len(X_train_synthetic))]
+                [np.ones(len(X_train_real)), np.zeros(len(X_train_synthetic))]
             )
             y_test = np.hstack(
-                [np.ones(len(X_test_real)),
-                 np.zeros(len(X_test_synthetic))]
+                [np.ones(len(X_test_real)), np.zeros(len(X_test_synthetic))]
             )
         return X_train, X_test, y_train, y_test
 
     def run(
-        self, real_data: dict, synthetic_data: dict, metadata: Metadata,
-        **kwargs
+        self,
+        real_data: dict,
+        synthetic_data: dict,
+        metadata: Metadata,
+        **kwargs,
     ):
         """Run the parent-child detection metric on all PC relationships.
 
@@ -221,7 +223,7 @@ class ParentChildDetection(DetectionBaseMetric):
         **kwargs
             Additional keyword arguments.
 
-        Returns:
+        Returns
         -------
         dict
             Dictionary mapping relationship identifiers to metric results.
@@ -229,18 +231,18 @@ class ParentChildDetection(DetectionBaseMetric):
         """
         results = {}
         for relationship in metadata.relationships:
-            child_table = relationship["child_table_name"]
-            child_fk = relationship["child_foreign_key"]
-            parent_table = relationship["parent_table_name"]
+            child_table = relationship['child_table_name']
+            child_fk = relationship['child_foreign_key']
+            parent_table = relationship['parent_table_name']
             if not self.is_applicable(metadata, parent_table, child_table):
                 continue
             pair_meta = metadata.to_dict()
             for table in metadata.get_tables():
                 if table != parent_table and table != child_table:
-                    pair_meta["tables"].pop(table)
-            pair_meta["relationships"] = [relationship]
+                    pair_meta['tables'].pop(table)
+            pair_meta['relationships'] = [relationship]
             pair_metadata = Metadata.load_from_dict(pair_meta)
-            results[f"{parent_table}_{child_table}_{child_fk}"] = super().run(
+            results[f'{parent_table}_{child_table}_{child_fk}'] = super().run(
                 real_data=real_data,
                 synthetic_data=synthetic_data,
                 metadata=metadata,
@@ -253,9 +255,9 @@ class ParentChildDetection(DetectionBaseMetric):
     def _fit_predict(self, X_train, y_train, X_test):
         model = Pipeline(
             [
-                ("imputer", SimpleImputer()),
-                ("scaler", StandardScaler()),
-                ("clf", self.classifier_cls(**self.classifier_args)),
+                ('imputer', SimpleImputer()),
+                ('scaler', StandardScaler()),
+                ('clf', self.classifier_cls(**self.classifier_args)),
             ]
         )
         model.fit(X_train, y_train)
@@ -274,7 +276,7 @@ class ParentChildDetection(DetectionBaseMetric):
         metadata:
             Metadata containing information about the tables / table / column.
 
-        Returns:
+        Returns
         -------
         dict:
             Metric output.
@@ -293,6 +295,6 @@ class ParentChildDetection(DetectionBaseMetric):
         probs2, model2 = self._fit_predict(X_test, y_test, X_train)
         y_pred2 = probs2.argmax(axis=1)
         scores.extend(list((y_train == y_pred2).astype(int)))
-        self.classifiers.append(deepcopy(model1["clf"]))
-        self.classifiers.append(deepcopy(model2["clf"]))
+        self.classifiers.append(deepcopy(model1['clf']))
+        self.classifiers.append(deepcopy(model2['clf']))
         return scores

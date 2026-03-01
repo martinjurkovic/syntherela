@@ -26,7 +26,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes:
+    Attributes
     ----------
     name : str
         Name of the metric.
@@ -37,7 +37,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
     max_value : float
         Maximum value of the metric (infinity).
 
-    References:
+    References
     ----------
     .. [1] Gretton, A., et al. (2012).
            A kernel two-sample test. JMLR, 13(1), 723-773.
@@ -46,22 +46,22 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = "MaximumMeanDiscrepancy"
+        self.name = 'MaximumMeanDiscrepancy'
         self.goal = Goal.MINIMIZE
         self.min_value = 0.0
-        self.max_value = float("inf")
+        self.max_value = float('inf')
 
     @staticmethod
     def is_applicable(metadata):
         """Check if the table contains numerical column."""
-        for column_name in metadata["columns"].keys():
-            if metadata["columns"][column_name]["sdtype"] == "numerical":
+        for column_name in metadata['columns'].keys():
+            if metadata['columns'][column_name]['sdtype'] == 'numerical':
                 return True
         return False
 
     @staticmethod
     def compute(
-        original_table, sythetic_table, metadata, kernel="linear", **kwargs
+        original_table, sythetic_table, metadata, kernel='linear', **kwargs
     ):
         """Compute the Maximum Mean Discrepancy (MMD) between two tables.
 
@@ -78,18 +78,18 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
         orig = drop_ids(orig, metadata)
         synth = drop_ids(synth, metadata)
         for col in orig.columns:
-            if orig[col].dtype.name in ("object", "category"):
+            if orig[col].dtype.name in ('object', 'category'):
                 orig.drop(col, axis=1, inplace=True)
                 synth.drop(col, axis=1, inplace=True)
-            elif "datetime" in str(orig[col].dtype):
+            elif 'datetime' in str(orig[col].dtype):
                 orig[col] = pd.to_numeric(orig[col])
                 synth[col] = pd.to_numeric(synth[col])
 
         # standardize the values
         pipe = Pipeline(
             [
-                ("imputer", SimpleImputer(strategy="mean")),
-                ("scaler", StandardScaler()),
+                ('imputer', SimpleImputer(strategy='mean')),
+                ('scaler', StandardScaler()),
             ]
         )
 
@@ -98,7 +98,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
         orig = pipe.transform(orig)
         synth = pipe.transform(synth)
 
-        if kernel == "linear":
+        if kernel == 'linear':
             """
             MMD using linear kernel (i.e., k(x,y) = <x,y>)
             """
@@ -106,7 +106,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
             # delta = delta_df.values
 
             score = delta.dot(delta.T)
-        elif kernel == "rbf":
+        elif kernel == 'rbf':
             """
             MMD using rbf (gaussian) kernel
             (i.e., k(x,y) = exp(-gamma * ||x-y||^2 / 2))
@@ -128,7 +128,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
                 gamma,
             )
             score = XX.mean() + YY.mean() - 2 * XY.mean()
-        elif kernel == "polynomial":
+        elif kernel == 'polynomial':
             """
             MMD using polynomial kernel
             (i.e., k(x,y) = (gamma <X, Y> + coef0)^degree)
@@ -159,6 +159,6 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
             )
             score = XX.mean() + YY.mean() - 2 * XY.mean()
         else:
-            raise ValueError(f"Unsupported kernel {kernel}")
+            raise ValueError(f'Unsupported kernel {kernel}')
 
         return score.astype(float)
