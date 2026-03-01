@@ -15,6 +15,8 @@ SyntheRela provides a standardized framework for assessing both the fidelity and
 
 The framework is highly extensible, allowing users to benchmark on their own custom datasets and implement new evaluation metrics to suit specific use cases.
 
+Our research on SyntheRela is presented in the TMLR paper **"SyntheRela: A Benchmark For Synthetic Relational Database Generation"**, available on OpenReview.
+
 Key Features
 ~~~~~~~~~~~~
 
@@ -95,7 +97,7 @@ Documentation Contents
    :caption: Additional Resources
 
    GitHub Repository <https://github.com/martinjurkovic/syntherela>
-   Paper on OpenReview <https://openreview.net/forum?id=ZfQofWYn6n>
+   TMLR Paper (OpenReview) <https://openreview.net/forum?id=Mi8XioazWy>
    Leaderboard <https://huggingface.co/spaces/SyntheRela/leaderboard>
 
 Citation
@@ -105,13 +107,14 @@ If you use SyntheRela in your work, please cite our paper:
 
 .. code-block:: bibtex
 
-   @inproceedings{
-       iclrsyntheticdata2025syntherela,
+   @article{
+       hudovernik2026syntherela,
        title={SyntheRela: A Benchmark For Synthetic Relational Database Generation},
-       author={Martin Jurkovic and Valter Hudovernik and Erik {\v{S}}trumbelj},
-       booktitle={Will Synthetic Data Finally Solve the Data Access Problem?},
-       year={2025},
-       url={https://openreview.net/forum?id=ZfQofWYn6n}
+       author={Valter Hudovernik and Martin Jurkovic and Erik {\v{S}}trumbelj},
+       journal={Transactions on Machine Learning Research},
+       issn={2835-8856},
+       year={2026},
+       url={https://openreview.net/forum?id=Mi8XioazWy},
    }
 
 Indices and tables
