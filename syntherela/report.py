@@ -124,13 +124,14 @@ class Report:
         # reorder synthetic data columns to match real data
         for table in metadata.get_tables():
             self.synthetic_data[table] = self.synthetic_data[table][
-                self.real_data[table].columns]
+                self.real_data[table].columns
+            ]
             assert (
-                self.real_data[table].columns ==
-                self.synthetic_data[table].columns
+                self.real_data[table].columns
+                == self.synthetic_data[table].columns
             ).all(), (
-                f"Columns in real and synthetic data do not match for table "
-                f"{table}"
+                f'Columns in real and synthetic data do not match for table '
+                f'{table}'
             )
         self.metadata = metadata
         self.report_name = report_name
@@ -139,13 +140,13 @@ class Report:
         self.multi_table_metrics = multi_table_metrics
         self.report_datetime = datetime.now()
         self.results = {
-            "method_name": method_name,
-            "dataset_name": dataset_name,
-            "run_id": run_id,
-            "sample_id": sample_id,
-            "single_column_metrics": {},
-            "single_table_metrics": {},
-            "multi_table_metrics": {},
+            'method_name': method_name,
+            'dataset_name': dataset_name,
+            'run_id': run_id,
+            'sample_id': sample_id,
+            'single_column_metrics': {},
+            'single_table_metrics': {},
+            'multi_table_metrics': {},
         }
 
     def generate(self):
@@ -154,7 +155,7 @@ class Report:
         This method computes all configured metrics for single columns,
         single tables, and multi tables.
 
-        Returns:
+        Returns
         -------
         dict
             Dictionary containing all report results.
@@ -170,35 +171,36 @@ class Report:
 
         # single_column_metrics
         if len(self.single_column_metrics) == 0:
-            print("No single column metrics to run. Skipping.")
+            print('No single column metrics to run. Skipping.')
         else:
             with tqdm(
                 total=len(self.single_column_metrics) * column_count,
-                desc="Running Single Column Metrics",
+                desc='Running Single Column Metrics',
             ) as pbar:
                 for table in self.metadata.get_tables():
                     for metric in self.single_column_metrics:
                         table_columns = self.metadata.tables[table].columns
                         for column, column_info in table_columns.items():
-                            if not metric.is_applicable(column_info["sdtype"]):
+                            if not metric.is_applicable(column_info['sdtype']):
                                 pbar.update(1)
                                 continue
                             try:
                                 self.results[
-                                    "single_column_metrics"
+                                    'single_column_metrics'
                                 ].setdefault(  #
                                     metric.name, {}
                                 ).setdefault(table, {})[column] = metric.run(
                                     self.real_data[table][column],
                                     self.synthetic_data[table][column],
-                                    metadata=self.metadata.to_dict()["tables"]
-                                    [table]["columns"][column],
+                                    metadata=self.metadata.to_dict()['tables'][
+                                        table
+                                    ]['columns'][column],
                                 )
                             except Exception as e:
                                 print(
-                                    f"There was a problem with metric "
-                                    f"{metric.name}, table {table}, column "
-                                    f"{column}"
+                                    f'There was a problem with metric '
+                                    f'{metric.name}, table {table}, column '
+                                    f'{column}'
                                 )
                                 print(e)
                             pbar.update(1)
@@ -208,32 +210,33 @@ class Report:
                 )
         # single_table_metrics
         if len(self.single_table_metrics) == 0:
-            print("No single table metrics to run. Skipping.")
+            print('No single table metrics to run. Skipping.')
         else:
             with tqdm(
                 total=len(self.single_table_metrics) * table_count,
-                desc="Running Single Table Metrics",
+                desc='Running Single Table Metrics',
             ) as pbar:
                 for table in self.metadata.get_tables():
                     for metric in self.single_table_metrics:
                         if not metric.is_applicable(
-                            self.metadata.to_dict()["tables"][table]
+                            self.metadata.to_dict()['tables'][table]
                         ):
                             pbar.update(1)
                             continue
                         try:
-                            self.results["single_table_metrics"].setdefault(
+                            self.results['single_table_metrics'].setdefault(
                                 metric.name, {}
                             )[table] = metric.run(
                                 self.real_data[table],
                                 self.synthetic_data[table],
-                                metadata=self.metadata.to_dict()["tables"]
-                                [table],
+                                metadata=self.metadata.to_dict()['tables'][
+                                    table
+                                ],
                             )
                         except Exception as e:
                             print(
-                                f"There was a problem with metric "
-                                f"{metric.name}, table {table}"
+                                f'There was a problem with metric '
+                                f'{metric.name}, table {table}'
                             )
                             print(e)
                         pbar.update(1)
@@ -243,10 +246,10 @@ class Report:
                 )
         # multi_table_metrics
         if len(self.multi_table_metrics) == 0:
-            print("No multi table metrics to run. Skipping.")
+            print('No multi table metrics to run. Skipping.')
         else:
             for metric in tqdm(
-                self.multi_table_metrics, desc="Running Multi Table Metrics"
+                self.multi_table_metrics, desc='Running Multi Table Metrics'
             ):
                 try:
                     result = metric.run(
@@ -254,9 +257,9 @@ class Report:
                         self.synthetic_data,
                         metadata=self.metadata,
                     )
-                    self.results["multi_table_metrics"][metric.name] = result
+                    self.results['multi_table_metrics'][metric.name] = result
                 except Exception as e:
-                    print(f"There was a problem with metric {metric.name}")
+                    print(f'There was a problem with metric {metric.name}')
                     print(e)
             if self.evaluate_trends:
                 self.compute_trends(
@@ -272,7 +275,7 @@ class Report:
         single_table=True,
         single_column=True,
         multi_table=True,
-        verbose=True
+        verbose=True,
     ):
         """Compute trends for the data.
 
@@ -287,7 +290,7 @@ class Report:
         verbose : bool, default=True
             Whether to display progress information.
 
-        Returns:
+        Returns
         -------
         dict
             Dictionary containing trend results.
@@ -301,11 +304,11 @@ class Report:
                 self.metadata.to_dict(),
                 verbose=verbose,
             )
-            shapes_df = trends_report.get_details("Column Shapes")
-            self.results["single_column_metrics"]["Trends"] = {
-                "shapes": {
-                    "mean": shapes_df.Score.mean(),
-                    "se": shapes_df.Score.std() / len(shapes_df)**0.5,
+            shapes_df = trends_report.get_details('Column Shapes')
+            self.results['single_column_metrics']['Trends'] = {
+                'shapes': {
+                    'mean': shapes_df.Score.mean(),
+                    'se': shapes_df.Score.std() / len(shapes_df) ** 0.5,
                 }
             }
             # TODO: we could also store individual scores for each column
@@ -317,13 +320,13 @@ class Report:
                 self.metadata.to_dict(),
                 verbose=verbose,
             )
-            pairs_df = trends_report.get_details("Column Pair Trends")
+            pairs_df = trends_report.get_details('Column Pair Trends')
             if not pairs_df.empty:
                 # This can happen with tables with only one column
-                self.results["single_table_metrics"]["Trends"] = {
-                    "pairs": {
-                        "mean": pairs_df.Score.mean(),
-                        "se": pairs_df.Score.std() / len(pairs_df)**0.5,
+                self.results['single_table_metrics']['Trends'] = {
+                    'pairs': {
+                        'mean': pairs_df.Score.mean(),
+                        'se': pairs_df.Score.std() / len(pairs_df) ** 0.5,
                     }
                 }
         if multi_table:
@@ -333,19 +336,20 @@ class Report:
                 self.metadata,
                 verbose=verbose,
             )
-            self.results["multi_table_metrics"]["Trends"] = {
-                "cardinality": multi_table_trends_results["cardinality"],
-                "k_hop_similarity": {},
+            self.results['multi_table_metrics']['Trends'] = {
+                'cardinality': multi_table_trends_results['cardinality'],
+                'k_hop_similarity': {},
             }
-            hop_scores = multi_table_trends_results["avg_scores"]
-            hop_se = multi_table_trends_results["scores_se"]
-            for hop in multi_table_trends_results["hop_relation"]:
+            hop_scores = multi_table_trends_results['avg_scores']
+            hop_se = multi_table_trends_results['scores_se']
+            for hop in multi_table_trends_results['hop_relation']:
                 hop_results = {
-                    "mean": hop_scores[hop],
-                    "se": hop_se[hop],
+                    'mean': hop_scores[hop],
+                    'se': hop_se[hop],
                 }
-                self.results["multi_table_metrics"]["Trends"][
-                    "k_hop_similarity"][hop] = hop_results
+                self.results['multi_table_metrics']['Trends'][
+                    'k_hop_similarity'
+                ][hop] = hop_results
 
     def load_from_json(self, path):
         """Load report results from a JSON file.
@@ -355,7 +359,7 @@ class Report:
         path : str or Path
             Path to the JSON file.
 
-        Returns:
+        Returns
         -------
         dict
             Dictionary containing report results.
@@ -382,7 +386,7 @@ class Report:
         filename : str, default=None
             Name of the file. If None, a default name will be generated.
 
-        Returns:
+        Returns
         -------
         str
             Path to the saved file.
@@ -391,14 +395,14 @@ class Report:
         path = Path(path)
 
         if filename is None:
-            time_str = self.report_datetime.strftime("%Y-%m-%d_%H-%M-%S")
-            filename = (f"{self.report_name}_{time_str}.json")
+            time_str = self.report_datetime.strftime('%Y-%m-%d_%H-%M-%S')
+            filename = f'{self.report_name}_{time_str}.json'
 
         path = path / filename
 
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
-        with open(path, "w") as f:
+        with open(path, 'w') as f:
             json.dump(self.results, f, sort_keys=True, indent=4, cls=NpEncoder)
 
     def visualize_distributions(
@@ -437,26 +441,30 @@ class Report:
         metric_name : str
             Name of the metric.
 
-        Returns:
+        Returns
         -------
         object
             Metric instance.
 
-        Raises:
+        Raises
         ------
         ValueError
             If the metric is not found.
 
         """
         for metric in (
-            self.single_column_metrics + self.single_table_metrics +
-            self.multi_table_metrics
+            self.single_column_metrics
+            + self.single_table_metrics
+            + self.multi_table_metrics
         ):
             if metric.name == metric_name:
                 return metric
-        all_metrics = self.single_column_metrics + \
-            self.single_table_metrics + self.multi_table_metrics
+        all_metrics = (
+            self.single_column_metrics
+            + self.single_table_metrics
+            + self.multi_table_metrics
+        )
         raise ValueError(
             f'Metric with name "{metric_name}" not found in the report. '
-            f"Available metrics: {[metric.name for metric in all_metrics]}"
+            f'Available metrics: {[metric.name for metric in all_metrics]}'
         )

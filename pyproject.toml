@@ -59,47 +59,45 @@ Issues = "https://github.com/martinjurkovic/syntherela/issues"
 [tool.setuptools.packages.find]
 where = ["."]
 
-[tool.yapf]
-based_on_style = "pep8"
-column_limit = 80
-indent_width = 4
-blank_line_before_nested_class_or_def = true
-split_before_expression_after_opening_paren = true
-dedent_closing_brackets = true  # Crucial for isort compatibility
-
-[tool.isort]
-profile = "black"
-line_length = 80
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-
-[tool.ruff]  # https://docs.astral.sh/ruff/rules
-src = ["syntherela"]
+[tool.ruff]
 line-length = 80
-indent-width = 4
 target-version = "py310"
+src = ["syntherela"]
 
 [tool.ruff.lint]
 select = [
-    "B",  # flake8-bugbear
-    "D",  # pydocstyle
+  "E",  # Flake8/PEP8
+  "W",  # Flake8/PEP8
+  "F",  # Pyflakes
+  "I",  # isort (Import sorting)
+  "B",  # Bugbear
+  "D",  # pydocstyle
+  "UP",  # pyupgrade
 ]
 ignore = [
-    "B905",  # TODO Don't ignore "zip with strict=False"
-    "D100",  # TODO Don't ignore "Missing docstring in public module"
-    "D101",  # TODO Don't ignore "Missing docstring in public class"
-    "D102",  # TODO Don't ignore "Missing docstring in public method"
-    "D103",  # TODO Don't ignore "Missing docstring in public function"
-    "D104",  # TODO Don't ignore "Missing docstring in public package"
-    "D105",  # Ignore "Missing docstring in magic method"
-    "D107",  # Ignore "Missing docstring in __init__"
-    "D205",  # Ignore "blank line required between summary line and description"
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D107",
+    "D205",
 ]
 
-[tool.ruff.format]
-quote-style = "single"
-
 [tool.ruff.lint.pydocstyle]
-convention = "google"
+convention = "numpy"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+split-on-trailing-comma = true
+
+[tool.ruff.lint.per-file-ignores]
+"experiments/**/*.py" = ["E501"]
+
+[tool.ruff.format]
+# Matches your current YAPF/PyG style
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

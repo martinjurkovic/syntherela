@@ -20,6 +20,6 @@ class MultiTableTrendsReport(BaseMultiTableReport):
     def __init__(self):
         super().__init__()
         self._properties = {
-            "Cardinality": Cardinality(),
-            "Intertable Trends": InterTableTrends(),
+            'Cardinality': Cardinality(),
+            'Intertable Trends': InterTableTrends(),
         }

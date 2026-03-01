@@ -20,5 +20,5 @@ class ColumnPairsReport(BaseMultiTableReport):
     def __init__(self):
         super().__init__()
         self._properties = {
-            "Column Pair Trends": ColumnPairTrends(),
+            'Column Pair Trends': ColumnPairTrends(),
         }

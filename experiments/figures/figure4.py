@@ -4,15 +4,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import xgboost as xgb
 from matplotlib import rc
-
 from syntherela.data import load_tables, remove_sdv_columns
 from syntherela.metadata import Metadata
 from syntherela.metrics.multi_table.detection import AggregationDetection
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings('ignore')
 sns.set_theme()
-rc("font", **{"family": "serif", "serif": ["Times"], "size": 30})
-rc("text", usetex=True)
+rc('font', **{'family': 'serif', 'serif': ['Times'], 'size': 30})
+rc('text', usetex=True)
 
 
 def reproduce_figure(
@@ -21,7 +20,7 @@ def reproduce_figure(
     # Compute the metric
     xgb_cls = xgb.XGBClassifier
     xgb_args = {
-        "seed": 0,
+        'seed': 0,
     }
 
     metric = AggregationDetection(
@@ -42,21 +41,22 @@ def reproduce_figure(
 
     metric.plot_partial_dependence(feature, seed=0)
     plt.savefig(
-        f"results/figures/figure4{figure_name}.png",
-        bbox_inches="tight",
-        dpi=600
+        f'results/figures/figure4{figure_name}.png',
+        bbox_inches='tight',
+        dpi=600,
     )
 
 
-dataset_name = "imdb_MovieLens_v1"
-method = "CLAVADDPM"
+dataset_name = 'imdb_MovieLens_v1'
+method = 'CLAVADDPM'
 
-metadata = Metadata(
-).load_from_json(f"data/original/{dataset_name}/metadata.json")
+metadata = Metadata().load_from_json(
+    f'data/original/{dataset_name}/metadata.json'
+)
 
-tables = load_tables(f"data/original/{dataset_name}/", metadata)
+tables = load_tables(f'data/original/{dataset_name}/', metadata)
 tables_synthetic = load_tables(
-    f"data/synthetic/{dataset_name}/{method}/1/sample1", metadata
+    f'data/synthetic/{dataset_name}/{method}/1/sample1', metadata
 )
 
 tables, metadata = remove_sdv_columns(tables, metadata)
@@ -65,8 +65,8 @@ tables_synthetic, metadata = remove_sdv_columns(
 )
 
 # FIGURE 4 (a)
-feature = "movies2actors_movieid_cast_num_nunique"
-reproduce_figure(tables, tables_synthetic, metadata, "movies", feature, "a")
+feature = 'movies2actors_movieid_cast_num_nunique'
+reproduce_figure(tables, tables_synthetic, metadata, 'movies', feature, 'a')
 # FIGURE 4 (b)
-feature = "u2base_movieid_rating_mean"
-reproduce_figure(tables, tables_synthetic, metadata, "movies", feature, "b")
+feature = 'u2base_movieid_rating_mean'
+reproduce_figure(tables, tables_synthetic, metadata, 'movies', feature, 'b')

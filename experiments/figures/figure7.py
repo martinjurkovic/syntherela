@@ -4,21 +4,21 @@ import seaborn as sns
 import xgboost as xgb
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from tqdm import tqdm
-
 from syntherela.data import load_tables, remove_sdv_columns
 from syntherela.metadata import Metadata
 from syntherela.metrics.single_table.detection.single_table_detection import (
     SingleTableDetection,
 )
+from tqdm import tqdm
 
 sns.set_theme()
 
 
 def load_data(dataset_name, target_table):
-    metadata = Metadata(
-    ).load_from_json(f"data/original/{dataset_name}/metadata.json")
-    tables = load_tables(f"data/original/{dataset_name}/", metadata)
+    metadata = Metadata().load_from_json(
+        f'data/original/{dataset_name}/metadata.json'
+    )
+    tables = load_tables(f'data/original/{dataset_name}/', metadata)
     tables, metadata = remove_sdv_columns(tables, metadata)
 
     table_meta = metadata.get_table_meta(target_table, to_dict=True)
@@ -39,9 +39,9 @@ def symulate_generation(tables, target_table, seed=None):
 
 def initialize_metrics(seed):
     xgb_cls = xgb.XGBClassifier
-    xgb_args = {"seed": seed}
+    xgb_args = {'seed': seed}
     lin_cls = LogisticRegression
-    lin_args = {"random_state": seed}
+    lin_args = {'random_state': seed}
 
     c2st_xgb = SingleTableDetection(
         classifier_cls=xgb_cls, classifier_args=xgb_args, random_state=seed
@@ -53,27 +53,27 @@ def initialize_metrics(seed):
 
 
 datasets = [
-    "airbnb-simplified_subsampled",
-    "Biodegradability_v1",
-    "imdb_MovieLens_v1",
-    "rossmann_subsampled",
-    "walmart_subsampled",
+    'airbnb-simplified_subsampled',
+    'Biodegradability_v1',
+    'imdb_MovieLens_v1',
+    'rossmann_subsampled',
+    'walmart_subsampled',
 ]
 
 dataset_names = {
-    "airbnb-simplified_subsampled": "Airbnb\n(users)",
-    "Biodegradability_v1": "Biodegradability\n(molecule)",
-    "imdb_MovieLens_v1": "IMDB\n(movies)",
-    "rossmann_subsampled": "Rossmann\n(store)",
-    "walmart_subsampled": "Walmart\n(depts)",
+    'airbnb-simplified_subsampled': 'Airbnb\n(users)',
+    'Biodegradability_v1': 'Biodegradability\n(molecule)',
+    'imdb_MovieLens_v1': 'IMDB\n(movies)',
+    'rossmann_subsampled': 'Rossmann\n(store)',
+    'walmart_subsampled': 'Walmart\n(depts)',
 }
 
-target_tables = ["users", "molecule", "movies", "store", "stores"]
+target_tables = ['users', 'molecule', 'movies', 'store', 'stores']
 # Shuffling data
 
 seed = 0
 results = {}
-for dataset_name, target_table in zip(datasets, target_tables):
+for dataset_name, target_table in zip(datasets, target_tables, strict=False):
     tables, table_meta, _ = load_data(dataset_name, target_table)
 
     c2st_xgb_perfect = []
@@ -115,46 +115,46 @@ for dataset_name, target_table in zip(datasets, target_tables):
             table_meta,
         )
 
-        c2st_xgb_perfect.append(results_c2st_xgb_perfect["accuracy"])
-        c2st_xgb_shuffled.append(results_c2st_xgb_shuffled["accuracy"])
-        ld_perfect.append(results_ld_perfect["accuracy"])
-        ld_shuffled.append(results_ld_shuffled["accuracy"])
+        c2st_xgb_perfect.append(results_c2st_xgb_perfect['accuracy'])
+        c2st_xgb_shuffled.append(results_c2st_xgb_shuffled['accuracy'])
+        ld_perfect.append(results_ld_perfect['accuracy'])
+        ld_shuffled.append(results_ld_shuffled['accuracy'])
 
     results[dataset_name] = {
-        "c2st_xgb_perfect": c2st_xgb_perfect,
-        "c2st_xgb_shuffled": c2st_xgb_shuffled,
-        "ld_perfect": ld_perfect,
-        "ld_shuffled": ld_shuffled,
+        'c2st_xgb_perfect': c2st_xgb_perfect,
+        'c2st_xgb_shuffled': c2st_xgb_shuffled,
+        'ld_perfect': ld_perfect,
+        'ld_shuffled': ld_shuffled,
     }
 
 colormap = plt.cm.tab20
 fig, axes = plt.subplots(1, 2, figsize=(10, 6))
 
 
-def plot(ax, results, i, color, width=0.48, label=""):
+def plot(ax, results, i, color, width=0.48, label=''):
     mean = np.mean(results)
     se = np.std(results) / np.sqrt(len(results))
     ax.bar(i, mean, label=label, width=width, color=color)
-    ax.errorbar(i, mean, yerr=se, fmt="", color="black")
+    ax.errorbar(i, mean, yerr=se, fmt='', color='black')
 
 
 for i, dataset in enumerate(datasets):
     if i == 0:
-        label1 = "C2ST(XGB)"
-        label2 = "LD"
+        label1 = 'C2ST(XGB)'
+        label2 = 'LD'
     else:
-        label1 = ""
-        label2 = ""
+        label1 = ''
+        label2 = ''
     plot(
         axes[0],
-        results[dataset]["ld_perfect"],
+        results[dataset]['ld_perfect'],
         0 + i * 1.5,
         colormap(1),
-        label=label2
+        label=label2,
     )
     plot(
         axes[0],
-        results[dataset]["c2st_xgb_perfect"],
+        results[dataset]['c2st_xgb_perfect'],
         0.5 + i * 1.5,
         colormap(3),
         label=label1,
@@ -162,14 +162,14 @@ for i, dataset in enumerate(datasets):
 
     plot(
         axes[1],
-        results[dataset]["ld_shuffled"],
+        results[dataset]['ld_shuffled'],
         0 + i * 1.5,
         colormap(1),
-        label=label2
+        label=label2,
     )
     plot(
         axes[1],
-        results[dataset]["c2st_xgb_shuffled"],
+        results[dataset]['c2st_xgb_shuffled'],
         0.5 + i * 1.5,
         colormap(3),
         label=label1,
@@ -186,14 +186,14 @@ axes[1].set_xticklabels(
 )
 
 for ax in axes:
-    ax.legend(loc="upper right", bbox_to_anchor=(0.7, 1))
+    ax.legend(loc='upper right', bbox_to_anchor=(0.7, 1))
     ax.set_ylim(0.3, 1)
-    ax.hlines(0.5, -0.25, 6.8, color="red", linestyle="--")
+    ax.hlines(0.5, -0.25, 6.8, color='red', linestyle='--')
 
-axes[0].set_ylabel("Classification Accuracy")
-axes[0].set_title("Perfectly Generated Data")
-axes[1].set_ylabel("Classification Accuracy")
-axes[1].set_title("Shuffled Data")
+axes[0].set_ylabel('Classification Accuracy')
+axes[0].set_title('Perfectly Generated Data')
+axes[1].set_ylabel('Classification Accuracy')
+axes[1].set_title('Shuffled Data')
 
 fig.tight_layout()
-plt.savefig("results/figures/figure7.png", dpi=300)
+plt.savefig('results/figures/figure7.png', dpi=300)

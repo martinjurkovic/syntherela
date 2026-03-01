@@ -21,7 +21,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
     **kwargs
         Additional keyword arguments to pass to the parent class.
 
-    Attributes:
+    Attributes
     ----------
     name : str
         Name of the metric.
@@ -32,7 +32,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = "KolmogorovSmirnovTest"
+        self.name = 'KolmogorovSmirnovTest'
         self.goal = Goal.MINIMIZE
 
     @staticmethod
@@ -44,13 +44,13 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         column_type : str
             The type of the column.
 
-        Returns:
+        Returns
         -------
         bool
             Whether the metric is applicable to the column type.
 
         """
-        return column_type == "numerical" or column_type == "datetime"
+        return column_type == 'numerical' or column_type == 'datetime'
 
     def validate(self, column):
         """Validate that the column is numerical or datetime.
@@ -60,20 +60,21 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         column : pandas.Series
             The column to validate.
 
-        Raises:
+        Raises
         ------
         ValueError
             If the column is not numerical or datetime.
 
         """
         column_dtype = column.dtypes
-        if np.issubdtype(column_dtype, np.number
-                         ) or np.issubdtype(column_dtype, np.datetime64):
+        if np.issubdtype(column_dtype, np.number) or np.issubdtype(
+            column_dtype, np.datetime64
+        ):
             return
 
         raise ValueError(
-            f"{self.name} can only be applied to numerical columns, but "
-            f"column {column.name} is of type {column.dtype}"
+            f'{self.name} can only be applied to numerical columns, but '
+            f'column {column.name} is of type {column.dtype}'
         )
 
     @staticmethod
@@ -87,7 +88,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         synthetic_data : pandas.Series
             The synthetic data column.
 
-        Returns:
+        Returns
         -------
         dict
             Dictionary containing:
@@ -104,4 +105,4 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
 
         statistic, p_val = ks_2samp(real_data, synthetic_data)
 
-        return {"statistic": statistic, "p_val": p_val}
+        return {'statistic': statistic, 'p_val': p_val}
