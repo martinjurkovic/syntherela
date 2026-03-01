@@ -43,18 +43,26 @@ Basic Usage
    from syntherela.benchmark import Benchmark
    from syntherela.metrics.single_column.statistical import ChiSquareTest
    from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
+   from syntherela.metrics.multi_table.statistical import CardinalityShapeSimilarity
+   from syntherela.metrics.multi_table.detection import AggregationDetection
+   from xgboost import XGBClassifier
 
-   # Create a benchmark instance
+   # Initialize the benchmark with specific metrics
    benchmark = Benchmark(
-       real_data_dir="path/to/real/data",
-       synthetic_data_dir="path/to/synthetic/data",
-       results_dir="path/to/results",
-       benchmark_name="my_benchmark",
+       real_data_dir="path/to/real_data",
+       synthetic_data_dir="path/to/synthetic_data",
+       results_dir="results",
        single_column_metrics=[ChiSquareTest()],
-       single_table_metrics=[MaximumMeanDiscrepancy()]
+       single_table_metrics=[MaximumMeanDiscrepancy()],
+       multi_table_metrics=[
+           CardinalityShapeSimilarity(),
+           AggregationDetection(classifier_cls=XGBClassifier, random_state=42)
+       ],
+       datasets=["your_dataset_name"],
+       methods=["your_method_name"]
    )
 
-   # Run the benchmark
+   # Execute evaluation
    benchmark.run()
 
 Documentation Contents
@@ -66,6 +74,8 @@ Documentation Contents
 
    installation
    quickstart
+   examples
+   leaderboard
    guides/adding_metrics
    guides/replicating_results
 
