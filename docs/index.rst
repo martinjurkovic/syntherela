@@ -40,10 +40,10 @@ Basic Usage
 
 .. code-block:: python
 
-   from syntherela import Benchmark
+   from syntherela.benchmark import Benchmark
    from syntherela.metrics.single_column.statistical import ChiSquareTest
    from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
-   
+
    # Create a benchmark instance
    benchmark = Benchmark(
        real_data_dir="path/to/real/data",
@@ -53,7 +53,7 @@ Basic Usage
        single_column_metrics=[ChiSquareTest()],
        single_table_metrics=[MaximumMeanDiscrepancy()]
    )
-   
+
    # Run the benchmark
    benchmark.run()
 

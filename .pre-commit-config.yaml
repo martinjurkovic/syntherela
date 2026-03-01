@@ -39,8 +39,8 @@ repos:
         - mdformat-front-matters
         - mdformat-footnote
 
-# - repo: https://github.com/sphinx-contrib/sphinx-lint
-#   rev: v1.0.2
-#   hooks:
-#     - id: sphinx-lint
-#       name: Check Sphinx
+- repo: https://github.com/sphinx-contrib/sphinx-lint
+  rev: v1.0.2
+  hooks:
+    - id: sphinx-lint
+      name: Check Sphinx

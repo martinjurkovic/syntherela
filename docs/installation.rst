@@ -38,7 +38,6 @@ This includes:
 * tqdm
 * lightgbm
 * featuretools
-* python-dotenv
 
 Privacy Metrics
 ~~~~~~~~~~~~~~~
@@ -65,7 +64,7 @@ To install from source:
 Requirements
 ------------
 
-SyntheRela requires Python 3.8 or higher.
+SyntheRela requires Python 3.10 or higher.
 
 Main dependencies include:
 

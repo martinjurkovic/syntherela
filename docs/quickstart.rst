@@ -10,10 +10,15 @@ Here's a simple example of how to use SyntheRela to benchmark synthetic data:
 
 .. code-block:: python
 
-   from syntherela import Benchmark
+   from syntherela.benchmark import Benchmark
    from syntherela.metrics.single_column.statistical import ChiSquareTest
    from syntherela.metrics.single_table.distance import MaximumMeanDiscrepancy
-   
+   from syntherela.metrics.multi_table.statistical import (
+       CardinalityShapeSimilarity,
+   )
+   from syntherela.metrics.multi_table.detection import AggregationDetection
+   from xgboost import XGBClassifier
+
    # Create a benchmark instance
    benchmark = Benchmark(
        real_data_dir="path/to/real/data",
@@ -21,9 +26,15 @@ Here's a simple example of how to use SyntheRela to benchmark synthetic data:
        results_dir="path/to/results",
        benchmark_name="my_benchmark",
        single_column_metrics=[ChiSquareTest()],
-       single_table_metrics=[MaximumMeanDiscrepancy()]
+       single_table_metrics=[MaximumMeanDiscrepancy()],
+       multi_table_metrics=[
+           CardinalityShapeSimilarity(),
+           AggregationDetection(classifier_cls=XGBClassifier, random_state=42),
+       ],
+       datasets=["your_dataset_name"],
+       methods=["your_method_name"],
    )
-   
+
    # Run the benchmark
    benchmark.run()
 
@@ -57,7 +68,7 @@ Evaluate individual columns:
        HellingerDistance,
        WassersteinDistance
    )
-   
+
    single_column_metrics = [
        ChiSquareTest(),
        KolmogorovSmirnovTest(),
@@ -77,7 +88,7 @@ Evaluate tables as a whole:
        MaximumMeanDiscrepancy,
        PairwiseCorrelationDifference
    )
-   
+
    single_table_metrics = [
        MaximumMeanDiscrepancy(),
        PairwiseCorrelationDifference()
@@ -90,10 +101,15 @@ Evaluate relationships between tables:
 
 .. code-block:: python
 
-   from syntherela.metrics.multi_table import MultiTableMetric
-   
+   from syntherela.metrics.multi_table.statistical import (
+       CardinalityShapeSimilarity,
+   )
+   from syntherela.metrics.multi_table.detection import AggregationDetection
+   from xgboost import XGBClassifier
+
    multi_table_metrics = [
-       MultiTableMetric()
+       CardinalityShapeSimilarity(),
+       AggregationDetection(classifier_cls=XGBClassifier, random_state=42),
    ]
 
 Viewing Results
@@ -101,17 +117,16 @@ Viewing Results
 
 After running a benchmark, results are saved to the ``results_dir``:
 
-* **CSV files**: Detailed metric scores
-* **Visualizations**: Plots comparing real and synthetic data
-* **Report**: Summary report in HTML format
+* **JSON files**: Per-dataset/per-method metric outputs
+* **In-memory dictionary**: Aggregated results in the benchmark object
 
 .. code-block:: python
 
-   # Access the report
-   report = benchmark.report
-   
-   # Get metric results
-   results = report.get_results()
+    # Access aggregated results
+    results = benchmark.all_results
+
+    # Access report object for a specific dataset/method
+    report = benchmark.reports["your_dataset_name"]["your_method_name"]
 
 Next Steps
 ----------

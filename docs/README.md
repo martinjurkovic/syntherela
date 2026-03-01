@@ -6,16 +6,16 @@ This directory contains the Sphinx documentation for SyntheRela.
 
 ### Prerequisites
 
-Install the documentation dependencies:
-
-```bash
-pip install -e ".[docs]"
-```
-
-Or install Sphinx and dependencies directly:
+Install Sphinx and docs dependencies:
 
 ```bash
 pip install -r docs/requirements.txt
+```
+
+For API autodoc pages, also install the package in editable mode:
+
+```bash
+pip install -e .
 ```
 
 ### Building HTML Documentation
