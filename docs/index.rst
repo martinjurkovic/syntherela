@@ -3,7 +3,7 @@ SyntheRela Documentation
 
 Welcome to SyntheRela's documentation! SyntheRela is a comprehensive benchmark designed to evaluate and compare synthetic relational database generation methods.
 
-.. image:: https://raw.githubusercontent.com/martinjurkovic/syntherela/refs/heads/main/docs/SyntheRela.png
+.. image:: SyntheRela.png
    :alt: SyntheRela Logo
    :align: center
    :height: 150px
