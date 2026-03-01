@@ -30,11 +30,6 @@ def test_aggregation_detection_initialization():
     assert metric.folds == 3
     assert metric.random_state == 42
 
-    assert metric.classifier_args == custom_args
-    assert metric.folds == 3
-    assert metric.random_state == 42
-
-
 def test_aggregation_detection_run(sample_data):
     """Test computation of AggregationDetection metric."""
     data, metadata = sample_data
