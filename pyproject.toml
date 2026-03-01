@@ -138,4 +138,4 @@ exclude_lines = [
     "pass",
     "raise ImportError",
 ]
-fail_under = 80
+fail_under = 85

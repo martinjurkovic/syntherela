@@ -30,6 +30,7 @@ def test_aggregation_detection_initialization():
     assert metric.folds == 3
     assert metric.random_state == 42
 
+
 def test_aggregation_detection_run(sample_data):
     """Test computation of AggregationDetection metric."""
     data, metadata = sample_data
@@ -78,3 +79,23 @@ def test_parent_child_detection_run(sample_data):
     assert 0 <= result['table1_table2_fk2']['SE'] <= 1
     assert 0 <= result['table1_table2_fk2']['bin_test_p_val'] <= 1
     assert 0 <= result['table1_table2_fk2']['copying_p_val'] <= 1
+
+
+def test_aggregation_detection_feature_importance(sample_data):
+    """Test feature_importance after running AggregationDetection."""
+    data, metadata = sample_data
+
+    metric = AggregationDetection(
+        classifier_cls=RandomForestClassifier,
+        random_state=42,
+        folds=2,
+    )
+    metric.run(data, data, metadata, target_table='table1')
+
+    importance = metric.feature_importance()
+    assert isinstance(importance, dict)
+    assert len(importance) > 0
+    for name, scores in importance.items():
+        assert isinstance(name, str)
+        assert hasattr(scores, '__len__')
+        assert len(scores) == metric.folds  # one score per fold

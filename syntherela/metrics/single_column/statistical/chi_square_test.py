@@ -75,7 +75,7 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         freq_orig = orig_col.value_counts()
         freq_synth = synth_col.value_counts()
         if freq_synth.sum() == 0:
-            return {'statistic': -1, 'p_value': 0}
+            return {'statistic': -1, 'p_val': 0}
         freq_synth = freq_synth / freq_synth.sum() * freq_orig.sum()
         assert (freq_orig.index == freq_synth.index).all(), (
             'Indexes do not match for column'
