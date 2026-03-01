@@ -9,8 +9,8 @@
       <a href="https://github.com/martinjurkovic/syntherela/blob/main/LICENSE">
         <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-yellow.svg">
       </a>
-      <a href="https://openreview.net/forum?id=ZfQofWYn6n">
-        <img alt="Paper URL" src="https://img.shields.io/badge/OpenReview-ZfQofWYn6n-B31B1B.svg">
+      <a href="https://openreview.net/forum?id=Mi8XioazWy">
+        <img alt="Paper URL" src="https://img.shields.io/badge/OpenReview-Mi8XioazWy-B31B1B.svg">
       </a>
       <a href="https://huggingface.co/spaces/SyntheRela/leaderboard">
         <img src="https://img.shields.io/badge/🤗-Leaderboard-yellow.svg" alt="Hugging Face Leaderboard">
@@ -106,13 +106,15 @@ The authors declare no conflict of interest and are not associated with any of t
 ## Citation
 If you use SyntheRela in your work, please cite our paper:
 ```
-@inproceedings{
-    iclrsyntheticdata2025syntherela,
-    title={SyntheRela: A Benchmark For Synthetic Relational Database Generation},
-    author={Martin Jurkovic and Valter Hudovernik and Erik {\v{S}}trumbelj},
-    booktitle={Will Synthetic Data Finally Solve the Data Access Problem?},
-    year={2025},
-    url={https://openreview.net/forum?id=ZfQofWYn6n}
+@article{
+hudovernik2026syntherela,
+title={SyntheRela: A Benchmark For Synthetic Relational Database Generation},
+author={Valter Hudovernik and Martin Jurkovic and Erik {\v{S}}trumbelj},
+journal={Transactions on Machine Learning Research},
+issn={2835-8856},
+year={2026},
+url={https://openreview.net/forum?id=Mi8XioazWy},
+note={}
 }
 ```
 
