@@ -117,12 +117,13 @@ class Benchmark:
 
         """
         self.datasets = datasets
-        self.run_id = str(run_id)
-        self.sample_id = str(sample_id)
+        # Preserve `None` so we don't create ".../None/None" paths.
+        self.run_id = None if run_id is None else str(run_id)
+        self.sample_id = None if sample_id is None else str(sample_id)
         self.validate_metadata = validate_metadata
         self.compute_trends = compute_trends
 
-        self.benchmark_name = (benchmark_name,)
+        self.benchmark_name = benchmark_name
         self.real_data_dir = Path(real_data_dir)
         self.synthetic_data_dir = Path(synthetic_data_dir)
         self.results_dir = Path(results_dir)
@@ -484,10 +485,10 @@ class Benchmark:
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
                 file_name = self.build_file_name(dataset_name, method_name)
+                file_path = self.results_dir / file_name
                 try:
-                    real_data, synthetic_data, metadata = self.load_data(
-                        dataset_name, method_name
-                    )
+                    with open(file_path) as file:
+                        results = json.load(file)
                 except FileNotFoundError:
                     warnings.warn(
                         (
@@ -497,22 +498,10 @@ class Benchmark:
                         stacklevel=2,
                     )
                     continue
-                temp_report = Report(
-                    real_data,
-                    synthetic_data,
-                    metadata,
-                    f'{dataset_name}_{method_name}',
-                    validate_metadata=self.validate_metadata,
-                    method_name=method_name,
-                    dataset_name=dataset_name,
-                    run_id=self.run_id,
-                    sample_id=self.sample_id,
-                ).load_from_json(self.results_dir / file_name)
-                self.reports.setdefault(dataset_name, {})[method_name] = (
-                    temp_report
-                )
+
+                # Store results even if original data/metadata are unavailable.
                 self.all_results.setdefault(dataset_name, {})[method_name] = (
-                    temp_report.results
+                    results
                 )
         if not self.all_results:
             warnings.warn('No results found.', stacklevel=2)

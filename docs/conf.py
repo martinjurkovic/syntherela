@@ -2,7 +2,6 @@
 
 import os
 import sys
-from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as get_version
 
 # Add the project root to the path
