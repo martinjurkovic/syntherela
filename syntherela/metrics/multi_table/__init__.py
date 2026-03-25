@@ -2,5 +2,10 @@
 
 from .detection import AggregationDetection
 from .statistical import CardinalityShapeSimilarity
+from .trends import multi_table_trends
 
-__all__ = ['AggregationDetection', 'CardinalityShapeSimilarity']
+__all__ = [
+    'AggregationDetection',
+    'CardinalityShapeSimilarity',
+    'multi_table_trends',
+]

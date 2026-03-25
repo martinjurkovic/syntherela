@@ -24,7 +24,7 @@ SyntheRela is a comprehensive benchmark designed to evaluate and compare synthet
 
 SyntheRela is highly extensible, allowing users to benchmark on their own custom datasets and implement new evaluation metrics to suit specific use cases.
 
-Our research on SyntheRela is presented in the paper **"SyntheRela: A Benchmark For Synthetic Relational Database Generation"** at the ICLR 2025 Workshop "Will Synthetic Data Finally Solve the Data Access Problem?", available on [OpenReview](https://openreview.net/forum?id=ZfQofWYn6n).
+Our research on SyntheRela is presented in the TMLR paper **"SyntheRela: A Benchmark For Synthetic Relational Database Generation"**, available on [OpenReview](https://openreview.net/forum?id=Mi8XioazWy).
 
 We maintain a [public leaderboard on Hugging Face](https://huggingface.co/spaces/SyntheRela/leaderboard) where you can compare the performance of different synthetic data generation methods.
 
@@ -53,6 +53,7 @@ benchmark = Benchmark(
     real_data_dir="path/to/real_data",
     synthetic_data_dir="path/to/synthetic_data",
     results_dir="results",
+    benchmark_name="my_benchmark",
     single_column_metrics=[ChiSquareTest()],
     single_table_metrics=[MaximumMeanDiscrepancy()],
     multi_table_metrics=[
@@ -120,7 +121,6 @@ journal={Transactions on Machine Learning Research},
 issn={2835-8856},
 year={2026},
 url={https://openreview.net/forum?id=Mi8XioazWy},
-note={}
 }
 ```
 

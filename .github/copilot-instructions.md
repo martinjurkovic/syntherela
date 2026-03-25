@@ -47,6 +47,11 @@
   - `README.md` for user-facing usage changes.
   - `docs/ADDING_A_METRIC.md` when metric extension patterns change.
   - Relevant docs in `docs/` for reproducibility or setup changes.
+- Keep the Sphinx docs (`docs/*.rst`, `docs/guides/*.rst`, `docs/api/*.rst`) in sync with `README.md` and the codebase:
+  - When the README usage example changes, update `docs/index.rst` Quick Start and `docs/quickstart.rst` accordingly.
+  - When new top-level sections are added to the README (e.g. Examples, Leaderboard), add matching pages under `docs/`.
+  - When new public modules or classes are added, add a corresponding entry in the relevant `docs/api/*.rst` file.
+  - Build the docs locally (`cd docs && make html`) to verify there are no Sphinx errors after any documentation change.
 
 ## Safety and edit boundaries
 

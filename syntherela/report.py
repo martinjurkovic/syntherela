@@ -44,9 +44,9 @@ class Report:
         Name of the dataset.
     run_id : str
         Identifier for the report run.
-    single_column_metrics : list, default=[ChiSquareTest()]
+    single_column_metrics : list, default=``[ChiSquareTest()]``
         List of single column metrics to compute.
-    single_table_metrics : list, default=[MaximumMeanDiscrepancy()]
+    single_table_metrics : list, default=``[MaximumMeanDiscrepancy()]``
         List of single table metrics to compute.
     multi_table_metrics : list, default=[]
         List of multi table metrics to compute.
@@ -94,9 +94,9 @@ class Report:
             Name of the dataset.
         run_id : str
             Identifier for the report run.
-        single_column_metrics : list, default=[ChiSquareTest()]
+        single_column_metrics : list, default=``[ChiSquareTest()]``
             List of single column metrics to compute.
-        single_table_metrics : list, default=[MaximumMeanDiscrepancy()]
+        single_table_metrics : list, default=``[MaximumMeanDiscrepancy()]``
             List of single table metrics to compute.
         multi_table_metrics : list, default=[]
             List of multi table metrics to compute.
