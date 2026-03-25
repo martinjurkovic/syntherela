@@ -103,7 +103,7 @@ def visualize_marginals(real_data, synthetic_data, metadata):
                 )
             ax.set_title(f'{table}.{column}')
             fig.tight_layout()
-            fig.suptitle = f'{table}'
+            fig.suptitle(f'{table}')
             i += 1
         if num_non_id_columns < 3:
             num_non_id_columns = 3

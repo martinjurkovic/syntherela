@@ -6,6 +6,7 @@ real and synthetic tables with aggregations.
 """
 
 from copy import deepcopy
+from typing import Any
 
 import pandas as pd
 from sklearn.base import ClassifierMixin
@@ -181,8 +182,8 @@ class AggregationDetection(
 
     def __init__(
         self,
-        classifier_cls: ClassifierMixin,
-        classifier_args: dict | None = None,
+        classifier_cls: type[ClassifierMixin],
+        classifier_args: dict[str, Any] | None = None,
         random_state: int | None = None,
         folds: int = 5,
         levels: int = 1,
@@ -317,12 +318,9 @@ class ParentChildAggregationDetection(
 
     def prepare_data(
         self,
-        real_data: Tables,
-        synthetic_data: Tables,
-        metadata: Metadata,
-        parent_table: str,
-        child_table: str,
-        pair_metadata: Metadata,
+        real_data,
+        synthetic_data,
+        **kwargs,
     ):
         """Prepare data for the C2ST.
 
@@ -349,6 +347,11 @@ class ParentChildAggregationDetection(
             The target variable with synthetic and real labels.
 
         """
+        metadata = kwargs['metadata']
+        parent_table = kwargs['parent_table']
+        child_table = kwargs['child_table']
+        pair_metadata = kwargs['pair_metadata']
+
         aggregated_real_data, updated_metadata = self.add_aggregations(
             real_data, deepcopy(metadata)
         )
@@ -358,8 +361,8 @@ class ParentChildAggregationDetection(
         return super().prepare_data(
             aggregated_real_data,
             aggregated_synthetic_data,
-            updated_metadata,
-            parent_table,
-            child_table,
-            pair_metadata,
+            metadata=updated_metadata,
+            parent_table=parent_table,
+            child_table=child_table,
+            pair_metadata=pair_metadata,
         )

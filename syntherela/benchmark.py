@@ -116,7 +116,8 @@ class Benchmark:
             Whether to compute trends over time.
 
         """
-        self.datasets = datasets
+        self.datasets: list[str] | None = datasets
+        self.methods: dict[str, list[str]] = {}
         # Preserve `None` so we don't create ".../None/None" paths.
         self.run_id = None if run_id is None else str(run_id)
         self.sample_id = None if sample_id is None else str(sample_id)
@@ -141,17 +142,16 @@ class Benchmark:
                 for d in os.listdir(self.synthetic_data_dir)
                 if os.path.isdir(os.path.join(self.synthetic_data_dir, d))
             ]
+        assert self.datasets is not None  # for type-checking
 
         if methods is not None:
             # if self.methods is dict
             if isinstance(methods, dict):
-                self.methods = methods
+                self.methods = methods  # type: ignore[assignment]
             if isinstance(methods, list):
-                self.methods = {}
                 for dataset_name in self.datasets:
                     self.methods[dataset_name] = methods
         else:
-            self.methods = {}
             for dataset_name in self.datasets:
                 if dataset_name not in self.methods:
                     self.methods[dataset_name] = [
@@ -418,6 +418,7 @@ class Benchmark:
             Dictionary containing all benchmark results.
 
         """
+        assert self.datasets is not None
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
                 try:
@@ -482,6 +483,7 @@ class Benchmark:
             Dictionary containing all benchmark results.
 
         """
+        assert self.datasets is not None
         for dataset_name in self.datasets:
             for method_name in self.methods[dataset_name]:
                 file_name = self.build_file_name(dataset_name, method_name)

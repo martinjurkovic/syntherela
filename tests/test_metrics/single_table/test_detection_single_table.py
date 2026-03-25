@@ -38,7 +38,7 @@ def test_single_table_detection_prepare_data(detection_data):
     )
 
     # Test data preparation
-    X, y = metric.prepare_data(real_data, synthetic_data, metadata)
+    X, y = metric.prepare_data(real_data, synthetic_data, metadata=metadata)
 
     # Check that the output has the expected shape and types
     assert isinstance(X, pd.DataFrame)

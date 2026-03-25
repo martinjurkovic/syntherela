@@ -100,7 +100,7 @@ def visualize_single_table_distance_metrics(
 
             colors = [get_color(method) for method in methods]
             if None in colors:
-                colors = plt.cm.viridis(np.linspace(0.5, 1, N))
+                colors = plt.get_cmap('viridis')(np.linspace(0.5, 1, N))
 
             max_value = 0
 
@@ -265,7 +265,7 @@ def visualize_single_table_detection_metrics_per_classifier(
             # set dpi
             fig.dpi = 300
 
-            colors = plt.cm.viridis(
+            colors = plt.get_cmap('viridis')(
                 np.linspace(0.5, 1, N)
             )  # create a color map
 
@@ -486,7 +486,9 @@ def visualize_single_table_detection_metrics_per_table(
             # make font size bigger
             # plt.rcParams.update({'font.size': 20})
 
-            colors = plt.cm.tab20(np.linspace(0, 1, N))  # create a color map
+            colors = plt.get_cmap('tab20')(
+                np.linspace(0, 1, N)
+            )  # create a color map
 
             tab20 = plt.colormaps['tab20']
             colors = [tab20(1), tab20(3), tab20(0), tab20(2)]

@@ -8,6 +8,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 from tqdm import tqdm
 
@@ -20,6 +21,16 @@ from syntherela.visualisations.distribution_visualisations import (
     visualize_marginals,
     visualize_parent_child_bivariates,
 )
+
+
+class ReportResults(TypedDict):
+    method_name: str
+    dataset_name: str
+    run_id: str | None
+    sample_id: str | None
+    single_column_metrics: dict[str, dict[str, Any]]
+    single_table_metrics: dict[str, dict[str, Any]]
+    multi_table_metrics: dict[str, Any]
 
 
 class Report:
@@ -139,7 +150,7 @@ class Report:
         self.single_table_metrics = single_table_metrics
         self.multi_table_metrics = multi_table_metrics
         self.report_datetime = datetime.now()
-        self.results = {
+        self.results: ReportResults = {
             'method_name': method_name,
             'dataset_name': dataset_name,
             'run_id': run_id,
@@ -367,7 +378,7 @@ class Report:
         """
         path = Path(path)
         with open(path) as f:
-            self.results = json.load(f)
+            self.results = cast(ReportResults, json.load(f))
         return self
 
     def print_results(self):

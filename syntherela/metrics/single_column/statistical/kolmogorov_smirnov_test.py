@@ -1,5 +1,7 @@
 """Kolmogorov-Smirnov statistical test for single columns."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from scipy.stats import ks_2samp
@@ -32,8 +34,8 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'KolmogorovSmirnovTest'
-        self.goal = Goal.MINIMIZE
+        self.name: str = 'KolmogorovSmirnovTest'
+        self.goal: Goal = Goal.MINIMIZE
 
     @staticmethod
     def is_applicable(column_type):
@@ -52,7 +54,8 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
         """
         return column_type == 'numerical' or column_type == 'datetime'
 
-    def validate(self, column):
+    @staticmethod
+    def validate(data: Any) -> None:
         """Validate that the column is numerical or datetime.
 
         Parameters
@@ -66,19 +69,19 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
             If the column is not numerical or datetime.
 
         """
-        column_dtype = column.dtypes
+        column_dtype = data.dtypes
         if np.issubdtype(column_dtype, np.number) or np.issubdtype(
             column_dtype, np.datetime64
         ):
             return
 
         raise ValueError(
-            f'{self.name} can only be applied to numerical columns, but '
-            f'column {column.name} is of type {column.dtype}'
+            'KolmogorovSmirnovTest can only be applied to numerical '
+            f'columns, but column {data.name} is of type {data.dtype}'
         )
 
     @staticmethod
-    def compute(real_data, synthetic_data):
+    def compute(real_data, synthetic_data, **kwargs):
         """Compute the Kolmogorov-Smirnov test statistic and p-value.
 
         Parameters

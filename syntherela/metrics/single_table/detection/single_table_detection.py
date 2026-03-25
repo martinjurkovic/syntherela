@@ -39,7 +39,7 @@ class SingleTableDetection(DetectionBaseMetric, SingleTableMetric):
 
     """
 
-    def prepare_data(self, real_data, synthetic_data, metadata, **kwargs):
+    def prepare_data(self, real_data, synthetic_data, **kwargs):
         """Prepare the data for the classifier by removing ID columns.
 
         Parameters
@@ -61,6 +61,7 @@ class SingleTableDetection(DetectionBaseMetric, SingleTableMetric):
             - y: The labels for the real and synthetic data.
 
         """
+        metadata = kwargs['metadata']
         real_data = drop_ids(real_data, metadata)
         synthetic_data = drop_ids(synthetic_data, metadata)
         return super().prepare_data(real_data, synthetic_data)

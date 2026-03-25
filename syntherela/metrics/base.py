@@ -436,7 +436,7 @@ class DetectionBaseMetric(BaseMetric):
         self.folds = folds
         self.classifiers = []
         self.models = []
-        self.name = f'{type(self).__name__}-{classifier_cls.__name__}'
+        self.name: str = f'{type(self).__name__}-{classifier_cls.__name__}'
 
     def prepare_data(
         self,

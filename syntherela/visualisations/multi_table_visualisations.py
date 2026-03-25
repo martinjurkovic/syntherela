@@ -108,7 +108,9 @@ def visualize_parent_child_multi_table(
             # set dpi
             fig.dpi = 300
 
-            colors = plt.cm.viridis(np.linspace(0, 1, N))  # create a color map
+            colors = plt.get_cmap('viridis')(
+                np.linspace(0, 1, N)
+            )  # create a color map
 
             min_mean = 1
             for j, metric in enumerate(metrics):
@@ -318,7 +320,9 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
         # set dpi
         fig.dpi = 300
 
-        colors = plt.cm.viridis(np.linspace(0, 1, N))  # create a color map
+        colors = plt.get_cmap('viridis')(
+            np.linspace(0, 1, N)
+        )  # create a color map
 
         min_mean = 1
 

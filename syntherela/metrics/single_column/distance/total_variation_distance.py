@@ -64,7 +64,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         ]
 
     @staticmethod
-    def compute(real_data, synthetic_data, bins, **kwargs):
+    def compute(real_data, synthetic_data, **kwargs):
         """Compute the Total Variation Distance between two columns.
 
         Parameters
@@ -84,6 +84,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
             The Total Variation Distance between the two columns.
 
         """
+        bins = kwargs.get('bins')
         f_exp, f_obs = get_histograms(
             real_data, synthetic_data, normalize=True, bins=bins
         )

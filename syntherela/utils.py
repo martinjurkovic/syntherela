@@ -4,6 +4,7 @@ NpEncoder for saving results and CustomHyperTransformer for data preprocessing.
 """
 
 import json
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -18,7 +19,7 @@ class NpEncoder(json.JSONEncoder):
     for proper JSON serialization.
     """
 
-    def default(self, obj):
+    def default(self, o: Any) -> Any:
         """Convert NumPy objects to Python types.
 
         Parameters
@@ -32,15 +33,15 @@ class NpEncoder(json.JSONEncoder):
             The encoded object.
 
         """
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.floating):
-            return float(obj)
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        if isinstance(obj, np.bool_):
-            return bool(obj)
-        return super().default(obj)
+        if isinstance(o, np.integer):
+            return int(o)
+        if isinstance(o, np.floating):
+            return float(o)
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, np.bool_):
+            return bool(o)
+        return super().default(o)
 
 
 class CustomHyperTransformer(HyperTransformer):
@@ -136,10 +137,10 @@ class CustomHyperTransformer(HyperTransformer):
                     .transform(col_data)
                     .toarray()
                 )
-                transformed = pd.DataFrame(
-                    out,
-                    columns=[f'{field}_{i}' for i in range(np.shape(out)[1])],
-                )
+                cols: list[str] = [
+                    f'{field}_{i}' for i in range(np.shape(out)[1])
+                ]
+                transformed = pd.DataFrame(out, columns=pd.Index(cols))
                 data = data.drop(columns=[field])
                 data = pd.concat(
                     [data, transformed.set_index(data.index)], axis=1

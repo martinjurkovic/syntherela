@@ -9,7 +9,7 @@ from syntherela.metrics.single_column.detection import SingleColumnDetection
 def test_single_column_detection_init():
     """Test initialization of SingleColumnDetection metric."""
     metric = SingleColumnDetection(classifier_cls=RandomForestClassifier)
-    assert 'SingleColumnDetection' in metric.name
+    assert metric.name is not None and 'SingleColumnDetection' in metric.name
     assert metric.classifier_cls == RandomForestClassifier
     assert metric.folds == 5
 

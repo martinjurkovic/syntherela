@@ -33,7 +33,7 @@ def test_mmd_compute_linear(sample_data, table_meta):
     real = data['table1']
     synth = data['table1'].copy()
     score = MaximumMeanDiscrepancy.compute(
-        real, synth, table_meta, kernel='linear'
+        real, synth, metadata=table_meta, kernel='linear'
     )
     assert isinstance(score, (float, np.floating))
     assert score >= 0
@@ -44,7 +44,7 @@ def test_mmd_compute_rbf(sample_data, table_meta):
     real = data['table1']
     synth = data['table1'].copy()
     score = MaximumMeanDiscrepancy.compute(
-        real, synth, table_meta, kernel='rbf'
+        real, synth, metadata=table_meta, kernel='rbf'
     )
     assert isinstance(score, (float, np.floating))
     assert score >= 0
@@ -55,7 +55,7 @@ def test_mmd_compute_polynomial(sample_data, table_meta):
     real = data['table1']
     synth = data['table1'].copy()
     score = MaximumMeanDiscrepancy.compute(
-        real, synth, table_meta, kernel='polynomial'
+        real, synth, metadata=table_meta, kernel='polynomial'
     )
     assert isinstance(score, (float, np.floating))
     assert score >= 0
@@ -67,7 +67,7 @@ def test_mmd_compute_invalid_kernel_raises(sample_data, table_meta):
     synth = data['table1'].copy()
     with pytest.raises(ValueError, match=r'Unsupported kernel'):
         MaximumMeanDiscrepancy.compute(
-            real, synth, table_meta, kernel='invalid'
+            real, synth, metadata=table_meta, kernel='invalid'
         )
 
 
@@ -105,6 +105,6 @@ def test_pcd_compute(sample_data, table_meta):
     real = data['table1']
     synth = data['table1'].copy()
     m = PairwiseCorrelationDifference()
-    score = m.compute(real, synth, table_meta)
+    score = m.compute(real, synth, metadata=table_meta)
     assert isinstance(score, (float, np.floating))
     assert 0 <= score <= 1

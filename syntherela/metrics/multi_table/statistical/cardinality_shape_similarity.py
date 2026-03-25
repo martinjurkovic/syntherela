@@ -17,18 +17,21 @@ class CardinalityShapeSimilarity(StatisticalBaseMetric):
         super().__init__(**kwargs)
         self.name = 'CardinalityShapeSimilarity'
 
-    def validate(self, real_data, synthetic_data):
-        """Validate the input data."""
-        return sorted(real_data.keys()) == sorted(synthetic_data.keys())
+    @staticmethod
+    def validate(data):
+        """Validate that the input looks like a multi-table mapping."""
+        return isinstance(data, dict) and len(data) > 0
 
-    def run(self, real_data, synthetic_data, metadata, **kwargs):
+    def run(self, real_data, synthetic_data, **kwargs):
         """Execute the cardinality shape similarity metric."""
-        self.validate(real_data, synthetic_data)
-        return self.compute(real_data, synthetic_data, metadata)
+        self.validate(real_data)
+        self.validate(synthetic_data)
+        return self.compute(real_data, synthetic_data, **kwargs)
 
     @staticmethod
-    def compute(real_data, synthetic_data, metadata, **kwargs):
+    def compute(real_data, synthetic_data, **kwargs):
         """Compute the cardinality metric."""
+        metadata = kwargs['metadata']
         results = {}
         for rel in metadata.relationships:
             cardinality_real = get_cardinality_distribution(

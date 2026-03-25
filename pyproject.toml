@@ -73,6 +73,9 @@ line-length = 80
 target-version = "py310"
 src = ["syntherela"]
 
+[tool.ty.src]
+include = ["syntherela", "tests"]
+
 [tool.ruff.lint]
 select = [
   "E",  # Flake8/PEP8

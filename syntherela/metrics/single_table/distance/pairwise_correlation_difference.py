@@ -6,6 +6,8 @@ synthetic data preserves linear relationships between variables in the original
 dataset.
 """
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from sdmetrics.goal import Goal
@@ -41,7 +43,12 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
                 numeric_count += 1
         return numeric_count > 1
 
-    def compute(self, original_table, sythetic_table, metadata, **kwargs):
+    @staticmethod
+    def compute(
+        real_data: Any,
+        synthetic_data: Any,
+        **kwargs: Any,
+    ):
         """Compute PCD between original and synthetic data.
 
         Based on:
@@ -65,8 +72,12 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
             synthetic data.
 
         """
-        orig = original_table.copy()
-        synth = sythetic_table.copy()
+        metadata = kwargs['metadata']
+        correlation_method = kwargs.get('correlation_method', 'pearson')
+        norm_order = kwargs.get('norm_order', 'fro')
+
+        orig = real_data.copy()
+        synth = synthetic_data.copy()
 
         orig = drop_ids(orig, metadata)
         synth = drop_ids(synth, metadata)
@@ -99,9 +110,19 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         )
 
         # compute the correlation matrix
-        orig_corr = orig.corr(method=self.correlation_method)
-        synth_corr = synth.corr(method=self.correlation_method)
+        orig_corr = orig.corr(method=correlation_method)
+        synth_corr = synth.corr(method=correlation_method)
 
-        return np.linalg.norm(
-            orig_corr - synth_corr, ord=self.norm_order
-        ).astype(float)
+        return np.linalg.norm(orig_corr - synth_corr, ord=norm_order).astype(
+            float
+        )
+
+    def run(self, real_data, synthetic_data, **kwargs):
+        """Compute the metric and reference estimates."""
+        return super().run(
+            real_data,
+            synthetic_data,
+            correlation_method=self.correlation_method,
+            norm_order=self.norm_order,
+            **kwargs,
+        )

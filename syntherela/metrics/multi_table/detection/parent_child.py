@@ -85,10 +85,7 @@ class ParentChildDetection(DetectionBaseMetric):
         self,
         real_data,
         synthetic_data,
-        metadata,
-        parent_table,
-        child_table,
-        pair_metadata,
+        **kwargs,
     ):
         """Prepare the data for the classifier by denormalizing PC table pairs.
 
@@ -115,6 +112,9 @@ class ParentChildDetection(DetectionBaseMetric):
             - y: The labels for the real and synthetic data.
 
         """
+        metadata = kwargs['metadata']
+        parent_table = kwargs['parent_table']
+        child_table = kwargs['child_table']
         real_data_unique, synthetic_data_unique, metadata_unique = (
             make_column_names_unique(
                 {
