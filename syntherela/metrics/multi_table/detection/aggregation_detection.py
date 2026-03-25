@@ -12,7 +12,7 @@ import pandas as pd
 from sklearn.base import ClassifierMixin
 
 from syntherela.metadata import Metadata, drop_ids
-from syntherela.metrics.base import DetectionBaseMetric, SingleTableMetric
+from syntherela.metrics.base import DetectionBaseMetric
 from syntherela.typing import Tables
 
 from .parent_child import ParentChildDetection
@@ -175,9 +175,7 @@ class BaseAggregationDetection(DetectionBaseMetric):
         return aggregated_data, metadata
 
 
-class AggregationDetection(
-    BaseAggregationDetection, DetectionBaseMetric, SingleTableMetric
-):
+class AggregationDetection(BaseAggregationDetection, DetectionBaseMetric):
     """C2ST-Agg metric."""
 
     def __init__(
