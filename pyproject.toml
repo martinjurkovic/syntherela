@@ -36,8 +36,10 @@ classifiers = [
     ]
 
 [project.optional-dependencies]
-dev=[
-	"pre-commit",
+dev = [
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
 ]
 
 docs=[
@@ -107,3 +109,39 @@ quote-style = "single"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = [
+    "--capture=no",
+    "--color=yes",
+    "-vv",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: end-to-end or multi-component tests",
+    "network: requires network access",
+]
+
+[tool.coverage.run]
+source = ["syntherela"]
+omit = [
+    "*tests*",
+    "*docs*",
+    "experiments/*",
+    "*.ipynb",
+    "syntherela/visualisations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+]
+fail_under = 85

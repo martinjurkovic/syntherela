@@ -61,7 +61,7 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         -------
             dict: A dictionary containing the test statistic and p-value.
                 - "statistic" (float): The chi-square test statistic.
-                - "p_value" (float): The p-value of the chi-square test.
+                - "p_val" (float): The p-value of the chi-square test.
 
         Raises
         ------
@@ -75,7 +75,7 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         freq_orig = orig_col.value_counts()
         freq_synth = synth_col.value_counts()
         if freq_synth.sum() == 0:
-            return {'statistic': -1, 'p_value': 0}
+            return {'statistic': -1, 'p_val': 0}
         freq_synth = freq_synth / freq_synth.sum() * freq_orig.sum()
         assert (freq_orig.index == freq_synth.index).all(), (
             'Indexes do not match for column'
@@ -83,4 +83,4 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
         # calculate the chi-square test
         statistic, pval, _, _ = chi2_contingency([freq_orig, freq_synth])
 
-        return {'statistic': statistic, 'p_value': pval}
+        return {'statistic': statistic, 'p_val': pval}

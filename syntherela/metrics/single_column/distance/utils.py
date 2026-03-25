@@ -9,7 +9,7 @@ def get_histograms(
     original: pd.Series,
     synthetic: pd.Series,
     normalize: bool = True,
-    bins: str | np.array = 'doane',
+    bins: str | np.ndarray = 'doane',
     return_keys: bool = False,
 ) -> tuple:
     """Compute histograms for the given data.
