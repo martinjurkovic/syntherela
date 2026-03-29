@@ -32,7 +32,7 @@ repos:
   hooks:
     - id: ty
       name: Type checking
-      entry: ty check # --error-on-warning
+      entry: ty check --error-on-warning
       language: system
       types: [python]
       pass_filenames: false
