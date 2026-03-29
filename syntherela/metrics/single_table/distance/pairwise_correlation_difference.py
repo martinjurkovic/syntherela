@@ -10,11 +10,14 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 
 from syntherela.metadata import drop_ids
-from syntherela.metrics.base import DistanceBaseMetric, SingleTableMetric
+from syntherela.metrics.base import (
+    DistanceBaseMetric,
+    Goal,
+    SingleTableMetric,
+)
 
 
 class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):

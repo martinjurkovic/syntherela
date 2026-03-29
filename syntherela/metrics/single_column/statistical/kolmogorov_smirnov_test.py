@@ -5,10 +5,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from scipy.stats import ks_2samp
-from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 
-from syntherela.metrics.base import SingleColumnMetric, StatisticalBaseMetric
+from syntherela.metrics.base import (
+    Goal,
+    SingleColumnMetric,
+    StatisticalBaseMetric,
+)
 
 
 class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):

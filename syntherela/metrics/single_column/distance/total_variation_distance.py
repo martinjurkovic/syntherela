@@ -2,10 +2,13 @@
 
 import numpy as np
 import pandas as pd
-from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 
-from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
+from syntherela.metrics.base import (
+    DistanceBaseMetric,
+    Goal,
+    SingleColumnMetric,
+)
 from syntherela.metrics.single_column.distance.utils import get_histograms
 
 

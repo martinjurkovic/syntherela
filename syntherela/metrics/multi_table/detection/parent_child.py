@@ -252,19 +252,39 @@ class ParentChildDetection(DetectionBaseMetric):
             )
         return results
 
-    def _fit_predict(self, X_train, y_train, X_test):
+    def _fit_predict(
+        self,
+        X_train,
+        y_train,
+        X_test,
+        classifier_cls=None,
+        classifier_args=None,
+    ):
+        if classifier_cls is None:
+            classifier_cls = self.classifier_cls
+        if classifier_args is None:
+            classifier_args = self.classifier_args
         model = Pipeline(
             [
                 ('imputer', SimpleImputer()),
                 ('scaler', StandardScaler()),
-                ('clf', self.classifier_cls(**self.classifier_args)),
+                ('clf', classifier_cls(**classifier_args)),
             ]
         )
         model.fit(X_train, y_train)
         probs = model.predict_proba(X_test)
         return probs, model
 
-    def compute(self, real_data, synthetic_data, metadata, **kwargs):
+    def compute(
+        self,
+        real_data,
+        synthetic_data,
+        metadata,
+        classifier_cls=None,
+        classifier_args=None,
+        save_explainability: bool = False,
+        **kwargs,
+    ):
         """Compute the PC-C2ST metric based on a parent-level split.
 
         Parameters
@@ -285,16 +305,31 @@ class ParentChildDetection(DetectionBaseMetric):
         X_train, X_test, y_train, y_test = self.prepare_data(
             real_data, synthetic_data, metadata=metadata, **kwargs
         )
-        # save the data for feature importance methods
-        self.X = pd.concat([X_train, X_test])
-        self.y = np.hstack([y_train, y_test])
         scores = []
-        probs1, model1 = self._fit_predict(X_train, y_train, X_test)
+        probs1, model1 = self._fit_predict(
+            X_train,
+            y_train,
+            X_test,
+            classifier_cls=classifier_cls,
+            classifier_args=classifier_args,
+        )
         y_pred1 = probs1.argmax(axis=1)
         scores.extend(list((y_test == y_pred1).astype(int)))
-        probs2, model2 = self._fit_predict(X_test, y_test, X_train)
+        probs2, model2 = self._fit_predict(
+            X_test,
+            y_test,
+            X_train,
+            classifier_cls=classifier_cls,
+            classifier_args=classifier_args,
+        )
         y_pred2 = probs2.argmax(axis=1)
         scores.extend(list((y_train == y_pred2).astype(int)))
-        self.classifiers.append(deepcopy(model1['clf']))
-        self.classifiers.append(deepcopy(model2['clf']))
-        return scores
+
+        if not save_explainability:
+            return scores, [], [], None, None
+
+        X = pd.concat([X_train, X_test])
+        y = np.hstack([y_train, y_test])
+        classifiers = [deepcopy(model1['clf']), deepcopy(model2['clf'])]
+        models = [model1, model2]
+        return scores, classifiers, models, X, y

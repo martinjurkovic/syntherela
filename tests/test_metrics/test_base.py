@@ -127,6 +127,18 @@ def test_detection_base_metric(table_data):
     assert len(scores) == len(X)
 
 
+def test_detection_feature_importance_after_run(table_data):
+    """After `run`, feature importance is available."""
+    real_data, synthetic_data = table_data
+    metric = TestDetectionMetric(random_state=42, folds=2)
+    metric.run(real_data, synthetic_data, metadata=None)
+    importance = metric.feature_importance()
+    assert isinstance(importance, dict)
+    assert len(importance) > 0
+    for _name, scores in importance.items():
+        assert len(scores) == metric.folds
+
+
 def test_single_table_metric_is_applicable():
     """Test SingleTableMetric.is_applicable with metadata dict."""
     only_id = {'columns': {'pk': {'sdtype': 'id'}}}

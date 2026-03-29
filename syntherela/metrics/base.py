@@ -7,13 +7,13 @@ and functionality for all metrics used in synthetic data evaluation.
 import re
 import warnings
 from copy import deepcopy
+from enum import Enum
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import binomtest, norm
-from sdmetrics.base import BaseMetric
-from sdmetrics.goal import Goal
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import Pipeline
@@ -22,8 +22,27 @@ from sklearn.preprocessing import StandardScaler
 from syntherela.utils import CustomHyperTransformer
 from syntherela.visualisations.utils import prettify_feature_name
 
-# FIXME: We should implement our own BaseMetric class or
-# we should be consistent with the sdmetrics API (run vs. compute)
+
+class Goal(Enum):
+    """Optimization direction for metrics."""
+
+    MINIMIZE = 'MINIMIZE'
+    MAXIMIZE = 'MAXIMIZE'
+
+
+class BaseMetric:
+    """Local metric base class (minimal, sdmetrics-free)."""
+
+    name: str | None = None
+    goal: Goal | None = None
+    min_value: float | tuple[float, ...] | None = None
+    max_value: float | tuple[float, ...] | None = None
+
+    def __init__(self, **kwargs: Any):
+        # Accept common sdmetrics-like attributes if passed.
+        for key in ('name', 'goal', 'min_value', 'max_value'):
+            if key in kwargs:
+                setattr(self, key, kwargs[key])
 
 
 class SingleColumnMetric(BaseMetric):
@@ -494,9 +513,27 @@ class DetectionBaseMetric(BaseMetric):
             X = X.loc[:, X.apply(lambda x: x.nunique() > 1)]
         return X, y
 
-    def stratified_kfold(self, X, y, save_models=False):
-        """Perform stratified k-fold cross-validation."""
-        scores = []
+    def stratified_kfold(
+        self,
+        X,
+        y,
+        classifier_cls=None,
+        classifier_args=None,
+        save_models=False,
+    ):
+        """Perform stratified k-fold cross-validation.
+
+        Side-effect free: returns trained artifacts instead of mutating
+        `self.classifiers` / `self.models`.
+        """
+        if classifier_cls is None:
+            classifier_cls = self.classifier_cls
+        if classifier_args is None:
+            classifier_args = self.classifier_args
+
+        scores: list[int] = []
+        classifiers = []
+        models = []
         # Shuffle the data
         np.random.seed(self.random_state)
         idx = np.random.permutation(len(y))
@@ -512,7 +549,7 @@ class DetectionBaseMetric(BaseMetric):
                 [
                     ('imputer', SimpleImputer()),
                     ('scaler', StandardScaler()),
-                    ('clf', self.classifier_cls(**self.classifier_args)),
+                    ('clf', classifier_cls(**classifier_args)),
                 ]
             )
             model.fit(X.iloc[train_index], y[train_index])
@@ -520,12 +557,23 @@ class DetectionBaseMetric(BaseMetric):
             y_pred = probs.argmax(axis=1)
             scores.extend(list((y[test_index] == y_pred).astype(int)))
             if save_models:
-                self.classifiers.append(deepcopy(model['clf']))
-                self.models.append(model)
+                classifiers.append(deepcopy(model['clf']))
+                models.append(model)
+        if save_models:
+            return scores, classifiers, models
         return scores
 
-    def compute(self, real_data, synthetic_data, metadata, **kwargs):
-        """Compute the C2ST metric.
+    def compute(
+        self,
+        real_data,
+        synthetic_data,
+        metadata,
+        classifier_cls=None,
+        classifier_args=None,
+        save_explainability: bool = False,
+        **kwargs,
+    ):
+        """Compute the C2ST detection metric (side-effect free).
 
         Parameters
         ----------
@@ -542,13 +590,31 @@ class DetectionBaseMetric(BaseMetric):
             Metric output.
 
         """
+        if classifier_cls is None:
+            classifier_cls = self.classifier_cls
+        if classifier_args is None:
+            classifier_args = self.classifier_args
+
         X, y = self.prepare_data(
             real_data, synthetic_data, metadata=metadata, **kwargs
         )
-        # save the data for feature importance methods
-        self.X = X
-        self.y = y
-        return self.stratified_kfold(X, y, save_models=True)
+        if save_explainability:
+            scores, classifiers, models = self.stratified_kfold(
+                X,
+                y,
+                classifier_cls=classifier_cls,
+                classifier_args=classifier_args,
+                save_models=True,
+            )
+            return scores, classifiers, models, X, y
+        scores = self.stratified_kfold(
+            X,
+            y,
+            classifier_cls=classifier_cls,
+            classifier_args=classifier_args,
+            save_models=False,
+        )
+        return scores, [], [], None, None
 
     @staticmethod
     def bootstrap_sample(real_data, random_state=None, metadata=None):
@@ -593,7 +659,13 @@ class DetectionBaseMetric(BaseMetric):
             X, y = self.prepare_data(
                 sample1, sample2, metadata=metadata, **kwargs
             )
-            scores = self.stratified_kfold(X, y)
+            scores = self.stratified_kfold(
+                X,
+                y,
+                classifier_cls=self.classifier_cls,
+                classifier_args=self.classifier_args,
+                save_models=False,
+            )
             bootstrap_accuracy = np.mean(scores)
             bootstrap_scores.append(bootstrap_accuracy)
         return np.mean(bootstrap_scores), np.std(bootstrap_scores) / np.sqrt(m)
@@ -622,9 +694,21 @@ class DetectionBaseMetric(BaseMetric):
                 Metric output.
 
         """
-        scores = self.compute(
-            real_data, synthetic_data, metadata=metadata, **kwargs
+        scores, classifiers, models, X, y = self.compute(
+            real_data,
+            synthetic_data,
+            metadata=metadata,
+            classifier_cls=self.classifier_cls,
+            classifier_args=self.classifier_args,
+            save_explainability=True,
+            **kwargs,
         )
+        # Store explainability state only for `run(...)`.
+        if X is not None and y is not None:
+            self.X = X
+            self.y = y
+        self.classifiers = classifiers
+        self.models = models
         _, bin_test_p_val = self.binomial_test(
             sum(scores), len(scores), p=0.5, alternative='greater'
         )

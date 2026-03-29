@@ -3,13 +3,13 @@
 from typing import Any
 
 import numpy as np
-from sdmetrics.base import BaseMetric
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_squared_error, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from syntherela.metadata import drop_ids
+from syntherela.metrics.base import BaseMetric
 from syntherela.utils import CustomHyperTransformer
 
 

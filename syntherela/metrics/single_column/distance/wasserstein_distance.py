@@ -2,11 +2,14 @@
 
 import pandas as pd
 from scipy.stats import wasserstein_distance
-from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 from sklearn.preprocessing import MinMaxScaler
 
-from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
+from syntherela.metrics.base import (
+    DistanceBaseMetric,
+    Goal,
+    SingleColumnMetric,
+)
 
 
 class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):

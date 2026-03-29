@@ -4,9 +4,12 @@ from typing import Any
 
 import pandas as pd
 from scipy.stats import chi2_contingency
-from sdmetrics.goal import Goal
 
-from syntherela.metrics.base import SingleColumnMetric, StatisticalBaseMetric
+from syntherela.metrics.base import (
+    Goal,
+    SingleColumnMetric,
+    StatisticalBaseMetric,
+)
 
 
 class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):

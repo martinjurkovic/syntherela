@@ -4,14 +4,17 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from sdmetrics.goal import Goal
 from sklearn import metrics
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from syntherela.metadata import drop_ids
-from syntherela.metrics.base import DistanceBaseMetric, SingleTableMetric
+from syntherela.metrics.base import (
+    DistanceBaseMetric,
+    Goal,
+    SingleTableMetric,
+)
 
 
 class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
