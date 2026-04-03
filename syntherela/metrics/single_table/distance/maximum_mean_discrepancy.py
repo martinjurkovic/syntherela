@@ -125,7 +125,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
             gamma = 1.0
             XX = metrics.pairwise.rbf_kernel(
                 orig.reshape(len(real_data), -1),
-                synth.reshape(len(real_data), -1),
+                orig.reshape(len(real_data), -1),
                 gamma,
             )
             YY = metrics.pairwise.rbf_kernel(
