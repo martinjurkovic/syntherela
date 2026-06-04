@@ -188,8 +188,6 @@ class MachineLearningEfficacyMetric(BaseMetric):
                 feature_importance_real, _ = self.feature_importance(
                     model_real,
                 )
-            else:
-                feature_importance_real = feature_importance_real
             feature_importance_syn, feature_names = self.feature_importance(
                 model_synthetic,
             )

@@ -44,12 +44,15 @@ class Benchmark:
         Directory where results will be saved.
     benchmark_name : str
         Name of the benchmark.
-    single_column_metrics : list, default=``[ChiSquareTest()]``
-        List of single column metrics to compute.
-    single_table_metrics : list, default=``[MaximumMeanDiscrepancy()]``
-        List of single table metrics to compute.
-    multi_table_metrics : list, default=[]
-        List of multi table metrics to compute.
+    single_column_metrics : list | None, default=None
+        List of single column metrics to compute. If None, no single
+        column metrics are computed.
+    single_table_metrics : list | None, default=None
+        List of single table metrics to compute. If None, no single
+        table metrics are computed.
+    multi_table_metrics : list | None, default=None
+        List of multi table metrics to compute. If None, no multi
+        table metrics are computed.
     methods : list, default=None
         List of synthetic data generation methods to evaluate.
         If None, all methods in synthetic_data_dir will be evaluated.
@@ -95,12 +98,15 @@ class Benchmark:
             Directory where results will be saved.
         benchmark_name : str
             Name of the benchmark.
-        single_column_metrics : list, default=``[ChiSquareTest()]``
-            List of single column metrics to compute.
-        single_table_metrics : list, default=``[MaximumMeanDiscrepancy()]``
-            List of single table metrics to compute.
-        multi_table_metrics : list, default=[]
-            List of multi table metrics to compute.
+        single_column_metrics : list | None, default=None
+            List of single column metrics to compute. If None, no single
+            column metrics are computed.
+        single_table_metrics : list | None, default=None
+            List of single table metrics to compute. If None, no single
+            table metrics are computed.
+        multi_table_metrics : list | None, default=None
+            List of multi table metrics to compute. If None, no multi
+            table metrics are computed.
         methods : list, default=None
             List of synthetic data generation methods to evaluate.
             If None, all methods in synthetic_data_dir will be evaluated.
@@ -195,12 +201,13 @@ class Benchmark:
         Returns
         -------
         tuple
-            Tuple containing:
-                - real_data: Dictionary mapping table names to pandas
-                DataFrames for real data.
-                - synthetic_data: Dictionary mapping table names to pandas
-                DataFrames for synthetic data.
-            - metadata: Metadata object for the dataset.
+            A ``(real_data, synthetic_data, metadata)`` tuple where:
+
+            - ``real_data`` is a dictionary mapping table names to pandas
+              DataFrames for the real data.
+            - ``synthetic_data`` is a dictionary mapping table names to
+              pandas DataFrames for the synthetic data.
+            - ``metadata`` is the Metadata object for the dataset.
 
         """
         real_data_path = self.real_data_dir / dataset_name

@@ -122,9 +122,11 @@ def test_detection_base_metric(table_data):
     assert set(np.unique(y)) == {0, 1}
 
     # Test stratified_kfold returns per-sample 0-1 loss
-    scores = metric.stratified_kfold(X, y)
+    scores, classifiers, models = metric.stratified_kfold(X, y)
     assert isinstance(scores, list)
     assert len(scores) == len(X)
+    assert classifiers == []
+    assert models == []
 
 
 def test_detection_feature_importance_after_run(table_data):

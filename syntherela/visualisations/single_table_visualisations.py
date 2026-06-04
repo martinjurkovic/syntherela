@@ -57,10 +57,9 @@ def visualize_single_table_distance_metrics(
         Font size for the plot text elements.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_figs_path : str
-            Path where to save the figures.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_figs_path`` (str): path where to save the figures.
 
     """
     for dataset in datasets:
@@ -225,12 +224,10 @@ def visualize_single_table_detection_metrics_per_classifier(
         List of synthetic data generation methods to compare.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_figs_path : str
-            Path where to save the figures.
-        - detection_metrics : list
-            List of detection metrics to visualize.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_figs_path`` (str): path where to save the figures.
+        - ``detection_metrics`` (list): detection metrics to visualize.
 
     """
     for dataset in datasets:
@@ -392,12 +389,10 @@ def visualize_single_table_detection_metrics_per_table(
         Font size for the plot text elements.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_figs_path : str
-            Path where to save the figures.
-        - detection_metrics : list
-            List of detection metrics to visualize.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_figs_path`` (str): path where to save the figures.
+        - ``detection_metrics`` (list): detection metrics to visualize.
 
     """
     for dataset in datasets:

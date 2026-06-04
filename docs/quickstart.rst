@@ -45,7 +45,7 @@ SyntheRela expects data in the following format:
 
 * **Real data**: CSV files in the ``real_data_dir`` directory
 * **Synthetic data**: CSV files in the ``synthetic_data_dir`` directory with matching names
-* **Metadata**: A metadata file describing table relationships (optional)
+* **Metadata**: A ``metadata.json`` file describing the tables, columns, and relationships (required)
 
 Selecting Metrics
 -----------------

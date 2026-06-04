@@ -32,14 +32,11 @@ def visualize_parent_child_multi_table(
         List of synthetic data generation methods to compare.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_path : str
-            Path where to save the figures.
-        - detection_metrics : list
-            List of detection metrics to visualize.
-        - method_order : list
-            Custom order for methods in the visualization.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_path`` (str): path where to save the figures.
+        - ``detection_metrics`` (list): detection metrics to visualize.
+        - ``method_order`` (list): custom order for methods in the plot.
 
     """
     for dataset in datasets:
@@ -254,14 +251,11 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
         List of synthetic data generation methods to compare.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_path : str
-            Path where to save the figures.
-        - detection_metrics : list
-            List of detection metrics to visualize.
-        - method_order : list
-            Custom order for methods in the visualization.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_path`` (str): path where to save the figures.
+        - ``detection_metrics`` (list): detection metrics to visualize.
+        - ``method_order`` (list): custom order for methods in the plot.
 
     """
     save_figs = kwargs.get('save_figs', False)

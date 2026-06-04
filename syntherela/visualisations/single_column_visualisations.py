@@ -37,10 +37,9 @@ def visualize_single_column_distance_metrics(
         List of synthetic data generation methods to compare.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_path : str
-            Path where to save the figures.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_path`` (str): path where to save the figures.
 
     """
     for dataset in datasets:
@@ -199,10 +198,9 @@ def visualize_single_column_detection_metrics(
         List of synthetic data generation methods to compare.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_path : str
-            Path where to save the figures.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_path`` (str): path where to save the figures.
 
     """
     for dataset in datasets:

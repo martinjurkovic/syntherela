@@ -55,12 +55,15 @@ class Report:
         Name of the dataset.
     run_id : str
         Identifier for the report run.
-    single_column_metrics : list, default=``[ChiSquareTest()]``
-        List of single column metrics to compute.
-    single_table_metrics : list, default=``[MaximumMeanDiscrepancy()]``
-        List of single table metrics to compute.
-    multi_table_metrics : list, default=[]
-        List of multi table metrics to compute.
+    single_column_metrics : list | None, default=None
+        List of single column metrics to compute. If None, no single
+        column metrics are computed.
+    single_table_metrics : list | None, default=None
+        List of single table metrics to compute. If None, no single
+        table metrics are computed.
+    multi_table_metrics : list | None, default=None
+        List of multi table metrics to compute. If None, no multi
+        table metrics are computed.
     validate_metadata : bool, default=True
         Whether to validate metadata against data.
     compute_trends : bool, default=True
@@ -105,12 +108,15 @@ class Report:
             Name of the dataset.
         run_id : str
             Identifier for the report run.
-        single_column_metrics : list, default=``[ChiSquareTest()]``
-            List of single column metrics to compute.
-        single_table_metrics : list, default=``[MaximumMeanDiscrepancy()]``
-            List of single table metrics to compute.
-        multi_table_metrics : list, default=[]
-            List of multi table metrics to compute.
+        single_column_metrics : list | None, default=None
+            List of single column metrics to compute. If None, no single
+            column metrics are computed.
+        single_table_metrics : list | None, default=None
+            List of single table metrics to compute. If None, no single
+            table metrics are computed.
+        multi_table_metrics : list | None, default=None
+            List of multi table metrics to compute. If None, no multi
+            table metrics are computed.
         validate_metadata : bool, default=True
             Whether to validate metadata against data.
         compute_trends : bool, default=True

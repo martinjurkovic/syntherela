@@ -3,12 +3,12 @@ Adding a Metric
 
 The metrics are implemented in a way so that adding a new metric is straightforward.
 
-All of the abstract metric classes are defined in ``syntherela.metrics.base``. To add a new metric, you need to create a new class that inherits from one of the abstract classes. All of our metrics inherit the ``BaseMetric`` class from the SDV package. We divide the metrics into 3 categories based on the type: ``Statistical``, ``Distance``, and ``Detection``, and into 3 categories based on the granularity: ``SingleColumnMetric``, ``SingleTable``, and ``MultiTable``.
+All of the abstract metric classes are defined in ``syntherela.metrics.base``. To add a new metric, you need to create a new class that inherits from one of the abstract classes. All of our metrics inherit the ``BaseMetric`` class defined locally in ``syntherela.metrics.base``. We divide the metrics into 3 categories based on the type: ``Statistical``, ``Distance``, and ``Detection``, and into 3 categories based on the granularity: ``SingleColumnMetric``, ``SingleTable``, and ``MultiTable``.
 
 BaseMetric Class
 ----------------
 
-All of our metrics inherit the ``BaseMetric`` class from the SDV package. The ``BaseMetric`` class has a ``compute`` function, as well as the class variables ``name``, ``goal`` (maximize or minimize), ``min_value`` and ``max_value``. All of the metrics should implement the ``compute`` function, which calculates the metric value and returns a dictionary with the results of the metric. The ``goal`` variable should be set to ``maximize`` or ``minimize`` based on the metric. The ``min_value`` and ``max_value`` variables should be set to the minimum and maximum possible values of the metric.
+All of our metrics inherit the ``BaseMetric`` class defined in ``syntherela.metrics.base``. The ``BaseMetric`` class has a ``compute`` function, as well as the class variables ``name``, ``goal`` (maximize or minimize), ``min_value`` and ``max_value``. All of the metrics should implement the ``compute`` function, which calculates the metric value and returns a dictionary with the results of the metric. The ``goal`` variable should be set to ``maximize`` or ``minimize`` based on the metric. The ``min_value`` and ``max_value`` variables should be set to the minimum and maximum possible values of the metric.
 
 In our abstract metric classes we implement a ``run`` function additionally to the ``compute`` function. When the benchmark is run, the ``run`` function is called, which usually validates the data, calls the ``compute`` function and validates the results.
 
@@ -19,9 +19,9 @@ Statistical metrics calculate the metric value and the p-value. The ``Statistica
 
 .. code-block:: python
 
-   {"statistic": <statistic>, "p_value": <pval>}
+   {"statistic": <statistic>, "p_val": <pval>}
 
-The ``validate`` function should be implemented in the metric class and should return a boolean value indicating whether the metric results are valid. The ``validate`` function is called before the ``compute`` function on the real and synthetic data. If the ``validate`` function returns ``False``, the metric is skipped for that specific column, table or dataset it is computed on.
+The ``validate`` function should be implemented in the metric class and should raise a ``ValueError`` if the data is not valid for the metric (for example, the wrong column type). The ``validate`` function is called before the ``compute`` function on the real and synthetic data. If the ``validate`` function raises, the metric is skipped for that specific column, table or dataset it is computed on.
 
 Distance Metrics
 ~~~~~~~~~~~~~~~~
