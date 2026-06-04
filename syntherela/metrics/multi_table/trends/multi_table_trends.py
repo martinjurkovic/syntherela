@@ -204,8 +204,8 @@ def evaluate_long_path(
         mask = errors == errors  # Select rows with errors (not None)
         column_pair_quality.loc[mask.values, 'Score'] = 0
         # set scores
-    top_table_cols = set(top_table_cols)
-    bottom_table_cols = set(bottom_table_cols)
+    top_table_cols = list(set(top_table_cols))
+    bottom_table_cols = list(set(bottom_table_cols))
 
     res = {}
 
