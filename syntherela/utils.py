@@ -4,6 +4,7 @@ NpEncoder for saving results and CustomHyperTransformer for data preprocessing.
 """
 
 import json
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -18,12 +19,12 @@ class NpEncoder(json.JSONEncoder):
     for proper JSON serialization.
     """
 
-    def default(self, obj):
+    def default(self, o: Any) -> Any:
         """Convert NumPy objects to Python types.
 
         Parameters
         ----------
-        obj: object
+        o: object
             The object to encode.
 
         Returns
@@ -32,15 +33,15 @@ class NpEncoder(json.JSONEncoder):
             The encoded object.
 
         """
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.floating):
-            return float(obj)
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        if isinstance(obj, np.bool_):
-            return bool(obj)
-        return super().default(obj)
+        if isinstance(o, np.integer):
+            return int(o)
+        if isinstance(o, np.floating):
+            return float(o)
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, np.bool_):
+            return bool(o)
+        return super().default(o)
 
 
 class CustomHyperTransformer(HyperTransformer):
@@ -115,56 +116,53 @@ class CustomHyperTransformer(HyperTransformer):
         if not isinstance(data, pd.DataFrame):
             data = pd.DataFrame(data)
 
+        out = data.copy()
         for field in data:
             transform_info = self.column_transforms[field]
 
             kind = self.column_kind[field]
             if kind == 'i' or kind == 'f':
                 # Numerical column.
-                data[field] = data[field].fillna(transform_info['mean'])
+                out[field] = out[field].fillna(transform_info['mean'])
             elif kind == 'b':
                 # Boolean column.
-                data[field] = pd.to_numeric(
-                    data[field], errors='coerce'
-                ).astype(float)
-                data[field] = data[field].fillna(transform_info['mode'])
+                out[field] = pd.to_numeric(out[field], errors='coerce')
+                out[field] = out[field].fillna(transform_info['mode'])
             elif kind == 'O':
                 # Categorical column.
                 col_data = pd.DataFrame({'field': data[field]})
-                out = (
+                encoded = (
                     transform_info['one_hot_encoder']
                     .transform(col_data)
                     .toarray()
                 )
-                transformed = pd.DataFrame(
-                    out,
-                    columns=[f'{field}_{i}' for i in range(np.shape(out)[1])],
-                )
-                data = data.drop(columns=[field])
-                data = pd.concat(
-                    [data, transformed.set_index(data.index)], axis=1
-                )
+                cols: list[str] = [
+                    f'{field}_{i}' for i in range(np.shape(encoded)[1])
+                ]
+                transformed = pd.DataFrame(encoded, columns=pd.Index(cols))
+                out = out.drop(columns=[field])
+                out = pd.concat([out, transformed.set_index(out.index)], axis=1)
             elif kind == 'M':
                 # Datetime column.
                 nulls = data[field].isnull()
-                data[field] = pd.to_datetime(data[field], errors='coerce')
-                data[f'{field}_Year'] = data[field].dt.year
-                data[f'{field}_Month'] = data[field].dt.month
-                data[f'{field}_Day'] = data[field].dt.day
-                data.loc[nulls, f'{field}_Year'] = np.nan
-                data.loc[nulls, f'{field}_Month'] = np.nan
-                data.loc[nulls, f'{field}_Day'] = np.nan
+                out[field] = pd.to_datetime(data[field], errors='coerce')
+                out[f'{field}_Year'] = out[field].dt.year
+                out[f'{field}_Month'] = out[field].dt.month
+                out[f'{field}_Day'] = out[field].dt.day
+                out.loc[nulls, f'{field}_Year'] = np.nan
+                out.loc[nulls, f'{field}_Month'] = np.nan
+                out.loc[nulls, f'{field}_Day'] = np.nan
                 if transform_info['has_hours']:
-                    data[f'{field}_Hour'] = data[field].dt.hour
-                    data.loc[nulls, f'{field}_Hour'] = np.nan
+                    out[f'{field}_Hour'] = out[field].dt.hour
+                    out.loc[nulls, f'{field}_Hour'] = np.nan
                 if transform_info['has_minutes']:
-                    data[f'{field}_Minute'] = data[field].dt.minute
-                    data.loc[nulls, f'{field}_Minute'] = np.nan
+                    out[f'{field}_Minute'] = out[field].dt.minute
+                    out.loc[nulls, f'{field}_Minute'] = np.nan
                 if transform_info['has_seconds']:
-                    data[f'{field}_Second'] = data[field].dt.second
-                    data.loc[nulls, f'{field}_Second'] = np.nan
+                    out[f'{field}_Second'] = out[field].dt.second
+                    out.loc[nulls, f'{field}_Second'] = np.nan
                 if transform_info['has_microseconds']:
-                    data[f'{field}_Microsecond'] = data[field].dt.microsecond
-                    data.loc[nulls, f'{field}_Microsecond'] = np.nan
-                data = data.drop(columns=[field])
-        return data
+                    out[f'{field}_Microsecond'] = out[field].dt.microsecond
+                    out.loc[nulls, f'{field}_Microsecond'] = np.nan
+                out = out.drop(columns=[field])
+        return out

@@ -127,7 +127,7 @@ def remove_sdv_columns(
     "_v1" Versions of the relational demo datasets in SDV have some columns
     that are not present in the original datasets. We created this function to
     remove these columns from the tables and the metadata.
-    """
+    """  # noqa: DOC201
     warnings.warn(
         'This function is deprecated and will be removed in the future.',
         category=DeprecationWarning,
@@ -215,11 +215,6 @@ def download_sdv_relational_datasets(
     ----------
     data_path: Union[str, os.PathLike], default="data/original"
         Path to the directory where datasets will be saved.
-
-    Returns
-    -------
-    list
-        List of downloaded dataset names.
 
     """
     sdv_relational_datasets = get_available_demos('multi_table')
@@ -342,6 +337,11 @@ def make_column_names_unique(
         - synthetic_data: Dictionary mapping table names to pandas DataFrames
         with unique column names.
         - metadata: Updated metadata object with unique column names.
+
+    Raises
+    ------
+    ValueError
+        If real and synthetic tables do not have the same columns.
 
     """
     for table_name in metadata.get_tables():

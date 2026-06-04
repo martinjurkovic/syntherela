@@ -6,6 +6,7 @@ describing the database schema: tables and their relationships.
 
 import json
 import os
+from typing import cast
 
 import graphviz
 import pandas as pd
@@ -152,18 +153,7 @@ class Metadata(MultiTableMetadata):
     def rename_column(
         self, table_name: str, old_column_name: str, new_column_name: str
     ):
-        """Rename a column in a table.
-
-        Parameters
-        ----------
-        table_name: str
-            Name of the table.
-        old_column_name: str
-            Current name of the column.
-        new_column_name: str
-            New name for the column.
-
-        """
+        """Rename a column in a table."""  # noqa: DOC201
         self.tables[table_name].columns[new_column_name] = self.tables[
             table_name
         ].columns.pop(old_column_name)
@@ -228,13 +218,22 @@ class Metadata(MultiTableMetadata):
                 relationships.append(relationship)
         return table_levels
 
-    def visualize(self, output_filename=None) -> graphviz.Digraph:
+    def visualize(
+        self,
+        show_table_details='full',
+        show_relationship_labels=True,
+        output_filepath=None,
+    ) -> graphviz.Digraph:
         """Visualize the database schema.
 
         Parameters
         ----------
-        output_filename: str, default=None
-            Name of the output file. If None, the graph is not saved.
+        show_table_details: str, default='full'
+            Ignored (kept for compatibility with SDV's API).
+        show_relationship_labels: bool, default=True
+            Ignored (kept for compatibility with SDV's API).
+        output_filepath: str | os.PathLike | None, default=None
+            Output file path. If None, the graph is not saved.
 
         Returns
         -------
@@ -242,7 +241,7 @@ class Metadata(MultiTableMetadata):
             Graph visualization of the metadata.
 
         """
-        filename, graphviz_extension = _get_graphviz_extension(output_filename)
+        filename, graphviz_extension = _get_graphviz_extension(output_filepath)
 
         def create_table_node(
             table_name: str, metadata: Metadata, font: str = 'Arial'
@@ -264,7 +263,9 @@ class Metadata(MultiTableMetadata):
                 HTML-like label for the node.
 
             """
-            table_meta = metadata.get_table_meta(table_name)
+            table_meta = cast(
+                dict, metadata.get_table_meta(table_name, to_dict=True)
+            )
             table_label = '< <table cellpadding="0" cellborder="0" cellspacing="0" border="0">'  # noqa: E501
             table_label += f'<tr><td bgcolor="#476893">  </td> <td align="left" bgcolor="#476893"><font color="white"><b>{table_name}</b></font></td> <td align="right" bgcolor="#476893"></td></tr>'  # noqa: E501
             primary_key = metadata.get_primary_key(table_name)

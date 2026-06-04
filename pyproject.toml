@@ -40,6 +40,7 @@ dev = [
     "pre-commit",
     "pytest",
     "pytest-cov",
+    "ty==0.0.25",
 ]
 
 docs=[
@@ -72,14 +73,19 @@ line-length = 80
 target-version = "py310"
 src = ["syntherela"]
 
+[tool.ty.src]
+include = ["syntherela", "tests"]
+
 [tool.ruff.lint]
+preview = true
 select = [
-  "E",  # Flake8/PEP8
-  "W",  # Flake8/PEP8
-  "F",  # Pyflakes
-  "I",  # isort (Import sorting)
-  "B",  # Bugbear
-  "D",  # pydocstyle
+  "E",   # Flake8/PEP8
+  "W",   # Flake8/PEP8
+  "F",   # Pyflakes
+  "I",   # isort (Import sorting)
+  "B",   # Bugbear
+  "D",   # pydocstyle
+  "DOC", # pydoclint
   "UP",  # pyupgrade
 ]
 ignore = [
@@ -101,7 +107,8 @@ combine-as-imports = true
 split-on-trailing-comma = true
 
 [tool.ruff.lint.per-file-ignores]
-"experiments/**/*.py" = ["E501"]
+"experiments/**/*.py" = ["E501", "DOC"]
+"tests/**/*.py" = ["DOC"]
 
 [tool.ruff.format]
 # Matches your current YAPF/PyG style

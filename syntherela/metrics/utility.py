@@ -1,13 +1,15 @@
 """Single-table machine learning efficacy (utility) metric."""
 
+from typing import Any
+
 import numpy as np
-from sdmetrics.base import BaseMetric
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_squared_error, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from syntherela.metadata import drop_ids
+from syntherela.metrics.base import BaseMetric
 from syntherela.utils import CustomHyperTransformer
 
 
@@ -16,25 +18,25 @@ class MachineLearningEfficacyMetric(BaseMetric):
 
     def __init__(
         self,
-        target: tuple[str, str],
+        target: tuple[str, str, str | None],
         classifier_cls,
-        classifier_args=None,
-        random_state=None,
+        classifier_args: dict[str, Any] | None = None,
+        random_state: int | None = None,
         feature_engineering_function=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.target = target
         self.classifier_cls = classifier_cls
-        self.classifier_args = classifier_args
         if classifier_args is None:
             classifier_args = {}
+        self.classifier_args: dict[str, Any] = classifier_args
         self.random_state = random_state
-        self.name = f'{type(self).__name__}-{classifier_cls.__name__}'
+        self.name: str = f'{type(self).__name__}-{classifier_cls.__name__}'
         self.feature_engineering_function = feature_engineering_function
 
     def prepare_data(self, X, ht=None, **kwargs):
-        """Prepare the data for training."""
+        """Prepare the data for training."""  # noqa: DOC201
         if ht is None:
             ht = CustomHyperTransformer()
             ht.fit(X.copy())
@@ -44,7 +46,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         return transformed_data, ht
 
     def score(self, model, X, y):
-        """Compute the score of the model."""
+        """Compute the score of the model."""  # noqa: DOC201
         # if classifier is a regressor, compute RMSE, else AUCROC
         if hasattr(model, 'predict_proba'):
             probs = model.predict_proba(X)
@@ -61,8 +63,9 @@ class MachineLearningEfficacyMetric(BaseMetric):
             return -np.sqrt(mean_squared_error(y, y_pred))
 
     def compute(self, X_train, y_train, X_test, y_test, m=100, **kwargs):
-        """Compute the ML-E metric."""
-        np.random.seed(self.random_state)
+        """Compute the ML-E metric."""  # noqa: DOC201
+        seed_base = self.random_state if self.random_state is not None else 0
+        np.random.seed(seed_base)
         model_full_train_set = Pipeline(
             [
                 ('imputer', SimpleImputer()),
@@ -77,7 +80,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         scores = []
         models = []
         for bootstrap_idx in range(m):
-            np.random.seed(self.random_state + bootstrap_idx)
+            np.random.seed(seed_base + bootstrap_idx)
             indices = np.random.choice(
                 len(X_train), len(X_train), replace=m > 1
             )
@@ -106,7 +109,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         )
 
     def get_target_table(self, data, target, metadata):
-        """Extract the target table and column from the data."""
+        """Extract the target table and column from the data."""  # noqa: DOC201
         target_table, target_column, _ = target
         X, y = (
             data[target_table].drop(columns=target_column),
@@ -128,7 +131,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         feature_importance_real=None,
         **kwargs,
     ):
-        """Compute the ML-E using train-on-sythetic test-on-real approach."""
+        """Compute the ML-E using train-on-sythetic test-on-real approach."""  # noqa: DOC201
         if self.feature_engineering_function:
             X_real, y_real = self.feature_engineering_function(
                 real_data, metadata
@@ -214,7 +217,7 @@ class MachineLearningEfficacyMetric(BaseMetric):
         }
 
     def feature_importance(self, model):
-        """Extract feature importance from the trained model."""
+        """Extract feature importance from the trained model."""  # noqa: DOC201
         if hasattr(model['clf'], 'feature_importances_'):
             importance = model['clf'].feature_importances_
         elif hasattr(model['clf'], 'coef_'):

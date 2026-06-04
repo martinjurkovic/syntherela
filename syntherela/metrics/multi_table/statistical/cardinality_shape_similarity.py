@@ -17,18 +17,60 @@ class CardinalityShapeSimilarity(StatisticalBaseMetric):
         super().__init__(**kwargs)
         self.name = 'CardinalityShapeSimilarity'
 
-    def validate(self, real_data, synthetic_data):
-        """Validate the input data."""
-        return sorted(real_data.keys()) == sorted(synthetic_data.keys())
+    @staticmethod
+    def validate(real_data, synthetic_data):
+        """Validate the real and synthetic data inputs.
 
-    def run(self, real_data, synthetic_data, metadata, **kwargs):
-        """Execute the cardinality shape similarity metric."""
+        Parameters
+        ----------
+        real_data : dict
+            Dictionary mapping table names to real data DataFrames.
+        synthetic_data : dict
+            Dictionary mapping table names to synthetic data DataFrames.
+
+        Raises
+        ------
+        ValueError
+            If either dict is empty, or they do not contain the same tables.
+
+        """
+        for name, data in (
+            ('real_data', real_data),
+            ('synthetic_data', synthetic_data),
+        ):
+            if not (isinstance(data, dict) and len(data) > 0):
+                raise ValueError(
+                    f'{name} must be a non-empty dict of table DataFrames'
+                )
+        if sorted(real_data.keys()) != sorted(synthetic_data.keys()):
+            raise ValueError(
+                'real_data and synthetic_data must contain the same table keys'
+            )
+
+    def run(self, real_data, synthetic_data, **kwargs):
+        """Execute the cardinality shape similarity metric.
+
+        Returns
+        -------
+        dict
+            Per-relationship KS test results; see ``compute`` for structure.
+
+        """
         self.validate(real_data, synthetic_data)
-        return self.compute(real_data, synthetic_data, metadata)
+        return self.compute(real_data, synthetic_data, **kwargs)
 
     @staticmethod
-    def compute(real_data, synthetic_data, metadata, **kwargs):
-        """Compute the cardinality metric."""
+    def compute(real_data, synthetic_data, **kwargs):
+        """Compute the cardinality metric.
+
+        Returns
+        -------
+        dict
+            Mapping of ``'{parent}_{child}'`` relationship keys to dicts
+            containing ``'statistic'`` and ``'pval'`` from a KS test.
+
+        """
+        metadata = kwargs['metadata']
         results = {}
         for rel in metadata.relationships:
             cardinality_real = get_cardinality_distribution(

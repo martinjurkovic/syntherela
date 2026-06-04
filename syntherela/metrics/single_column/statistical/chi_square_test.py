@@ -1,10 +1,15 @@
 """Chi-square statistical test for single columns."""
 
+from typing import Any
+
 import pandas as pd
 from scipy.stats import chi2_contingency
-from sdmetrics.goal import Goal
 
-from syntherela.metrics.base import SingleColumnMetric, StatisticalBaseMetric
+from syntherela.metrics.base import (
+    Goal,
+    SingleColumnMetric,
+    StatisticalBaseMetric,
+)
 
 
 class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
@@ -30,24 +35,33 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'ChiSquareTest'
-        self.goal = Goal.MINIMIZE
+        self.name: str = 'ChiSquareTest'
+        self.goal: Goal = Goal.MINIMIZE
 
     @staticmethod
     def is_applicable(column_type):
-        """Check if the metric is applicable to the given column type."""
+        """Check if the metric is applicable to the given column type."""  # noqa: DOC201
         return column_type == 'categorical' or column_type == 'boolean'
 
-    def validate(self, column):
-        """Validate if the data can be used with the chi-square test."""
+    @staticmethod
+    def validate(data: Any) -> None:
+        """Validate if the data can be used with the chi-square test.
+
+        Raises
+        ------
+        ValueError
+            If the column is not categorical, boolean, or object dtype.
+
+        """
+        column = data
         if column.dtype.name not in ('object', 'category', 'bool'):
             raise ValueError(
-                f'{self.name} can only be applied to categorical columns, but '
-                f'column {column.name} is of type {column.dtype}'
+                'ChiSquareTest can only be applied to categorical columns, '
+                f'but column {column.name} is of type {column.dtype}'
             )
 
     @staticmethod
-    def compute(real_data, synthetic_data):
+    def compute(real_data, synthetic_data, **kwargs):
         """Compute the chi-square test statistic and p-value.
 
         Parameters

@@ -2,10 +2,9 @@
 
 import numpy as np
 import pandas as pd
-from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 
-from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
+from syntherela.metrics.base import DistanceBaseMetric, Goal, SingleColumnMetric
 from syntherela.metrics.single_column.distance.utils import get_histograms
 
 _SQRT2 = np.sqrt(2)
@@ -23,7 +22,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
-        """Check if the metric is applicable to the given column type."""
+        """Check if the metric is applicable to the given column type."""  # noqa: DOC201
         return column_type in [
             'categorical',
             'numerical',
@@ -33,13 +32,11 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def hellinger(p, q):
-        """Hellinger distance between two histograms."""
+        """Hellinger distance between two histograms."""  # noqa: DOC201
         return np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2)) / _SQRT2
 
-    @classmethod
-    def compute(
-        cls, orig_col, synth_col, bins, normalize_histograms=True, **kwargs
-    ):
+    @staticmethod
+    def compute(real_data, synthetic_data, **kwargs):
         """Compute Hellinger distance between two histograms.
 
         Parameters
@@ -60,13 +57,25 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
                 Metric output or outputs.
 
         """
+        bins = kwargs.get('bins')
+        normalize_histograms = kwargs.get('normalize_histograms', True)
         gt_freq, synth_freq = get_histograms(
-            orig_col, synth_col, normalize=normalize_histograms, bins=bins
+            real_data,
+            synthetic_data,
+            normalize=normalize_histograms,
+            bins=bins,
         )
-        return cls.hellinger(gt_freq, synth_freq)
+        return HellingerDistance.hellinger(gt_freq, synth_freq)
 
     def run(self, real_data, synthetic_data, **kwargs):
-        """Run the Hellinger distance metric."""
+        """Run the Hellinger distance metric.
+
+        Returns
+        -------
+        dict
+            Dictionary with results.
+
+        """
         if self.is_constant(real_data):
             return {
                 'value': 0,

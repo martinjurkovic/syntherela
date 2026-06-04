@@ -76,7 +76,7 @@ def visualize_single_column_distance_metrics(
                     # set dpi
                     fig.dpi = 300
 
-                    colors = plt.cm.viridis(
+                    colors = plt.get_cmap('viridis')(
                         np.linspace(0.5, 1, N)
                     )  # create a color map
 
@@ -237,7 +237,7 @@ def visualize_single_column_detection_metrics(
                 # set dpi
                 fig.dpi = 300
 
-                colors = plt.cm.viridis(
+                colors = plt.get_cmap('viridis')(
                     np.linspace(0.5, 1, N)
                 )  # create a color map
 

@@ -1,15 +1,16 @@
 """Maximum Mean Discrepancy (MMD) metric for single tables."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
-from sdmetrics.goal import Goal
 from sklearn import metrics
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from syntherela.metadata import drop_ids
-from syntherela.metrics.base import DistanceBaseMetric, SingleTableMetric
+from syntherela.metrics.base import DistanceBaseMetric, Goal, SingleTableMetric
 
 
 class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
@@ -54,7 +55,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
 
     @staticmethod
     def is_applicable(metadata):
-        """Check if the table contains numerical column."""
+        """Check if the table contains numerical column."""  # noqa: DOC201
         for column_name in metadata['columns'].keys():
             if metadata['columns'][column_name]['sdtype'] == 'numerical':
                 return True
@@ -62,7 +63,9 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
 
     @staticmethod
     def compute(
-        original_table, sythetic_table, metadata, kernel='linear', **kwargs
+        real_data: Any,
+        synthetic_data: Any,
+        **kwargs: Any,
     ):
         """Compute the Maximum Mean Discrepancy (MMD) between two tables.
 
@@ -72,9 +75,23 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
         different data modalities.
         arXiv: https://arxiv.org/abs/2301.07573
         github: https://github.com/vanderschaarlab/synthcity/
+
+        Returns
+        -------
+        float
+            MMD score between the two tables.
+
+        Raises
+        ------
+        ValueError
+            If an unsupported kernel is specified.
+
         """
-        orig = original_table.copy()
-        synth = sythetic_table.copy()
+        metadata = kwargs['metadata']
+        kernel = kwargs.get('kernel', 'linear')
+
+        orig = real_data.copy()
+        synth = synthetic_data.copy()
 
         orig = drop_ids(orig, metadata)
         synth = drop_ids(synth, metadata)
@@ -114,18 +131,18 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
             """
             gamma = 1.0
             XX = metrics.pairwise.rbf_kernel(
-                orig.reshape(len(original_table), -1),
-                synth.reshape(len(original_table), -1),
+                orig.reshape(len(real_data), -1),
+                orig.reshape(len(real_data), -1),
                 gamma,
             )
             YY = metrics.pairwise.rbf_kernel(
-                synth.reshape(len(sythetic_table), -1),
-                synth.reshape(len(sythetic_table), -1),
+                synth.reshape(len(synthetic_data), -1),
+                synth.reshape(len(synthetic_data), -1),
                 gamma,
             )
             XY = metrics.pairwise.rbf_kernel(
-                orig.reshape(len(original_table), -1),
-                synth.reshape(len(sythetic_table), -1),
+                orig.reshape(len(real_data), -1),
+                synth.reshape(len(synthetic_data), -1),
                 gamma,
             )
             score = XX.mean() + YY.mean() - 2 * XY.mean()
@@ -138,23 +155,23 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
             gamma = 1
             coef0 = 0
             XX = metrics.pairwise.polynomial_kernel(
-                orig.reshape(len(original_table), -1),
-                orig.reshape(len(original_table), -1),
+                orig.reshape(len(real_data), -1),
+                orig.reshape(len(real_data), -1),
                 degree,
                 gamma,
                 coef0,
             )
             synth_arr = np.asarray(synth)
             YY = metrics.pairwise.polynomial_kernel(
-                synth_arr.reshape(len(sythetic_table), -1),
-                synth_arr.reshape(len(sythetic_table), -1),
+                synth_arr.reshape(len(synthetic_data), -1),
+                synth_arr.reshape(len(synthetic_data), -1),
                 degree,
                 gamma,
                 coef0,
             )
             XY = metrics.pairwise.polynomial_kernel(
-                orig.reshape(len(original_table), -1),
-                synth_arr.reshape(len(sythetic_table), -1),
+                orig.reshape(len(real_data), -1),
+                synth_arr.reshape(len(synthetic_data), -1),
                 degree,
                 gamma,
                 coef0,

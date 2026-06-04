@@ -12,7 +12,7 @@ def test_utility_init():
         classifier_args={},
         random_state=0,
     )
-    assert 'MachineLearningEfficacyMetric' in m.name
+    assert m.name is not None and 'MachineLearningEfficacyMetric' in m.name
     assert m.target == ('table1', 'categorical', None)
 
 

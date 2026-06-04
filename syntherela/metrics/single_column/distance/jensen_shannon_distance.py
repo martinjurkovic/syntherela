@@ -3,10 +3,13 @@
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import jensenshannon
-from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 
-from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
+from syntherela.metrics.base import (
+    DistanceBaseMetric,
+    Goal,
+    SingleColumnMetric,
+)
 from syntherela.metrics.single_column.distance.utils import get_histograms
 
 
@@ -68,14 +71,7 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
         ]
 
     @staticmethod
-    def compute(
-        orig_col,
-        synth_col,
-        bins,
-        normalize_histograms=True,
-        base=np.e,
-        **kwargs,
-    ):
+    def compute(real_data, synthetic_data, **kwargs):
         """Compute the Jensen-Shannon distance between two columns.
 
         Parameters
@@ -99,8 +95,14 @@ class JensenShannonDistance(DistanceBaseMetric, SingleColumnMetric):
             The Jensen-Shannon distance between the two columns.
 
         """
+        bins = kwargs.get('bins')
+        normalize_histograms = kwargs.get('normalize_histograms', True)
+        base = kwargs.get('base', np.e)
         gt_freq, synth_freq = get_histograms(
-            orig_col, synth_col, normalize=normalize_histograms, bins=bins
+            real_data,
+            synthetic_data,
+            normalize=normalize_histograms,
+            bins=bins,
         )
         return jensenshannon(gt_freq, synth_freq, base=base)
 

@@ -38,7 +38,7 @@ def test_single_table_detection_prepare_data(detection_data):
     )
 
     # Test data preparation
-    X, y = metric.prepare_data(real_data, synthetic_data, metadata)
+    X, y = metric.prepare_data(real_data, synthetic_data, metadata=metadata)
 
     # Check that the output has the expected shape and types
     assert isinstance(X, pd.DataFrame)
@@ -69,3 +69,16 @@ def test_single_table_detection_run(detection_data):
     assert 'bin_test_p_val' in result
     assert 0 <= result['accuracy'] <= 1
     assert 0 <= result['bin_test_p_val'] <= 1
+
+
+def test_single_table_detection_feature_importance_after_run(detection_data):
+    real_data, synthetic_data, metadata = detection_data
+    metric = SingleTableDetection(
+        classifier_cls=RandomForestClassifier, random_state=42, folds=2
+    )
+    metric.run(real_data, synthetic_data, metadata)
+    importance = metric.feature_importance()
+    assert isinstance(importance, dict)
+    assert len(importance) > 0
+    for _name, scores in importance.items():
+        assert len(scores) == metric.folds

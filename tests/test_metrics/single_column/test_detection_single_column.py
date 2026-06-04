@@ -9,7 +9,7 @@ from syntherela.metrics.single_column.detection import SingleColumnDetection
 def test_single_column_detection_init():
     """Test initialization of SingleColumnDetection metric."""
     metric = SingleColumnDetection(classifier_cls=RandomForestClassifier)
-    assert 'SingleColumnDetection' in metric.name
+    assert metric.name is not None and 'SingleColumnDetection' in metric.name
     assert metric.classifier_cls == RandomForestClassifier
     assert metric.folds == 5
 
@@ -49,6 +49,19 @@ def test_single_column_detection_run_numerical(numerical_data):
     assert 0 <= result['bin_test_p_val'] <= 1
 
 
+def test_single_column_detection_feature_importance_after_run(numerical_data):
+    real_data, synthetic_data = numerical_data
+    metric = SingleColumnDetection(
+        classifier_cls=RandomForestClassifier, random_state=42, folds=2
+    )
+    metric.run(real_data, synthetic_data, metadata=None)
+    importance = metric.feature_importance()
+    assert isinstance(importance, dict)
+    assert len(importance) > 0
+    for _name, scores in importance.items():
+        assert len(scores) == metric.folds
+
+
 def test_single_column_detection_run_categorical(categorical_data):
     """Test run for SingleColumnDetection with categorical_data fixture."""
     real_data, synthetic_data = categorical_data
@@ -60,3 +73,4 @@ def test_single_column_detection_run_categorical(categorical_data):
     assert 'accuracy' in result
     assert 'bin_test_p_val' in result
     assert 0 <= result['accuracy'] <= 1
+    assert 0 <= result['bin_test_p_val'] <= 1

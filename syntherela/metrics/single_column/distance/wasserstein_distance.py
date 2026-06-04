@@ -2,11 +2,10 @@
 
 import pandas as pd
 from scipy.stats import wasserstein_distance
-from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 from sklearn.preprocessing import MinMaxScaler
 
-from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
+from syntherela.metrics.base import DistanceBaseMetric, Goal, SingleColumnMetric
 
 
 class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
@@ -21,12 +20,19 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
-        """Check if the metric is applicable to the given column type."""
+        """Check if the metric is applicable to the given column type."""  # noqa: DOC201
         return column_type in ['numerical', 'datetime']
 
     @staticmethod
     def compute(real_data, synthetic_data, **kwargs):
-        """Compute the Wasserstein distance between two columns."""
+        """Compute the Wasserstein distance between two columns.
+
+        Returns
+        -------
+        float
+            Wasserstein distance scaled to [0, 1].
+
+        """
         combined_data = pd.concat(
             [real_data, synthetic_data], ignore_index=True
         )
@@ -45,7 +51,14 @@ class WassersteinDistance(DistanceBaseMetric, SingleColumnMetric):
         return wasserstein_distance(x_orig, x_synth)
 
     def run(self, real_data, synthetic_data, **kwargs):
-        """Execute the Wasserstein distance metric."""
+        """Execute the Wasserstein distance metric.
+
+        Returns
+        -------
+        dict
+            Dictionary with results.
+
+        """
         if is_datetime(real_data):
             real_data = pd.to_numeric(
                 real_data, errors='coerce', downcast='integer'

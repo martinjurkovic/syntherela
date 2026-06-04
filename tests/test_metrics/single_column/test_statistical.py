@@ -11,7 +11,7 @@ def test_kolmogorov_smirnov_initialization():
     """Test initialization of KolmogorovSmirnovTest metric."""
     metric = KolmogorovSmirnovTest()
     assert metric.name == 'KolmogorovSmirnovTest'
-    assert metric.goal.name == 'MINIMIZE'
+    assert metric.goal is not None and metric.goal.name == 'MINIMIZE'
 
 
 def test_kolmogorov_smirnov_is_applicable():
@@ -65,7 +65,7 @@ def test_chi_square_initialization():
     """Test initialization of ChiSquareTest metric."""
     metric = ChiSquareTest()
     assert metric.name == 'ChiSquareTest'
-    assert metric.goal.name == 'MINIMIZE'
+    assert metric.goal is not None and metric.goal.name == 'MINIMIZE'
 
 
 def test_chi_square_is_applicable():

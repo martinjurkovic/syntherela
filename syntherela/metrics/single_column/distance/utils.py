@@ -9,7 +9,7 @@ def get_histograms(
     original: pd.Series,
     synthetic: pd.Series,
     normalize: bool = True,
-    bins: str | np.ndarray = 'doane',
+    bins: str | np.ndarray | None = 'doane',
     return_keys: bool = False,
 ) -> tuple:
     """Compute histograms for the given data.
@@ -34,12 +34,20 @@ def get_histograms(
     -------
         The observed and expected frequencies, and keys if return_keys is True.
 
+    Raises
+    ------
+    ValueError
+        If the column dtype is not supported.
+
     """
     if is_datetime(original):
         original = pd.to_numeric(original, errors='coerce', downcast='integer')
         synthetic = pd.to_numeric(
             synthetic, errors='coerce', downcast='integer'
         )
+
+    if bins is None:
+        bins = 'doane'
 
     if original.dtype.name in ('object', 'category', 'bool'):  # categorical
         gt = original.value_counts().to_dict()
@@ -48,7 +56,7 @@ def get_histograms(
         for key in all_keys:
             gt.setdefault(key, 0)
             synth.setdefault(key, 0)
-    elif np.issubdtype(original.dtype, np.number):  # continuous
+    elif pd.api.types.is_numeric_dtype(original.dtype):  # continuous
         original = original.dropna()
         synthetic = synthetic.dropna()
         if type(bins) is not np.ndarray:

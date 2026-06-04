@@ -2,10 +2,13 @@
 
 import numpy as np
 import pandas as pd
-from sdmetrics.goal import Goal
 from sdmetrics.utils import is_datetime
 
-from syntherela.metrics.base import DistanceBaseMetric, SingleColumnMetric
+from syntherela.metrics.base import (
+    DistanceBaseMetric,
+    Goal,
+    SingleColumnMetric,
+)
 from syntherela.metrics.single_column.distance.utils import get_histograms
 
 
@@ -64,7 +67,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
         ]
 
     @staticmethod
-    def compute(real_data, synthetic_data, bins, **kwargs):
+    def compute(real_data, synthetic_data, **kwargs):
         """Compute the Total Variation Distance between two columns.
 
         Parameters
@@ -84,6 +87,7 @@ class TotalVariationDistance(DistanceBaseMetric, SingleColumnMetric):
             The Total Variation Distance between the two columns.
 
         """
+        bins = kwargs.get('bins')
         f_exp, f_obs = get_histograms(
             real_data, synthetic_data, normalize=True, bins=bins
         )

@@ -5,6 +5,7 @@
 import warnings
 from collections import defaultdict
 from copy import deepcopy
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -39,7 +40,7 @@ class PairTrendsReport(BaseReport):
 
 
 def recursive_merge(
-    dataframes: list[pd.DataFrame], keys: list[str]
+    dataframes: list[pd.DataFrame], keys: list[tuple[str, str]]
 ) -> pd.DataFrame:
     """Merge a list of dataframes using the given keys.
 
@@ -78,7 +79,9 @@ def recursive_merge(
 
 
 def get_joint_table(
-    long_path: list[str], tables: dict[pd.DataFrame], dataset_meta: Metadata
+    long_path: list[str],
+    tables: dict[str, pd.DataFrame],
+    dataset_meta: Metadata,
 ) -> tuple:
     """Denormalize the tables in along path and return the joined relation.
 
@@ -120,7 +123,10 @@ def get_joint_table(
     # Remove the in-between tables
     for i in range(1, len(long_path) - 1):
         in_between_table = long_path[i]
-        single_table_meta = dataset_meta.get_table_meta(in_between_table)
+        single_table_meta = cast(
+            dict[str, Any],
+            dataset_meta.get_table_meta(in_between_table, to_dict=True),
+        )
         for column in single_table_meta['columns'].keys():
             if column in long_path_joined:
                 long_path_joined.pop(column)
@@ -130,7 +136,10 @@ def get_joint_table(
     metadata = SingleTableMetadata()
     metadata.detect_from_dataframe(long_path_joined)
     for table in final_tables:
-        single_table_meta = dataset_meta.get_table_meta(table)
+        single_table_meta = cast(
+            dict[str, Any],
+            dataset_meta.get_table_meta(table, to_dict=True),
+        )
         for column, info in single_table_meta['columns'].items():
             if column in long_path_joined.columns:
                 metadata.update_column(column, **info)
@@ -195,8 +204,8 @@ def evaluate_long_path(
         mask = errors == errors  # Select rows with errors (not None)
         column_pair_quality.loc[mask.values, 'Score'] = 0
         # set scores
-    top_table_cols = set(top_table_cols)
-    bottom_table_cols = set(bottom_table_cols)
+    top_table_cols = list(set(top_table_cols))
+    bottom_table_cols = list(set(bottom_table_cols))
 
     res = {}
 
@@ -216,7 +225,9 @@ def evaluate_long_path(
     return res
 
 
-def find_paths_with_length_greater_than_one(metadata: Metadata) -> list[str]:
+def find_paths_with_length_greater_than_one(
+    metadata: Metadata,
+) -> list[list[str]]:
     """Find paths in the database schema with length greater than one.
 
     This function uses depth-first search to find all paths in the database
@@ -265,8 +276,8 @@ def find_paths_with_length_greater_than_one(metadata: Metadata) -> list[str]:
 
 
 def get_long_range(
-    real_tables: dict[pd.DataFrame],
-    syn_tables: dict[pd.DataFrame],
+    real_tables: dict[str, pd.DataFrame],
+    syn_tables: dict[str, pd.DataFrame],
     dataset_meta: Metadata,
     verbose: bool = True,
 ) -> dict:
@@ -365,8 +376,8 @@ def get_avg_long_range_scores(res: dict) -> tuple:
 
 
 def multi_table_trends(
-    tables: dict[pd.DataFrame],
-    syn_tables: dict[pd.DataFrame],
+    tables: dict[str, pd.DataFrame],
+    syn_tables: dict[str, pd.DataFrame],
     metadata: Metadata,
     verbose: bool = True,
 ) -> dict:

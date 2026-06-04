@@ -99,3 +99,17 @@ def test_aggregation_detection_feature_importance(sample_data):
         assert isinstance(name, str)
         assert hasattr(scores, '__len__')
         assert len(scores) == metric.folds  # one score per fold
+
+
+def test_parent_child_detection_feature_importance(sample_data):
+    data, metadata = sample_data
+    metric = ParentChildDetection(
+        classifier_cls=RandomForestClassifier,
+        random_state=42,
+    )
+    metric.run(data, data, metadata)
+    importance = metric.feature_importance()
+    assert isinstance(importance, dict)
+    assert len(importance) > 0
+    for _name, scores in importance.items():
+        assert len(scores) == 2
