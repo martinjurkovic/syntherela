@@ -8,10 +8,17 @@ import os
 import warnings
 
 import pandas as pd
-from sdv.datasets.demo import download_demo, get_available_demos
 
 from syntherela.metadata import Metadata
 from syntherela.typing import Tables
+
+try:
+    # ``sdv`` is an optional dependency, only required to download the SDV
+    # demo datasets. Install it with ``pip install 'syntherela[sdv]'``.
+    from sdv.datasets.demo import download_demo, get_available_demos
+except ImportError:  # pragma: no cover - sdv is optional
+    download_demo = None
+    get_available_demos = None
 
 
 def get_dataset_stats(tables: Tables, metadata: Metadata) -> dict:
@@ -216,7 +223,18 @@ def download_sdv_relational_datasets(
     data_path: Union[str, os.PathLike], default="data/original"
         Path to the directory where datasets will be saved.
 
+    Raises
+    ------
+    ImportError
+        If the optional ``sdv`` dependency is not installed.
+
     """
+    if get_available_demos is None or download_demo is None:
+        raise ImportError(
+            'Downloading the SDV demo datasets requires the optional '
+            "'sdv' dependency. Install it with: pip install 'syntherela[sdv]'."
+        )
+
     sdv_relational_datasets = get_available_demos('multi_table')
 
     # iterate through the dataframe
