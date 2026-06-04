@@ -16,6 +16,7 @@ from syntherela.data import (
 
 def test_dataset_download():
     """Test download_sdv_relational_datasets with mocked SDV demo calls."""
+    pytest.importorskip('sdv')
     # Avoid network: mock get_available_demos and download_demo
     mock_demos = pd.DataFrame({'dataset_name': ['fake_dataset']})
 
@@ -25,9 +26,9 @@ def test_dataset_download():
             os.makedirs(out, exist_ok=True)
 
     with (
-        patch('syntherela.data.get_available_demos', return_value=mock_demos),
+        patch('sdv.datasets.demo.get_available_demos', return_value=mock_demos),
         patch(
-            'syntherela.data.download_demo', side_effect=create_output_dir
+            'sdv.datasets.demo.download_demo', side_effect=create_output_dir
         ) as mock_download,
     ):
         download_sdv_relational_datasets('tests/tmp')
