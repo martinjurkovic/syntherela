@@ -207,13 +207,8 @@ class StatisticalBaseMetric(BaseMetric):
         super().__init__(**kwargs)
 
     @staticmethod
-    def validate(data):
+    def validate(*args: Any, **kwargs: Any) -> None:
         """Validate the input data.
-
-        Parameters
-        ----------
-        data
-            The data to validate.
 
         Raises
         ------
@@ -305,7 +300,16 @@ class DistanceBaseMetric(BaseMetric):
         raise NotImplementedError()
 
     def run(self, real_data, synthetic_data, **kwargs):
-        """Compute the reference and actual metric values."""
+        """Compute the reference and actual metric values.
+
+        Returns
+        -------
+        dict
+            Dictionary with keys ``value``, ``reference_mean``,
+            ``reference_variance``, ``reference_ci``, ``bootstrap_mean``,
+            and ``bootstrap_se``.
+
+        """
         reference_mean, reference_variance, reference_standard_ci = (
             self.bootstrap_reference_standard_conf_int(
                 real_data, alpha=self.alpha, **kwargs
@@ -327,7 +331,7 @@ class DistanceBaseMetric(BaseMetric):
     def boostrap_metric_values(
         self, data1, data2, m=100, random_state=None, **kwargs
     ):
-        """Compute the metric values for m bootstrap samples."""
+        """Compute the metric values for m bootstrap samples."""  # noqa: DOC201
         # get random_state from kwargs
         if random_state is None:
             random_state = 0
@@ -347,7 +351,7 @@ class DistanceBaseMetric(BaseMetric):
     def bootstrap_metric_estimate(
         self, real_data, synthetic_data, m=1000, **kwargs
     ):
-        """Compute the bootstrap mean and standard error estimates."""
+        """Compute the bootstrap mean and standard error estimates."""  # noqa: DOC201
         values = self.boostrap_metric_values(
             real_data, synthetic_data, m=m, **kwargs
         )
@@ -356,7 +360,7 @@ class DistanceBaseMetric(BaseMetric):
     def bootstrap_reference_standard_conf_int(
         self, real_data, m=1000, alpha=0.05, **kwargs
     ):
-        """Compute the standard CI on the original data using bootstrapping."""
+        """Compute the standard CI on the original data using bootstrapping."""  # noqa: DOC201
         values = self.boostrap_metric_values(
             real_data, real_data, m=m, **kwargs
         )
@@ -416,9 +420,11 @@ class DetectionBaseMetric(BaseMetric):
     -------
     prepare_data(real_data, synthetic_data, **kwargs)
         Prepare the data for the classifier.
-    stratified_kfold(X, y, save_models=False)
+    stratified_kfold(X, y, classifier_cls=None, classifier_args=None,
+    save_models=False)
         Perform stratified k-fold cross-validation.
-    compute(real_data, synthetic_data, metadata, **kwargs)
+    compute(real_data, synthetic_data, metadata, classifier_cls=None,
+    classifier_args=None, save_explainability=False, **kwargs)
         Compute the C2ST metric.
     bootstrap_sample(real_data, random_state=None, metadata=None)
         Generate a bootstrap sample from the real data.
@@ -427,7 +433,7 @@ class DetectionBaseMetric(BaseMetric):
     binomial_test(x, n, p=0.5, alternative="greater")
         Compute the p-value of the metric using the binomial test.
     run(real_data, synthetic_data, metadata, **kwargs)
-        Compute the C2ST metric.
+        Compute the C2ST metric and return scores with explainability artifacts.
     feature_importance(combine_categorical=False, combine_datetime=False)
         Return the feature importance scores for trained classifiers.
     plot_feature_importance(metadata, ax=None, combine_categorical=False,
@@ -525,7 +531,7 @@ class DetectionBaseMetric(BaseMetric):
 
         Side-effect free: returns trained artifacts instead of mutating
         `self.classifiers` / `self.models`.
-        """
+        """  # noqa: DOC201
         if classifier_cls is None:
             classifier_cls = self.classifier_cls
         if classifier_args is None:
@@ -559,9 +565,7 @@ class DetectionBaseMetric(BaseMetric):
             if save_models:
                 classifiers.append(deepcopy(model['clf']))
                 models.append(model)
-        if save_models:
-            return scores, classifiers, models
-        return scores
+        return scores, classifiers, models
 
     def compute(
         self,
@@ -586,8 +590,16 @@ class DetectionBaseMetric(BaseMetric):
 
         Returns
         -------
-        dict:
-            Metric output.
+        scores: list[int]
+            The scores for the real and synthetic data.
+        classifiers: list[sklearn.base.BaseEstimator]
+            The classifiers if save_explainability is True.
+        models: list[sklearn.base.BaseEstimator]
+            The models if save_explainability is True.
+        X: pd.DataFrame | None
+            The combined data if save_explainability is True.
+        y: np.ndarray | None
+            The labels if save_explainability is True.
 
         """
         if classifier_cls is None:
@@ -598,27 +610,20 @@ class DetectionBaseMetric(BaseMetric):
         X, y = self.prepare_data(
             real_data, synthetic_data, metadata=metadata, **kwargs
         )
-        if save_explainability:
-            scores, classifiers, models = self.stratified_kfold(
-                X,
-                y,
-                classifier_cls=classifier_cls,
-                classifier_args=classifier_args,
-                save_models=True,
-            )
-            return scores, classifiers, models, X, y
-        scores = self.stratified_kfold(
+        scores, classifiers, models = self.stratified_kfold(
             X,
             y,
             classifier_cls=classifier_cls,
             classifier_args=classifier_args,
-            save_models=False,
+            save_models=save_explainability,
         )
-        return scores, [], [], None, None
+        if not save_explainability:
+            return scores, [], [], None, None
+        return scores, classifiers, models, X, y
 
     @staticmethod
     def bootstrap_sample(real_data, random_state=None, metadata=None):
-        """Generate a bootstrap sample from the real data."""
+        """Generate a bootstrap sample from the real data."""  # noqa: DOC201
         return real_data.sample(
             frac=1,
             replace=True,
@@ -659,7 +664,7 @@ class DetectionBaseMetric(BaseMetric):
             X, y = self.prepare_data(
                 sample1, sample2, metadata=metadata, **kwargs
             )
-            scores = self.stratified_kfold(
+            scores, _, _ = self.stratified_kfold(
                 X,
                 y,
                 classifier_cls=self.classifier_cls,
@@ -672,7 +677,7 @@ class DetectionBaseMetric(BaseMetric):
 
     @staticmethod
     def binomial_test(x, n, p=0.5, alternative='greater'):
-        """Compute the p-value of the metric using the binomial test."""
+        """Compute the p-value of the metric using the binomial test."""  # noqa: DOC201
         test = binomtest(x, n, p, alternative=alternative)
         return test.statistic, test.pvalue
 
@@ -745,8 +750,11 @@ class DetectionBaseMetric(BaseMetric):
 
         Raises
         ------
-        ValueError: If no classifiers have been trained or if the classifier
-        does not have a feature_importances_ attribute.
+        ValueError
+            If no classifiers have been trained.
+        ValueError
+            If the classifier does not have a ``feature_importances_``
+            attribute.
 
         """
         if not len(self.classifiers):

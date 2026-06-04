@@ -40,12 +40,19 @@ class ChiSquareTest(StatisticalBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
-        """Check if the metric is applicable to the given column type."""
+        """Check if the metric is applicable to the given column type."""  # noqa: DOC201
         return column_type == 'categorical' or column_type == 'boolean'
 
     @staticmethod
     def validate(data: Any) -> None:
-        """Validate if the data can be used with the chi-square test."""
+        """Validate if the data can be used with the chi-square test.
+
+        Raises
+        ------
+        ValueError
+            If the column is not categorical, boolean, or object dtype.
+
+        """
         column = data
         if column.dtype.name not in ('object', 'category', 'bool'):
             raise ValueError(

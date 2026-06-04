@@ -36,7 +36,7 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
 
     @staticmethod
     def is_applicable(metadata):
-        """Check if the table contains at least one non-id column."""
+        """Check if the table contains at least one non-id column."""  # noqa: DOC201
         numeric_count = 0
         for column_name in metadata['columns'].keys():
             if (
@@ -121,7 +121,7 @@ class PairwiseCorrelationDifference(DistanceBaseMetric, SingleTableMetric):
         )
 
     def run(self, real_data, synthetic_data, **kwargs):
-        """Compute the metric and reference estimates."""
+        """Compute the metric and reference estimates."""  # noqa: DOC201
         return super().run(
             real_data,
             synthetic_data,

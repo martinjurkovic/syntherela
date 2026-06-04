@@ -10,11 +10,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from syntherela.metadata import drop_ids
-from syntherela.metrics.base import (
-    DistanceBaseMetric,
-    Goal,
-    SingleTableMetric,
-)
+from syntherela.metrics.base import DistanceBaseMetric, Goal, SingleTableMetric
 
 
 class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
@@ -59,7 +55,7 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
 
     @staticmethod
     def is_applicable(metadata):
-        """Check if the table contains numerical column."""
+        """Check if the table contains numerical column."""  # noqa: DOC201
         for column_name in metadata['columns'].keys():
             if metadata['columns'][column_name]['sdtype'] == 'numerical':
                 return True
@@ -79,6 +75,17 @@ class MaximumMeanDiscrepancy(DistanceBaseMetric, SingleTableMetric):
         different data modalities.
         arXiv: https://arxiv.org/abs/2301.07573
         github: https://github.com/vanderschaarlab/synthcity/
+
+        Returns
+        -------
+        float
+            MMD score between the two tables.
+
+        Raises
+        ------
+        ValueError
+            If an unsupported kernel is specified.
+
         """
         metadata = kwargs['metadata']
         kernel = kwargs.get('kernel', 'linear')

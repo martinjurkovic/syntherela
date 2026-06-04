@@ -34,6 +34,11 @@ def get_histograms(
     -------
         The observed and expected frequencies, and keys if return_keys is True.
 
+    Raises
+    ------
+    ValueError
+        If the column dtype is not supported.
+
     """
     if is_datetime(original):
         original = pd.to_numeric(original, errors='coerce', downcast='integer')

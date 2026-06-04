@@ -361,6 +361,7 @@ class Report:
                 self.results['multi_table_metrics']['Trends'][
                     'k_hop_similarity'
                 ][hop] = hop_results
+        return self.results
 
     def load_from_json(self, path):
         """Load report results from a JSON file.
@@ -415,6 +416,7 @@ class Report:
 
         with open(path, 'w') as f:
             json.dump(self.results, f, sort_keys=True, indent=4, cls=NpEncoder)
+        return path
 
     def visualize_distributions(
         self, marginals=True, bivariate=True, parent_child_bivariate=True

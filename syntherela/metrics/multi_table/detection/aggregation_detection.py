@@ -202,7 +202,7 @@ class AggregationDetection(BaseAggregationDetection, DetectionBaseMetric):
 
         Check if the table contains at least one column that is not an id
         and if the table has a relationship with another table.
-        """
+        """  # noqa: DOC201
         nonid = False
         table_metadata = metadata.tables[table].to_dict()
         for column_name in table_metadata['columns'].keys():

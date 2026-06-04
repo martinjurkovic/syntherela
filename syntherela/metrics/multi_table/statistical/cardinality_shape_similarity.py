@@ -18,19 +18,58 @@ class CardinalityShapeSimilarity(StatisticalBaseMetric):
         self.name = 'CardinalityShapeSimilarity'
 
     @staticmethod
-    def validate(data):
-        """Validate that the input looks like a multi-table mapping."""
-        return isinstance(data, dict) and len(data) > 0
+    def validate(real_data, synthetic_data):
+        """Validate the real and synthetic data inputs.
+
+        Parameters
+        ----------
+        real_data : dict
+            Dictionary mapping table names to real data DataFrames.
+        synthetic_data : dict
+            Dictionary mapping table names to synthetic data DataFrames.
+
+        Raises
+        ------
+        ValueError
+            If either dict is empty, or they do not contain the same tables.
+
+        """
+        for name, data in (
+            ('real_data', real_data),
+            ('synthetic_data', synthetic_data),
+        ):
+            if not (isinstance(data, dict) and len(data) > 0):
+                raise ValueError(
+                    f'{name} must be a non-empty dict of table DataFrames'
+                )
+        if sorted(real_data.keys()) != sorted(synthetic_data.keys()):
+            raise ValueError(
+                'real_data and synthetic_data must contain the same table keys'
+            )
 
     def run(self, real_data, synthetic_data, **kwargs):
-        """Execute the cardinality shape similarity metric."""
-        self.validate(real_data)
-        self.validate(synthetic_data)
+        """Execute the cardinality shape similarity metric.
+
+        Returns
+        -------
+        dict
+            Per-relationship KS test results; see ``compute`` for structure.
+
+        """
+        self.validate(real_data, synthetic_data)
         return self.compute(real_data, synthetic_data, **kwargs)
 
     @staticmethod
     def compute(real_data, synthetic_data, **kwargs):
-        """Compute the cardinality metric."""
+        """Compute the cardinality metric.
+
+        Returns
+        -------
+        dict
+            Mapping of ``'{parent}_{child}'`` relationship keys to dicts
+            containing ``'statistic'`` and ``'pval'`` from a KS test.
+
+        """
         metadata = kwargs['metadata']
         results = {}
         for rel in metadata.relationships:

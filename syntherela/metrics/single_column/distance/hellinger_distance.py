@@ -4,11 +4,7 @@ import numpy as np
 import pandas as pd
 from sdmetrics.utils import is_datetime
 
-from syntherela.metrics.base import (
-    DistanceBaseMetric,
-    Goal,
-    SingleColumnMetric,
-)
+from syntherela.metrics.base import DistanceBaseMetric, Goal, SingleColumnMetric
 from syntherela.metrics.single_column.distance.utils import get_histograms
 
 _SQRT2 = np.sqrt(2)
@@ -26,7 +22,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def is_applicable(column_type):
-        """Check if the metric is applicable to the given column type."""
+        """Check if the metric is applicable to the given column type."""  # noqa: DOC201
         return column_type in [
             'categorical',
             'numerical',
@@ -36,7 +32,7 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
 
     @staticmethod
     def hellinger(p, q):
-        """Hellinger distance between two histograms."""
+        """Hellinger distance between two histograms."""  # noqa: DOC201
         return np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2)) / _SQRT2
 
     @staticmethod
@@ -72,7 +68,14 @@ class HellingerDistance(DistanceBaseMetric, SingleColumnMetric):
         return HellingerDistance.hellinger(gt_freq, synth_freq)
 
     def run(self, real_data, synthetic_data, **kwargs):
-        """Run the Hellinger distance metric."""
+        """Run the Hellinger distance metric.
+
+        Returns
+        -------
+        dict
+            Dictionary with results.
+
+        """
         if self.is_constant(real_data):
             return {
                 'value': 0,

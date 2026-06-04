@@ -153,18 +153,7 @@ class Metadata(MultiTableMetadata):
     def rename_column(
         self, table_name: str, old_column_name: str, new_column_name: str
     ):
-        """Rename a column in a table.
-
-        Parameters
-        ----------
-        table_name: str
-            Name of the table.
-        old_column_name: str
-            Current name of the column.
-        new_column_name: str
-            New name for the column.
-
-        """
+        """Rename a column in a table."""  # noqa: DOC201
         self.tables[table_name].columns[new_column_name] = self.tables[
             table_name
         ].columns.pop(old_column_name)

@@ -95,21 +95,18 @@ class ParentChildDetection(DetectionBaseMetric):
             Dictionary mapping table names to real data DataFrames.
         synthetic_data : dict
             Dictionary mapping table names to synthetic data DataFrames.
-        metadata : Metadata
-            Metadata object containing information about the tables.
-        parent_table : str
-            Name of the parent table.
-        child_table : str
-            Name of the child table.
-        pair_metadata : Metadata
-            Metadata object for the parent-child table pair.
+        **kwargs
+            Expected keys:
+
+            - ``metadata`` : Metadata — full multi-table metadata object.
+            - ``parent_table`` : str — name of the parent table.
+            - ``child_table`` : str — name of the child table.
 
         Returns
         -------
         tuple
-            A tuple containing:
-            - X: The combined data with transformed features.
-            - y: The labels for the real and synthetic data.
+            4-tuple ``(X_train, X_test, y_train, y_test)`` of the
+            denormalized, transformed features and labels split by parent ID.
 
         """
         metadata = kwargs['metadata']

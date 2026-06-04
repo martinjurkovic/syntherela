@@ -63,7 +63,7 @@ class KolmogorovSmirnovTest(StatisticalBaseMetric, SingleColumnMetric):
 
         Parameters
         ----------
-        column : pandas.Series
+        data : pandas.Series
             The column to validate.
 
         Raises

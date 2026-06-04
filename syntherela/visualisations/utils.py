@@ -91,7 +91,7 @@ def get_bins(data):
 
 
 def prettify_feature_name(feature_name):
-    """Convert feature names into a more readable format."""
+    """Convert feature names into a more readable format."""  # noqa: DOC201
     split_name = feature_name.split('_')
     if len(split_name) > 1:
         return ' '.join(
