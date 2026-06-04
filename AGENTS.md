@@ -106,13 +106,9 @@ Whenever behaviour or public usage changes, update the docs in the same change:
 
 - **Do not** commit directly to `main` (pre-commit hook blocks it).
 - **Do not** edit files under `syntherela.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, `htmlcov/`, `docs/_build/` — all generated.
-- **Do not** change `xgboost` or `seaborn` to range constraints; they are pinned intentionally.
-- **Do not** reintroduce a hard dependency on `sdv` — it is BUSL-1.1 (source-available, not OSI), while SyntheRela is MIT. `syntherela/metadata.py` is a clean-room reimplementation of the `MULTI_TABLE_V1` spec; do not copy SDV source into it. `sdv` stays an optional `[sdv]` extra, pinned `>= 1.9, < 2` when present.
 - **Do not** use `Optional[X]` or `Union[X, Y]` — use `X | None` and `X | Y` (Python 3.10+ style).
 - **Do not** add metrics outside the `single_column/`, `single_table/`, `multi_table/` hierarchy without updating `metrics/base.py`.
-- **Do not** skip `--error-on-warning` on `ty check` — type warnings are treated as errors in CI.
 - **Do not** reduce coverage below 85%; `visualisations/` is the only omitted directory.
-- **Do not** modify files in `data/original/` or bulky artifacts unless explicitly requested.
 - **Do not** break reproducibility scripts in `experiments/reproducibility/` — keep them stable and backward-compatible.
 - **Do not** hardcode machine-specific paths; prefer project-relative paths and config.
 
