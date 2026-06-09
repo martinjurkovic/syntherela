@@ -6,7 +6,8 @@ build-backend = 'setuptools.build_meta'
 name = "syntherela"
 version = "0.3.0"
 dependencies = [
-    "sdv>=1.9.0,<2",
+    "sdmetrics>=0.21.0",
+    "graphviz>=0.13.2",
     "seaborn==0.13.2",
     "xgboost==1.7.6",
     "scikit-learn>1.3.1,<1.5"
@@ -36,6 +37,10 @@ classifiers = [
     ]
 
 [project.optional-dependencies]
+sdv = [
+    "sdv>=1.9.0,<2",
+]
+
 dev = [
     "pre-commit",
     "pytest",

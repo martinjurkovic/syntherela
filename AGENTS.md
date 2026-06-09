@@ -14,7 +14,8 @@ SyntheRela is a Python benchmark library for evaluating synthetic relational dat
 ## Tech Stack
 
 - **Language:** Python ≥ 3.10 (3.10–3.13 supported; 3.14+ not supported)
-- **Core deps:** `sdv ≥ 1.9, < 2`, `scikit-learn > 1.3.1, < 1.5`, `xgboost == 1.7.6` (pinned), `seaborn == 0.13.2` (pinned)
+- **Core deps:** `sdmetrics ≥ 0.21`, `graphviz ≥ 0.13.2`, `scikit-learn > 1.3.1, < 1.5`, `xgboost == 1.7.6` (pinned), `seaborn == 0.13.2` (pinned)
+- **Optional deps:** `sdv ≥ 1.9, < 2` (extra `[sdv]`, only for downloading SDV demo datasets)
 - **Testing:** pytest, pytest-cov (≥ 85% coverage enforced)
 - **Linting/formatting:** Ruff (lint + format), `ty` (type checker)
 - **Docs:** Sphinx with NumPy-style docstrings
@@ -26,7 +27,7 @@ SyntheRela is a Python benchmark library for evaluating synthetic relational dat
 syntherela/          Main package
   benchmark.py       Core Benchmark class
   data.py            Dataset loading helpers
-  metadata.py        Extends SDV MultiTableMetadata
+  metadata.py        Native Metadata / SingleTableMetadata (SDV-spec compatible)
   typing.py          Shared type aliases (Tables, etc.)
   metrics/           All metric implementations
     base.py          Abstract base classes — read before adding metrics
@@ -105,13 +106,9 @@ Whenever behaviour or public usage changes, update the docs in the same change:
 
 - **Do not** commit directly to `main` (pre-commit hook blocks it).
 - **Do not** edit files under `syntherela.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, `htmlcov/`, `docs/_build/` — all generated.
-- **Do not** change `xgboost` or `seaborn` to range constraints; they are pinned intentionally.
-- **Do not** drop `sdv` below 1.9 or allow 2.x — the API surface changed between major versions.
 - **Do not** use `Optional[X]` or `Union[X, Y]` — use `X | None` and `X | Y` (Python 3.10+ style).
 - **Do not** add metrics outside the `single_column/`, `single_table/`, `multi_table/` hierarchy without updating `metrics/base.py`.
-- **Do not** skip `--error-on-warning` on `ty check` — type warnings are treated as errors in CI.
 - **Do not** reduce coverage below 85%; `visualisations/` is the only omitted directory.
-- **Do not** modify files in `data/original/` or bulky artifacts unless explicitly requested.
 - **Do not** break reproducibility scripts in `experiments/reproducibility/` — keep them stable and backward-compatible.
 - **Do not** hardcode machine-specific paths; prefer project-relative paths and config.
 

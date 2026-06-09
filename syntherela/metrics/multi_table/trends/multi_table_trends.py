@@ -11,10 +11,9 @@ import numpy as np
 import pandas as pd
 from sdmetrics.reports.base_report import BaseReport
 from sdmetrics.reports.single_table._properties import ColumnPairTrends
-from sdv.metadata import SingleTableMetadata
 
 from syntherela.data import make_column_names_unique
-from syntherela.metadata import Metadata
+from syntherela.metadata import Metadata, SingleTableMetadata
 
 from .table_pairs import MultiTableTrendsReport
 

@@ -68,7 +68,8 @@ SyntheRela requires Python 3.10 or higher.
 
 Main dependencies include:
 
-* sdv>=1.9.0,<2
+* sdmetrics>=0.21.0
+* graphviz>=0.13.2
 * seaborn==0.13.2
 * xgboost==1.7.6
 * scikit-learn>1.3.1,<1.5
