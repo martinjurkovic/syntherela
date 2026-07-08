@@ -1,4 +1,4 @@
-"""Detection metrics (C2ST) for distinguishing between real and synthetic databases."""
+"""Detection metrics (C2ST) for comparing real and synthetic databases."""
 
 from .aggregation_detection import (
     AggregationDetection,
@@ -7,7 +7,7 @@ from .aggregation_detection import (
 from .parent_child import ParentChildDetection
 
 __all__ = [
-    "AggregationDetection",
-    "ParentChildDetection",
-    "ParentChildAggregationDetection",
+    'AggregationDetection',
+    'ParentChildDetection',
+    'ParentChildAggregationDetection',
 ]

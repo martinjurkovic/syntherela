@@ -15,36 +15,80 @@ class CardinalityShapeSimilarity(StatisticalBaseMetric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = "CardinalityShapeSimilarity"
-
-    def validate(self, real_data, synthetic_data):
-        """Validate the input data."""
-        return sorted(real_data.keys()) == sorted(synthetic_data.keys())
-
-    def run(self, real_data, synthetic_data, metadata, **kwargs):
-        """Execute the cardinality shape similarity metric."""
-        self.validate(real_data, synthetic_data)
-        return self.compute(real_data, synthetic_data, metadata)
+        self.name = 'CardinalityShapeSimilarity'
 
     @staticmethod
-    def compute(real_data, synthetic_data, metadata, **kwargs):
-        """Compute the cardinality shape similarity between real and synthetic data."""
+    def validate(real_data, synthetic_data):
+        """Validate the real and synthetic data inputs.
+
+        Parameters
+        ----------
+        real_data : dict
+            Dictionary mapping table names to real data DataFrames.
+        synthetic_data : dict
+            Dictionary mapping table names to synthetic data DataFrames.
+
+        Raises
+        ------
+        ValueError
+            If either dict is empty, or they do not contain the same tables.
+
+        """
+        for name, data in (
+            ('real_data', real_data),
+            ('synthetic_data', synthetic_data),
+        ):
+            if not (isinstance(data, dict) and len(data) > 0):
+                raise ValueError(
+                    f'{name} must be a non-empty dict of table DataFrames'
+                )
+        if sorted(real_data.keys()) != sorted(synthetic_data.keys()):
+            raise ValueError(
+                'real_data and synthetic_data must contain the same table keys'
+            )
+
+    def run(self, real_data, synthetic_data, **kwargs):
+        """Execute the cardinality shape similarity metric.
+
+        Returns
+        -------
+        dict
+            Per-relationship KS test results; see ``compute`` for structure.
+
+        """
+        self.validate(real_data, synthetic_data)
+        return self.compute(real_data, synthetic_data, **kwargs)
+
+    @staticmethod
+    def compute(real_data, synthetic_data, **kwargs):
+        """Compute the cardinality metric.
+
+        Returns
+        -------
+        dict
+            Mapping of ``'{parent}_{child}'`` relationship keys to dicts
+            containing ``'statistic'`` and ``'pval'`` from a KS test.
+
+        """
+        metadata = kwargs['metadata']
         results = {}
         for rel in metadata.relationships:
             cardinality_real = get_cardinality_distribution(
-                real_data[rel["parent_table_name"]][rel["parent_primary_key"]],
-                real_data[rel["child_table_name"]][rel["child_foreign_key"]],
+                real_data[rel['parent_table_name']][rel['parent_primary_key']],
+                real_data[rel['child_table_name']][rel['child_foreign_key']],
             )
             cardinality_synthetic = get_cardinality_distribution(
-                synthetic_data[rel["parent_table_name"]][
-                    rel["parent_primary_key"]],
-                synthetic_data[rel["child_table_name"]][
-                    rel["child_foreign_key"]],
+                synthetic_data[rel['parent_table_name']][
+                    rel['parent_primary_key']
+                ],
+                synthetic_data[rel['child_table_name']][
+                    rel['child_foreign_key']  #
+                ],
             )
             statistic, pval = ks_2samp(cardinality_real, cardinality_synthetic)
-            results[
-                f"{rel['parent_table_name']}_{rel['child_table_name']}"] = {
-                    "statistic": statistic,
-                    "pval": pval,
-                }
+            key = f'{rel["parent_table_name"]}_{rel["child_table_name"]}'
+            results[key] = {
+                'statistic': statistic,
+                'pval': pval,
+            }
         return results

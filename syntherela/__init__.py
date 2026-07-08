@@ -1,1 +1,3 @@
-"""Syntherela: A framework for evaluating synthetic relational database quality."""
+"""Syntherela: A framework for evaluating synthetic relational database
+quality.
+"""

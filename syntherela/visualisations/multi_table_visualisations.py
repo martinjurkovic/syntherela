@@ -3,23 +3,24 @@
 import os
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
-import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 from syntherela.visualisations.utils import get_x_tick_width_coef
 
-rc("font", **{"family": "serif", "serif": ["Times"]})
-rc("text", usetex=True)
+rc('font', **{'family': 'serif', 'serif': ['Times']})
+rc('text', usetex=True)
 
 
-def visualize_parent_child_multi_table(all_results, datasets, methods,
-                                       **kwargs):
+def visualize_parent_child_multi_table(
+    all_results, datasets, methods, **kwargs
+):
     """Visualize parent-child detection metrics for multi-table datasets.
 
     This function creates bar charts comparing parent-child detection metrics
-    across different synthetic data generation methods for multi-table datasets.
+    across different synthetic data generation methods.
 
     Parameters
     ----------
@@ -31,55 +32,68 @@ def visualize_parent_child_multi_table(all_results, datasets, methods,
         List of synthetic data generation methods to compare.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_figs_path : str
-            Path where to save the figures.
-        - detection_metrics : list
-            List of detection metrics to visualize.
-        - method_order : list
-            Custom order for methods in the visualization.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_path`` (str): path where to save the figures.
+        - ``detection_metrics`` (list): detection metrics to visualize.
+        - ``method_order`` (list): custom order for methods in the plot.
 
     """
     for dataset in datasets:
         metrics = kwargs.get(
-            "detection_metrics",
+            'detection_metrics',
             [
-                metric for metric in list(all_results[dataset][methods[0]]
-                                          ["multi_table_metrics"].keys())
-                if "ParentChildDetection" in metric
+                metric
+                for metric in list(
+                    all_results[dataset][methods[0]][
+                        'multi_table_metrics'
+                    ].keys()
+                )
+                if 'ParentChildDetection' in metric
             ],
         )
-        metric_names = kwargs.get("detection_metric_names", metrics)
+        metric_names = kwargs.get('detection_metric_names', metrics)
 
         aggregation_metrics = kwargs.get(
-            "aggregation_metrics",
+            'aggregation_metrics',
             [
-                metric for metric in list(all_results[datasets[0]][methods[0]]
-                                          ["multi_table_metrics"].keys())
-                if "ParentChildAggregationDetection" in metric
+                metric
+                for metric in list(
+                    all_results[datasets[0]][methods[0]][
+                        'multi_table_metrics'
+                    ].keys()
+                )
+                if 'ParentChildAggregationDetection' in metric
             ],
         )
 
-        save_figs = kwargs.get("save_figs", False)
-        save_figs_path = kwargs.get("save_figs_path", "./figs")
-        save_figs_path = Path(save_figs_path) / "multi_table" / "detection"
+        save_figs = kwargs.get('save_figs', False)
+        save_path = kwargs.get('save_path', './figs')
+        save_path = Path(save_path) / 'multi_table' / 'detection'
 
         method_order = kwargs.get(
-            "method_order", ["SDV", "RCTGAN", "MOSTLYAI", "REALTABFORMER"])
+            'method_order', ['SDV', 'RCTGAN', 'MOSTLYAI', 'REALTABFORMER']
+        )
         if method_order is not None:
             methods = [method for method in method_order if method in methods]
             methods += sorted(
-                [method for method in methods if method not in method_order])
+                [method for method in methods if method not in method_order]
+            )
 
         if len(methods) == 0 or len(metrics) == 0:
             continue
-        tables = all_results[dataset][methods[0]]["multi_table_metrics"][
-            metrics[0]].keys()
+        tables = all_results[dataset][methods[0]]['multi_table_metrics'][
+            metrics[0]
+        ].keys()
         for table in tables:
             agg_metrics = []
-            if (aggregation_metrics and table in all_results[dataset]
-                [methods[0]]["multi_table_metrics"][aggregation_metrics[0]]):
+            if (
+                aggregation_metrics
+                and table
+                in all_results[dataset][methods[0]]['multi_table_metrics'][
+                    aggregation_metrics[0]
+                ]
+            ):
                 agg_metrics = aggregation_metrics
 
             N = len(metrics + agg_metrics)  # number of metrics
@@ -91,22 +105,25 @@ def visualize_parent_child_multi_table(all_results, datasets, methods,
             # set dpi
             fig.dpi = 300
 
-            colors = plt.cm.viridis(np.linspace(0, 1, N))  # create a color map
+            colors = plt.get_cmap('viridis')(
+                np.linspace(0, 1, N)
+            )  # create a color map
 
             min_mean = 1
             for j, metric in enumerate(metrics):
                 metric_means = [
-                    all_results[dataset][method]["multi_table_metrics"][metric]
-                    [table]["accuracy"] for method in methods
+                    all_results[dataset][method]['multi_table_metrics'][metric][
+                        table
+                    ]['accuracy']
+                    for method in methods
                 ]
                 min_mean = min(min_mean, min(metric_means))
                 metric_ses = [
-                    all_results[dataset][method]["multi_table_metrics"][metric]
-                    [table]["SE"] for method in methods
+                    all_results[dataset][method]['multi_table_metrics'][metric][
+                        table
+                    ]['SE']
+                    for method in methods
                 ]
-                # baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][metric][table]["baseline_mean"] for method in methods])
-                # baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][metric][table]["baseline_se"] for method in methods])
-
                 baseline_means = np.array([0.5 for method in methods])
                 baseline_ses = np.array([0.00 for method in methods])
 
@@ -121,35 +138,37 @@ def visualize_parent_child_multi_table(all_results, datasets, methods,
                     baseline_means,
                     ind + width * j - width / 2,
                     ind + width * j + width / 2,
-                    color="k",
+                    color='k',
                 )  # , linestyle='--')
                 ax.hlines(
                     baseline_means + baseline_ses,
                     ind + width * j - width / 2,
                     ind + width * j + width / 2,
-                    color="k",
-                    linestyle="--",
+                    color='k',
+                    linestyle='--',
                 )
                 ax.hlines(
                     baseline_means - baseline_ses,
                     ind + width * j - width / 2,
                     ind + width * j + width / 2,
-                    color="k",
-                    linestyle="--",
+                    color='k',
+                    linestyle='--',
                 )
 
             for j, agg_metric in enumerate(agg_metrics):
                 metric_means = [
-                    all_results[dataset][method]["multi_table_metrics"]
-                    [agg_metric][table]["accuracy"] for method in methods
+                    all_results[dataset][method]['multi_table_metrics'][
+                        agg_metric
+                    ][table]['accuracy']
+                    for method in methods
                 ]
                 min_mean = min(min_mean, min(metric_means))
                 metric_ses = [
-                    all_results[dataset][method]["multi_table_metrics"]
-                    [agg_metric][table]["SE"] for method in methods
+                    all_results[dataset][method]['multi_table_metrics'][
+                        agg_metric
+                    ][table]['SE']
+                    for method in methods
                 ]
-                # baseline_means = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_mean"] for method in methods])
-                # baseline_ses = np.array([all_results[dataset][method]['multi_table_metrics'][agg_metric][table]["baseline_se"] for method in methods])
 
                 baseline_means = np.array([0.5 for method in methods])
                 baseline_ses = np.array([0.00 for method in methods])
@@ -165,52 +184,53 @@ def visualize_parent_child_multi_table(all_results, datasets, methods,
                     baseline_means,
                     ind + width * (j + len(metrics)) - width / 2,
                     ind + width * (j + len(metrics)) + width / 2,
-                    color="k",
+                    color='k',
                 )
                 ax.hlines(
                     baseline_means + baseline_ses,
                     ind + width * (j + len(metrics)) - width / 2,
                     ind + width * (j + len(metrics)) + width / 2,
-                    color="k",
-                    linestyle="--",
+                    color='k',
+                    linestyle='--',
                 )
                 ax.hlines(
                     baseline_means - baseline_ses,
                     ind + width * (j + len(metrics)) - width / 2,
                     ind + width * (j + len(metrics)) + width / 2,
-                    color="k",
-                    linestyle="--",
+                    color='k',
+                    linestyle='--',
                 )
 
-            ax.set_ylabel("Means")
+            ax.set_ylabel('Means')
             x_tick_width_coef = get_x_tick_width_coef(N)
             ax.set_xticks(ind + x_tick_width_coef * width)
             rotation = 20 if len(methods) > 6 else 0
             ax.set_xticklabels(methods, fontsize=10, rotation=rotation)
 
-            y_min = 0.4 if min_mean > 0.4 else np.floor(
-                (min_mean - 0.1) * 10) / 10
+            y_min = (
+                0.4 if min_mean > 0.4 else np.floor((min_mean - 0.1) * 10) / 10
+            )
             ax.set_ylim(y_min, 1.3)
             ax.set_yticks(np.arange(y_min, 1.01, 0.1))
-            ax.set_ylabel("Classification Accuracy")
+            ax.set_ylabel('Classification Accuracy')
 
             # Create a legend
             custom_lines = [
                 Line2D([0], [0], color=colors[i], lw=4) for i in range(N)
             ]
-            ax.legend(custom_lines,
-                      metric_names + agg_metrics,
-                      loc="upper left")  # move the legend
+            ax.legend(
+                custom_lines, metric_names + agg_metrics, loc='upper left'
+            )  # move the legend
 
-            ax.axhline(y=0.5, color="red", linestyle="--", linewidth=1)
+            ax.axhline(y=0.5, color='red', linestyle='--', linewidth=1)
 
             # set title
-            plt.title(f"Dataset {dataset}, table {table}")
+            plt.title(f'Dataset {dataset}, table {table}')
 
             if save_figs:
-                os.makedirs(save_figs_path, exist_ok=True)
+                os.makedirs(save_path, exist_ok=True)
                 plt.savefig(
-                    f"{save_figs_path}/{dataset}_{table}_parent_child_detection.png",
+                    f'{save_path}/{dataset}_{table}_PC_detection.png',
                     dpi=300,
                 )
 
@@ -218,8 +238,8 @@ def visualize_parent_child_multi_table(all_results, datasets, methods,
 def visualize_multi_table(all_results, datasets, methods, **kwargs):
     """Visualize detection metrics for multi-table datasets.
 
-    This function creates bar charts comparing detection metrics
-    across different synthetic data generation methods for multi-table datasets.
+    This function creates bar charts comparing detection metrics across
+    different synthetic data generation methods for multi-table datasets.
 
     Parameters
     ----------
@@ -231,53 +251,57 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
         List of synthetic data generation methods to compare.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_figs_path : str
-            Path where to save the figures.
-        - detection_metrics : list
-            List of detection metrics to visualize.
-        - method_order : list
-            Custom order for methods in the visualization.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_path`` (str): path where to save the figures.
+        - ``detection_metrics`` (list): detection metrics to visualize.
+        - ``method_order`` (list): custom order for methods in the plot.
 
     """
-    save_figs = kwargs.get("save_figs", False)
-    save_figs_path = kwargs.get("save_figs_path", "./figs/")
-    save_figs_path = Path(save_figs_path) / "multi_table" / "detection"
+    save_figs = kwargs.get('save_figs', False)
+    save_path = kwargs.get('save_path', './figs/')
+    save_path = Path(save_path) / 'multi_table' / 'detection'
 
     methods_all = methods.copy()
 
     for dataset in datasets:
         methods = methods_all.copy()
         method_order = kwargs.get(
-            "method_order",
+            'method_order',
             [
-                "SDV",
-                "RCTGAN",
-                "REALTABFORMER",
-                "MOSTLYAI",
-                "GRETEL_ACTGAN",
-                "GRETEL_LSTM",
+                'SDV',
+                'RCTGAN',
+                'REALTABFORMER',
+                'MOSTLYAI',
+                'GRETEL_ACTGAN',
+                'GRETEL_LSTM',
             ],
         )
         metrics = kwargs.get(
-            "detection_metrics",
+            'detection_metrics',
             [
-                metric for metric in list(all_results[dataset][method_order[1]]
-                                          ["multi_table_metrics"].keys())
-                if "singletable" not in metric.lower() and "parent" not in
-                metric.lower() and "detection" in metric.lower()
+                metric
+                for metric in list(
+                    all_results[dataset][method_order[1]][
+                        'multi_table_metrics'
+                    ].keys()
+                )
+                if 'singletable' not in metric.lower()
+                and 'parent' not in metric.lower()
+                and 'detection' in metric.lower()
             ],
         )
-        metric_names = kwargs.get("detection_metric_names", metrics)
+        metric_names = kwargs.get('detection_metric_names', metrics)
 
         if method_order is not None:
             methods = [
-                method for method in method_order
+                method
+                for method in method_order
                 if method in methods and method in all_results[dataset]
             ]
             methods += sorted(
-                [method for method in methods if method not in method_order])
+                [method for method in methods if method not in method_order]
+            )
         if len(methods) == 0 or len(metrics) == 0:
             continue
 
@@ -290,52 +314,60 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
         # set dpi
         fig.dpi = 300
 
-        colors = plt.cm.viridis(np.linspace(0, 1, N))  # create a color map
+        colors = plt.get_cmap('viridis')(
+            np.linspace(0, 1, N)
+        )  # create a color map
 
         min_mean = 1
 
         for j, metric in enumerate(metrics):
             metric_means = [
-                all_results[dataset][method]["multi_table_metrics"][metric]
-                ["accuracy"] for method in methods
+                all_results[dataset][method]['multi_table_metrics'][metric][
+                    'accuracy'
+                ]
+                for method in methods
             ]
             min_mean = min(min_mean, min(metric_means))
             metric_ses = [
-                all_results[dataset][method]["multi_table_metrics"][metric]
-                ["SE"] for method in methods
+                all_results[dataset][method]['multi_table_metrics'][metric][
+                    'SE'
+                ]
+                for method in methods
             ]
 
             baseline_means = np.array([0.5 for method in methods])
             baseline_ses = np.array([0.00 for method in methods])
 
-            ax.bar(ind + width * j,
-                   metric_means,
-                   width,
-                   yerr=metric_ses,
-                   color=colors[j])
+            ax.bar(
+                ind + width * j,
+                metric_means,
+                width,
+                yerr=metric_ses,
+                color=colors[j],
+            )
             # draw a horizontal line for the baseline and standard error
             ax.hlines(
                 baseline_means,
                 ind + width * j - width / 2,
                 ind + width * j + width / 2,
-                color="k",
+                color='k',
             )  # , linestyle='--')
             ax.hlines(
                 baseline_means + baseline_ses,
                 ind + width * j - width / 2,
                 ind + width * j + width / 2,
-                color="k",
-                linestyle="--",
+                color='k',
+                linestyle='--',
             )
             ax.hlines(
                 baseline_means - baseline_ses,
                 ind + width * j - width / 2,
                 ind + width * j + width / 2,
-                color="k",
-                linestyle="--",
+                color='k',
+                linestyle='--',
             )
 
-        ax.set_ylabel("Means")
+        ax.set_ylabel('Means')
         x_tick_width_coef = get_x_tick_width_coef(N)
         ax.set_xticks(ind + x_tick_width_coef * width)
         rotation = 20 if len(methods) > 6 else 0
@@ -344,21 +376,21 @@ def visualize_multi_table(all_results, datasets, methods, **kwargs):
         y_min = 0.4 if min_mean > 0.4 else np.floor((min_mean - 0.1) * 10) / 10
         ax.set_ylim(y_min, 1.3)
         ax.set_yticks(np.arange(y_min, 1.01, 0.1))
-        ax.set_ylabel("Classification Accuracy")
+        ax.set_ylabel('Classification Accuracy')
 
         # Create a legend
         custom_lines = [
             Line2D([0], [0], color=colors[i], lw=4) for i in range(N)
         ]
-        ax.legend(custom_lines, metric_names,
-                  loc="upper left")  # move the legend
+        ax.legend(
+            custom_lines, metric_names, loc='upper left'
+        )  # move the legend
 
-        ax.axhline(y=0.5, color="red", linestyle="--", linewidth=1)
+        ax.axhline(y=0.5, color='red', linestyle='--', linewidth=1)
 
         # set title
-        plt.title(f"Dataset {dataset}")
+        plt.title(f'Dataset {dataset}')
 
         if save_figs:
-            os.makedirs(save_figs_path, exist_ok=True)
-            plt.savefig(save_figs_path /
-                        f"{dataset}_multi_table_detection.png")
+            os.makedirs(save_path, exist_ok=True)
+            plt.savefig(save_path / f'{dataset}_multi_table_detection.png')

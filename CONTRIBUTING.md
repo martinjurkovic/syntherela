@@ -5,6 +5,7 @@ We welcome and appreciate contributions to SyntheRela from the community. Please
 ## Issues, Bug Fixes, and Discussions
 
 Please submit GitHub issues and open Pull Requests if you find bugs or other issues in SyntheRela. When reporting bugs, please include:
+
 - A clear description of the issue
 - Steps to reproduce the problem
 - Expected vs. actual behavior
@@ -15,23 +16,28 @@ Please submit GitHub issues and open Pull Requests if you find bugs or other iss
 To contribute to SyntheRela, follow these steps:
 
 1. Fork the repository on GitHub
+
 2. Clone your fork locally:
+
    ```bash
    git clone https://github.com/yourusername/syntherela.git
    cd syntherela
    ```
 
 3. Install the package in development mode with dev dependencies:
+
    ```bash
    pip install -e ".[dev]"
    ```
 
 4. Install pre-commit hooks:
+
    ```bash
    pre-commit install
    ```
 
 5. Create a new branch for your feature or bug fix:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -62,6 +68,7 @@ We welcome new evaluation metrics for assessing synthetic relational data qualit
 
 1. Follow existing metric implementation patterns
 2. Provide clear documentation on what the metric measures
+
 <!-- 3. Include examples of usage
 4. Add appropriate unit tests
 5. Consider computational efficiency for large datasets -->
@@ -79,7 +86,9 @@ If you have relational datasets that would be valuable for the benchmark:
 ## Pull Request Process
 
 1. Ensure your code passes all pre-commit checks
+
 <!-- 2. Add or update tests as necessary -->
+
 2. Update documentation if you're changing functionality
 3. Write a clear description of your changes in the PR
 4. Link any relevant issues

@@ -6,12 +6,11 @@ real and synthetic data for evaluation purposes.
 
 import os
 import warnings
-from typing import Optional, Union
-from syntherela.typing import Tables
 
 import pandas as pd
-from sdv.datasets.demo import get_available_demos, download_demo
+
 from syntherela.metadata import Metadata
+from syntherela.typing import Tables
 
 
 def get_dataset_stats(tables: Tables, metadata: Metadata) -> dict:
@@ -38,18 +37,18 @@ def get_dataset_stats(tables: Tables, metadata: Metadata) -> dict:
     total_columns = 0
     for table_name, table in tables.items():
         total_rows += len(table)
-        id_columns = metadata.get_column_names(table_name, sdtype="id")
+        id_columns = metadata.get_column_names(table_name, sdtype='id')
         total_columns += len(table.columns) - len(id_columns)
 
     return {
-        "num_tables": len(tables),
-        "num_rows": total_rows,
-        "num_columns": total_columns,
-        "num_relationships": len(metadata.relationships),
+        'num_tables': len(tables),
+        'num_rows': total_rows,
+        'num_columns': total_columns,
+        'num_relationships': len(metadata.relationships),
     }
 
 
-def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
+def load_tables(data_path: str | os.PathLike, metadata: Metadata):
     """Load tables from CSV files based on metadata.
 
     Parameters
@@ -73,30 +72,31 @@ def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
     tables: Tables = {}
     table_names = metadata.get_tables()
     for file_name in os.listdir(data_path):
-        if not file_name.endswith(".csv"):
+        if not file_name.endswith('.csv'):
             continue
-        table_name = file_name.split(".")[0]
+        table_name = file_name.split('.')[0]
         if table_name not in table_names:
             continue
         dtypes = {}
         parse_dates = []
         datetime_formats = {}
         for column, column_info in metadata.tables[table_name].columns.items():
-            if column_info["sdtype"] == "categorical":
-                dtypes[column] = "category"
-            elif column_info["sdtype"] == "boolean":
-                dtypes[column] = "bool"
-            elif column_info["sdtype"] == "datetime":
+            if column_info['sdtype'] == 'categorical':
+                dtypes[column] = 'category'
+            elif column_info['sdtype'] == 'boolean':
+                dtypes[column] = 'bool'
+            elif column_info['sdtype'] == 'datetime':
                 parse_dates.append(column)
-                datetime_format = column_info.get("datetime_format")
+                datetime_format = column_info.get('datetime_format')
                 if not datetime_format:
                     raise ValueError(
-                        f'"datetime_format" not found in metadata for column "{column}" in table "{table_name}"'
+                        f'"datetime_format" not found in metadata for column '
+                        f'"{column}" in table "{table_name}"'
                     )
                 datetime_formats[column] = datetime_format
 
         table = pd.read_csv(
-            f"{data_path}/{file_name}",
+            f'{data_path}/{file_name}',
             low_memory=False,
             dtype=dtypes,
             parse_dates=parse_dates,
@@ -106,7 +106,8 @@ def load_tables(data_path: Union[str, os.PathLike], metadata: Metadata):
             # If pandas can't parse the datetime format set it manually,
             # if the format is correct, this will not change the column.
             table[column] = pd.to_datetime(
-                table[column], format="ISO8601").dt.strftime(format)
+                table[column], format='ISO8601'
+            ).dt.strftime(format)
             table[column] = pd.to_datetime(table[column], format=format)
 
         tables[table_name] = table
@@ -122,17 +123,27 @@ def remove_sdv_columns(
 ):
     """Remove SDV-specific columns from tables.
 
-    "_v1" Versions of the relational demo datasets in SDV have some columns that are not present in the original datasets.
-    We created this function to remove these columns from the tables and the metadata.
-    """
+    "_v1" Versions of the relational demo datasets in SDV have some columns
+    that are not present in the original datasets. We created this function to
+    remove these columns from the tables and the metadata.
+    """  # noqa: DOC201
     warnings.warn(
-        "This function is deprecated and will be removed in the future.",
+        'This function is deprecated and will be removed in the future.',
         category=DeprecationWarning,
+        stacklevel=2,
     )
     for table_name, table in tables.items():
         for column in table.columns:
-            if any(prefix in column for prefix in
-                   ["add_numerical", "nb_rows_in", "min(", "max(", "sum("]):
+            if any(
+                prefix in column
+                for prefix in [
+                    'add_numerical',
+                    'nb_rows_in',
+                    'min(',
+                    'max(',
+                    'sum(',
+                ]
+            ):
                 table = table.drop(columns=column, axis=1)
 
                 if not update_metadata:
@@ -148,8 +159,8 @@ def remove_sdv_columns(
 
 def save_tables(
     tables: Tables,
-    path: Union[str, os.PathLike],
-    metadata: Optional[Metadata] = None,
+    path: str | os.PathLike,
+    metadata: Metadata | None = None,
     save_metadata: bool = False,
 ):
     """Save tables to CSV files.
@@ -170,51 +181,70 @@ def save_tables(
     if not os.path.exists(path):
         os.makedirs(path)
     if metadata and save_metadata:
-        metadata.save_to_json(os.path.join(path, "metadata.json"))
+        metadata.save_to_json(os.path.join(path, 'metadata.json'))
     for table_name, table in tables.items():
         if metadata:
             for col in table.columns:
-                # if col in metadata is datetime, convert to string with datetime_format
-                if metadata.tables[table_name].columns[col][
-                        "sdtype"] == "datetime":
-                    datetime_format = (metadata.tables[table_name].
-                                       columns[col].get("datetime_format"))
+                # convert to string with datetime_format
+                if (
+                    metadata.tables[table_name].columns[col]['sdtype']
+                    == 'datetime'
+                ):
+                    datetime_format = (
+                        metadata.tables[table_name]
+                        .columns[col]
+                        .get('datetime_format')
+                    )
                     if datetime_format:
-                        # If the column is already a string, convert it to datetime first
-                        # to ensure the datetime_format is applied correctly.
-                        table[col] = pd.to_datetime(
-                            table[col]).dt.strftime(datetime_format)
-        table.to_csv(os.path.join(path, f"{table_name}.csv"), index=False)
+                        # If the column is already a string, convert it to
+                        # datetime first to ensure the formatting is applied.
+                        table[col] = pd.to_datetime(table[col]).dt.strftime(
+                            datetime_format
+                        )
+        table.to_csv(os.path.join(path, f'{table_name}.csv'), index=False)
 
 
+# See also https://docs.sdv.dev/sdv/single-table-data/data-preparation/loading-data. # noqa: E501
 def download_sdv_relational_datasets(
-    data_path: Union[str, os.PathLike] = "data/original", ):
+    data_path: str | os.PathLike = 'data/original',
+):
     """Download SDV relational datasets.
-
-    The datasets are available at https://docs.sdv.dev/sdv/single-table-data/data-preparation/loading-data.
 
     Parameters
     ----------
     data_path: Union[str, os.PathLike], default="data/original"
         Path to the directory where datasets will be saved.
 
-    Returns
-    -------
-    list
-        List of downloaded dataset names.
+    Raises
+    ------
+    ImportError
+        If the optional ``sdv`` dependency is not installed.
 
     """
-    sdv_relational_datasets = get_available_demos("multi_table")
+    try:
+        # ``sdv`` is an optional dependency; install with
+        # ``pip install 'syntherela[sdv]'``.
+        from sdv.datasets.demo import (  # ty: ignore[unresolved-import]
+            download_demo,
+            get_available_demos,
+        )
+    except ImportError:  # pragma: no cover - sdv is optional
+        raise ImportError(
+            'Downloading the SDV demo datasets requires the optional '
+            "'sdv' dependency. Install it with: pip install 'syntherela[sdv]'."
+        ) from None
+
+    sdv_relational_datasets = get_available_demos('multi_table')
 
     # iterate through the dataframe
     for dataset_name in sdv_relational_datasets.dataset_name:
-        print(f"Downloading {dataset_name}...", end=" ")
+        print(f'Downloading {dataset_name}...', end=' ')
         download_demo(
-            "multi_table",
+            'multi_table',
             dataset_name,
-            output_folder_name=f"{data_path}/{dataset_name}",
+            output_folder_name=f'{data_path}/{dataset_name}',
         )
-        print("Done.")
+        print('Done.')
 
 
 def denormalize_tables(tables: Tables, metadata: Metadata):
@@ -225,7 +255,8 @@ def denormalize_tables(tables: Tables, metadata: Metadata):
     tables: Tables
         Dictionary mapping table names to pandas DataFrames.
     metadata: Metadata
-        Metadata object containing information about the tables and their relationships.
+        Metadata object containing information about the tables and their
+        relationships.
 
     Returns
     -------
@@ -234,39 +265,40 @@ def denormalize_tables(tables: Tables, metadata: Metadata):
 
     """
     relationships = metadata.relationships.copy()
-    denormalized_table = tables[relationships[0]["parent_table_name"]]
-    already_merged_tables = [relationships[0]["parent_table_name"]]
+    denormalized_table = tables[relationships[0]['parent_table_name']]
+    already_merged_tables = [relationships[0]['parent_table_name']]
 
     while len(relationships) > 0:
-        if relationships[0]["parent_table_name"] in already_merged_tables:
+        if relationships[0]['parent_table_name'] in already_merged_tables:
             parent_table = denormalized_table
-            child_table = tables[relationships[0]["child_table_name"]]
-            already_merged_tables.append(relationships[0]["child_table_name"])
+            child_table = tables[relationships[0]['child_table_name']]
+            already_merged_tables.append(relationships[0]['child_table_name'])
 
-        elif relationships[0]["child_table_name"] in already_merged_tables:
-            parent_table = tables[relationships[0]["parent_table_name"]]
+        elif relationships[0]['child_table_name'] in already_merged_tables:
+            parent_table = tables[relationships[0]['parent_table_name']]
             child_table = denormalized_table
-            already_merged_tables.append(relationships[0]["parent_table_name"])
+            already_merged_tables.append(relationships[0]['parent_table_name'])
         else:
             relationships.append(relationships.pop(0))
             continue
 
         denormalized_table = parent_table.merge(
             child_table,
-            left_on=relationships[0]["parent_primary_key"],
-            right_on=relationships[0]["child_foreign_key"],
-            suffixes=(None, f"_{relationships[0]['child_table_name']}"),
-            how="outer",
+            left_on=relationships[0]['parent_primary_key'],
+            right_on=relationships[0]['child_foreign_key'],
+            suffixes=(None, f'_{relationships[0]["child_table_name"]}'),
+            how='outer',
         )
 
         # Drop the foreign key column with suffix from the denormalized table
-        for column, column_info in metadata.tables[
-                relationships[0]["child_table_name"]].columns.items():
-            if column_info["sdtype"] != "id":
+        columns = metadata.tables[relationships[0]['child_table_name']].columns
+        for column, column_info in columns.items():
+            if column_info['sdtype'] != 'id':
                 continue
             denormalized_table = drop_column_if_in_table(
                 denormalized_table,
-                f"{column}_{relationships[0]['child_table_name']}")
+                f'{column}_{relationships[0]["child_table_name"]}',
+            )
 
         relationships.pop(0)
 
@@ -317,26 +349,38 @@ def make_column_names_unique(
     -------
     tuple
         Tuple containing:
-        - real_data: Dictionary mapping table names to pandas DataFrames with unique column names.
-        - synthetic_data: Dictionary mapping table names to pandas DataFrames with unique column names.
+        - real_data: Dictionary mapping table names to pandas DataFrames with
+        unique column names.
+        - synthetic_data: Dictionary mapping table names to pandas DataFrames
+        with unique column names.
         - metadata: Updated metadata object with unique column names.
+
+    Raises
+    ------
+    ValueError
+        If real and synthetic tables do not have the same columns.
 
     """
     for table_name in metadata.get_tables():
         if not real_data[table_name].columns.equals(
-                synthetic_data[table_name].columns):
+            synthetic_data[table_name].columns
+        ):
             raise ValueError(
-                "Real and synthetic data column names are not the same")
+                'Real and synthetic data column names are not the same'
+            )
 
         table_metadata = metadata.tables[table_name].to_dict()
 
-        for column in table_metadata["columns"]:
+        for column in table_metadata['columns']:
             real_data[table_name] = real_data[table_name].rename(
-                columns={column: f"{table_name}_{column}"})
+                columns={column: f'{table_name}_{column}'}
+            )
             synthetic_data[table_name] = synthetic_data[table_name].rename(
-                columns={column: f"{table_name}_{column}"})
-            metadata = metadata.rename_column(table_name, column,
-                                              f"{table_name}_{column}")
+                columns={column: f'{table_name}_{column}'}
+            )
+            metadata = metadata.rename_column(
+                table_name, column, f'{table_name}_{column}'
+            )
 
     if validate:
         metadata.validate()

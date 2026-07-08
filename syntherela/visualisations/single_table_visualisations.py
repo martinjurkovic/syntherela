@@ -1,24 +1,24 @@
 """Visualization tools for single table metrics."""
 
-import os
 import math
+import os
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
-import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 from syntherela.visualisations.utils import (
+    get_color,
+    get_dataset_info,
     get_x_tick_width_coef,
     prettify_dataset_name,
     prettify_method_name,
-    get_color,
-    get_dataset_info,
 )
 
-rc("font", **{"family": "serif", "serif": ["Times"]})
-rc("text", usetex=True)
+rc('font', **{'family': 'serif', 'serif': ['Times']})
+rc('text', usetex=True)
 
 
 def visualize_single_table_distance_metrics(
@@ -32,10 +32,10 @@ def visualize_single_table_distance_metrics(
     fontsize=35,
     **kwargs,
 ):
-    """Visualize distance metrics for single tables across datasets and methods.
+    """Visualize distance metrics for tables across datasets and methods.
 
-    This function creates bar charts comparing distance metrics for single tables
-    across different synthetic data generation methods.
+    This function creates bar charts comparing distance metrics for single
+    tables across different synthetic data generation methods.
 
     Parameters
     ----------
@@ -57,24 +57,32 @@ def visualize_single_table_distance_metrics(
         Font size for the plot text elements.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_figs_path : str
-            Path where to save the figures.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_figs_path`` (str): path where to save the figures.
 
     """
     for dataset in datasets:
         base_metrics, base_metric_names, save_figs, save_figs_path, methods = (
-            get_dataset_info(granularity_level, metric_type, all_results,
-                             dataset, methods, **kwargs))
+            get_dataset_info(
+                granularity_level,
+                metric_type,
+                all_results,
+                dataset,
+                methods,
+                **kwargs,
+            )
+        )
 
-        for base_metric, base_metric_name in zip(base_metrics,
-                                                 base_metric_names):
+        for base_metric, base_metric_name in zip(
+            base_metrics, base_metric_names, strict=False
+        ):
             if len(methods) == 0:
                 continue
 
-            tables = all_results[dataset][list(all_results[dataset].keys(
-            ))[0]]["single_table_metrics"][base_metric].keys()
+            tables = all_results[dataset][list(all_results[dataset].keys())[0]][
+                'single_table_metrics'
+            ][base_metric].keys()
 
             N = len(methods)  # number of methods
             M = len(tables)  # number of tables
@@ -87,22 +95,26 @@ def visualize_single_table_distance_metrics(
             fig.dpi = 300
 
             if log_scale:
-                ax.set_yscale("log")
+                ax.set_yscale('log')
 
             colors = [get_color(method) for method in methods]
             if None in colors:
-                colors = plt.cm.viridis(np.linspace(0.5, 1, N))
+                colors = plt.get_cmap('viridis')(np.linspace(0.5, 1, N))
 
             max_value = 0
 
             for j, method in enumerate(methods):
                 method_means = [
-                    all_results[dataset][method]["single_table_metrics"]
-                    [base_metric][table]["value"] for table in tables
+                    all_results[dataset][method]['single_table_metrics'][
+                        base_metric
+                    ][table]['value']
+                    for table in tables
                 ]
                 method_ses = [
-                    all_results[dataset][method]["single_table_metrics"]
-                    [base_metric][table]["bootstrap_se"] for table in tables
+                    all_results[dataset][method]['single_table_metrics'][
+                        base_metric
+                    ][table]['bootstrap_se']
+                    for table in tables
                 ]
                 ax.bar(
                     ind + width * j,
@@ -111,11 +123,13 @@ def visualize_single_table_distance_metrics(
                     yerr=method_ses,
                     color=colors[j],
                     alpha=0.8,
-                    edgecolor="white",
+                    edgecolor='white',
                 )
                 ci95s = [
-                    all_results[dataset][method]["single_table_metrics"]
-                    [base_metric][table]["reference_ci"][1] for table in tables
+                    all_results[dataset][method]['single_table_metrics'][
+                        base_metric
+                    ][table]['reference_ci'][1]
+                    for table in tables
                 ]
 
                 max_value = max(max_value, max(method_means), max(ci95s))
@@ -129,12 +143,12 @@ def visualize_single_table_distance_metrics(
             if not log_scale:
                 ax.set_ylim(bottom=0, top=max_value * 1.25)
             else:
-                p = kwargs.get(f"{base_metric}_pow", 20)
+                p = kwargs.get(f'{base_metric}_pow', 20)
                 top = math.pow(max_value, p)
                 ax.set_ylim(top=top)
             # ax.set_yticks(np.arange(y_min, 1.01, 0.1))
-            ax.set_ylabel("Metric Value", fontsize=fontsize)
-            ax.tick_params(axis="y", labelsize=20)
+            ax.set_ylabel('Metric Value', fontsize=fontsize)
+            ax.tick_params(axis='y', labelsize=20)
 
             custom_lines = [
                 Line2D([0], [0], color=colors[i], lw=4) for i in range(N)
@@ -142,27 +156,28 @@ def visualize_single_table_distance_metrics(
             ax.legend(
                 custom_lines,
                 [prettify_method_name(method) for method in methods],
-                loc="upper center",
+                loc='upper center',
                 ncol=3,
                 fontsize=18,
             )
 
             for j, table in enumerate(tables):
-                ci95 = all_results[dataset][method]["single_table_metrics"][
-                    base_metric][table]["reference_ci"]
+                ci95 = all_results[dataset][method]['single_table_metrics'][
+                    base_metric
+                ][table]['reference_ci']
                 # ci95 = np.mean(ci95, axis=0)
                 ax.axhline(
                     y=ci95[1],
-                    color="black",
-                    linestyle="--",
+                    color='black',
+                    linestyle='--',
                     linewidth=1,
                     xmin=j / len(tables),
                     xmax=(j + 1) / len(tables),
                 )
                 ax.axhline(
                     y=ci95[0],
-                    color="black",
-                    linestyle="--",
+                    color='black',
+                    linestyle='--',
                     linewidth=1,
                     xmin=j / len(tables),
                     xmax=(j + 1) / len(tables),
@@ -175,22 +190,25 @@ def visualize_single_table_distance_metrics(
             # set title
             if title:
                 plt.title(
-                    f"{base_metric_name} for dataset {prettify_dataset_name(dataset)}"
+                    f'{base_metric_name} for dataset '
+                    f'{prettify_dataset_name(dataset)}'
                 )
 
             if save_figs:
                 os.makedirs(save_figs_path, exist_ok=True)
-                plt.savefig(f"{save_figs_path}/{dataset}_{base_metric}.png",
-                            dpi=300)
+                plt.savefig(
+                    f'{save_figs_path}/{dataset}_{base_metric}.png', dpi=300
+                )
 
 
 def visualize_single_table_detection_metrics_per_classifier(
-        granularity_level, metric_type, all_results, datasets, methods,
-        **kwargs):
+    granularity_level, metric_type, all_results, datasets, methods, **kwargs
+):
     """Visualize detection metrics for single tables grouped by classifier.
 
-    This function creates bar charts comparing detection metrics for single tables
-    across different synthetic data generation methods, with results grouped by classifier.
+    This function creates bar charts comparing detection metrics for single
+    tables across different synthetic data generation methods, with results
+    grouped by classifier.
 
     Parameters
     ----------
@@ -206,26 +224,33 @@ def visualize_single_table_detection_metrics_per_classifier(
         List of synthetic data generation methods to compare.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_figs_path : str
-            Path where to save the figures.
-        - detection_metrics : list
-            List of detection metrics to visualize.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_figs_path`` (str): path where to save the figures.
+        - ``detection_metrics`` (list): detection metrics to visualize.
 
     """
     for dataset in datasets:
         base_metrics, base_metric_names, save_figs, save_figs_path, methods = (
-            get_dataset_info(granularity_level, metric_type, all_results,
-                             dataset, methods, **kwargs))
+            get_dataset_info(
+                granularity_level,
+                metric_type,
+                all_results,
+                dataset,
+                methods,
+                **kwargs,
+            )
+        )
 
-        for base_metric, base_metric_name in zip(base_metrics,
-                                                 base_metric_names):
+        for base_metric, base_metric_name in zip(
+            base_metrics, base_metric_names, strict=False
+        ):
             if len(methods) == 0:
                 continue
 
-            tables = all_results[dataset][
-                methods[0]]["single_table_metrics"][base_metric].keys()
+            tables = all_results[dataset][methods[0]]['single_table_metrics'][
+                base_metric
+            ].keys()
 
             N = len(methods)  # number of methods
             M = len(tables)  # number of tables
@@ -237,28 +262,41 @@ def visualize_single_table_detection_metrics_per_classifier(
             # set dpi
             fig.dpi = 300
 
-            colors = plt.cm.viridis(np.linspace(0.5, 1,
-                                                N))  # create a color map
+            colors = plt.get_cmap('viridis')(
+                np.linspace(0.5, 1, N)
+            )  # create a color map
 
             min_mean = 1
             for j, method in enumerate(methods):
                 method_means = [
-                    all_results[dataset][method]["single_table_metrics"]
-                    [base_metric][table]["accuracy"] for table in tables
+                    all_results[dataset][method]['single_table_metrics'][
+                        base_metric
+                    ][table]['accuracy']
+                    for table in tables
                 ]
                 min_mean = min(min_mean, min(method_means))
                 method_ses = [
-                    all_results[dataset][method]["single_table_metrics"]
-                    [base_metric][table]["SE"] for table in tables
+                    all_results[dataset][method]['single_table_metrics'][
+                        base_metric
+                    ][table]['SE']
+                    for table in tables
                 ]
-                baseline_means = np.array([
-                    all_results[dataset][method]["single_table_metrics"]
-                    [base_metric][table]["baseline_mean"] for table in tables
-                ])
-                baseline_ses = np.array([
-                    all_results[dataset][method]["single_table_metrics"]
-                    [base_metric][table]["baseline_se"] for table in tables
-                ])
+                baseline_means = np.array(
+                    [
+                        all_results[dataset][method]['single_table_metrics'][
+                            base_metric
+                        ][table]['baseline_mean']
+                        for table in tables
+                    ]
+                )
+                baseline_ses = np.array(
+                    [
+                        all_results[dataset][method]['single_table_metrics'][
+                            base_metric
+                        ][table]['baseline_se']
+                        for table in tables
+                    ]
+                )
                 ax.bar(
                     ind + width * j,
                     method_means,
@@ -271,21 +309,21 @@ def visualize_single_table_detection_metrics_per_classifier(
                     baseline_means,
                     ind + width * j - width / 2,
                     ind + width * j + width / 2,
-                    color="k",
+                    color='k',
                 )  # , linestyle='--')
                 ax.hlines(
                     baseline_means + baseline_ses,
                     ind + width * j - width / 2,
                     ind + width * j + width / 2,
-                    color="k",
-                    linestyle="--",
+                    color='k',
+                    linestyle='--',
                 )
                 ax.hlines(
                     baseline_means - baseline_ses,
                     ind + width * j - width / 2,
                     ind + width * j + width / 2,
-                    color="k",
-                    linestyle="--",
+                    color='k',
+                    linestyle='--',
                 )
 
             x_tick_width_coef = get_x_tick_width_coef(N)
@@ -293,44 +331,47 @@ def visualize_single_table_detection_metrics_per_classifier(
             rotation = 20 if len(tables) > 6 else 0
             ax.set_xticklabels(tables, fontsize=10, rotation=rotation)
 
-            y_min = 0.4 if min_mean > 0.4 else np.floor(
-                (min_mean - 0.1) * 10) / 10
+            y_min = (
+                0.4 if min_mean > 0.4 else np.floor((min_mean - 0.1) * 10) / 10
+            )
             ax.set_ylim(y_min, 1.1)
-            ax.set_ylabel("Metric Value")
+            ax.set_ylabel('Metric Value')
 
             # Create a legend
 
             custom_lines = [
                 Line2D([0], [0], color=colors[i], lw=4) for i in range(N)
             ]
-            ax.legend(custom_lines,
-                      methods,
-                      loc="upper center",
-                      ncol=N,
-                      fontsize=11)
+            ax.legend(
+                custom_lines, methods, loc='upper center', ncol=N, fontsize=11
+            )
 
-            ax.axhline(y=0.5, color="red", linestyle="--", linewidth=1)
+            ax.axhline(y=0.5, color='red', linestyle='--', linewidth=1)
 
             # set title
-            plt.title(f"{base_metric_name} for dataset {dataset}")
+            plt.title(f'{base_metric_name} for dataset {dataset}')
 
             if save_figs:
                 os.makedirs(save_figs_path, exist_ok=True)
-                plt.savefig(f"{save_figs_path}/{dataset}_{base_metric}.png",
-                            dpi=300)
+                plt.savefig(
+                    f'{save_figs_path}/{dataset}_{base_metric}.png', dpi=300
+                )
 
 
-def visualize_single_table_detection_metrics_per_table(all_results,
-                                                       datasets,
-                                                       methods,
-                                                       title=True,
-                                                       log_scale=False,
-                                                       fontsize=20,
-                                                       **kwargs):
+def visualize_single_table_detection_metrics_per_table(
+    all_results,
+    datasets,
+    methods,
+    title=True,
+    log_scale=False,
+    fontsize=20,
+    **kwargs,
+):
     """Visualize detection metrics for single tables grouped by table.
 
-    This function creates bar charts comparing detection metrics for single tables
-    across different synthetic data generation methods, with results grouped by table.
+    This function creates bar charts comparing detection metrics for single
+    tables across different synthetic data generation methods, with results
+    grouped by table.
 
     Parameters
     ----------
@@ -348,73 +389,86 @@ def visualize_single_table_detection_metrics_per_table(all_results,
         Font size for the plot text elements.
     **kwargs : dict
         Additional keyword arguments including:
-        - save_figs : bool
-            Whether to save the figures.
-        - save_figs_path : str
-            Path where to save the figures.
-        - detection_metrics : list
-            List of detection metrics to visualize.
+
+        - ``save_figs`` (bool): whether to save the figures.
+        - ``save_figs_path`` (str): path where to save the figures.
+        - ``detection_metrics`` (list): detection metrics to visualize.
 
     """
     for dataset in datasets:
         metrics = kwargs.get(
-            "detection_metrics",
+            'detection_metrics',
             [
-                metric for metric in list(all_results[dataset][list(
-                    all_results[dataset].keys())[0]]
-                                          ["single_table_metrics"].keys())
-                if "detection" in metric.lower()
+                metric
+                for metric in list(
+                    all_results[dataset][list(all_results[dataset].keys())[0]][
+                        'single_table_metrics'
+                    ].keys()
+                )
+                if 'detection' in metric.lower()
             ],
         )
-        metric_names = kwargs.get("detection_metric_names", metrics)
+        metric_names = kwargs.get('detection_metric_names', metrics)
 
-        aggregation_metrics = kwargs.get(
-            "aggregation_metrics",
+        agg_metrics = kwargs.get(
+            'agg_metrics',
             [
-                metric for metric in list(all_results[dataset][list(
-                    all_results[dataset].keys())[0]]
-                                          ["multi_table_metrics"].keys())
-                if "AggregationDetection" in metric
-                and "parent" not in metric.lower()
+                metric
+                for metric in list(
+                    all_results[dataset][list(all_results[dataset].keys())[0]][
+                        'multi_table_metrics'
+                    ].keys()
+                )
+                if 'AggregationDetection' in metric
+                and 'parent' not in metric.lower()
             ],
         )
 
-        save_figs = kwargs.get("save_figs", False)
-        save_figs_path = kwargs.get("save_figs_path", "./figs")
-        save_figs_path = Path(save_figs_path) / "single_table" / "detection"
+        save_figs = kwargs.get('save_figs', False)
+        save_figs_path = kwargs.get('save_figs_path', './figs')
+        save_figs_path = Path(save_figs_path) / 'single_table' / 'detection'
 
         method_order = kwargs.get(
-            "method_order",
+            'method_order',
             [
-                "SDV",
-                "RCTGAN",
-                "REALTABFORMER",
-                "MOSTLYAI",
-                "GRETEL_ACTGAN",
-                "GRETEL_LSTM",
-                "CLAVADDPM",
+                'SDV',
+                'RCTGAN',
+                'REALTABFORMER',
+                'MOSTLYAI',
+                'GRETEL_ACTGAN',
+                'GRETEL_LSTM',
+                'CLAVADDPM',
             ],
         )
 
         if method_order is not None:
             methods = [
-                method for method in method_order
+                method
+                for method in method_order
                 if method in methods and method in all_results[dataset]
             ]
             methods += sorted(
-                [method for method in methods if method not in method_order])
+                [method for method in methods if method not in method_order]
+            )
 
         if len(methods) == 0 or len(metrics) == 0:
             continue
         method_ = list(all_results[dataset].keys())[0]
-        tables = all_results[dataset][method_]["single_table_metrics"][list(
-            all_results[dataset][method_]
-            ["single_table_metrics"].keys())[0]].keys()
+        tables = all_results[dataset][method_]['single_table_metrics'][
+            list(all_results[dataset][method_]['single_table_metrics'].keys())[
+                0
+            ]
+        ].keys()
         for table in tables:
             agg_metrics = []
-            if (aggregation_metrics and table in all_results[dataset]
-                [methods[-1]]["multi_table_metrics"][aggregation_metrics[-1]]):
-                agg_metrics = aggregation_metrics
+            if (
+                agg_metrics
+                and table
+                in all_results[dataset][methods[-1]]['multi_table_metrics'][
+                    agg_metrics[-1]
+                ]
+            ):
+                agg_metrics = agg_metrics
 
             N = len(metrics + agg_metrics)  # number of metrics
             M = len(methods)  # number of methods
@@ -427,21 +481,27 @@ def visualize_single_table_detection_metrics_per_table(all_results,
             # make font size bigger
             # plt.rcParams.update({'font.size': 20})
 
-            colors = plt.cm.tab20(np.linspace(0, 1, N))  # create a color map
+            colors = plt.get_cmap('tab20')(
+                np.linspace(0, 1, N)
+            )  # create a color map
 
-            tab20 = plt.colormaps["tab20"]
+            tab20 = plt.colormaps['tab20']
             colors = [tab20(1), tab20(3), tab20(0), tab20(2)]
 
             min_mean = 1
             for j, metric in enumerate(metrics):
                 metric_means = [
-                    all_results[dataset][method]["single_table_metrics"]
-                    [metric][table]["accuracy"] for method in methods
+                    all_results[dataset][method]['single_table_metrics'][
+                        metric
+                    ][table]['accuracy']  # noqa: E501
+                    for method in methods
                 ]
                 min_mean = min(min_mean, min(metric_means))
                 metric_ses = [
-                    all_results[dataset][method]["single_table_metrics"]
-                    [metric][table]["SE"] for method in methods
+                    all_results[dataset][method]['single_table_metrics'][
+                        metric
+                    ][table]['SE']  # noqa: E501
+                    for method in methods
                 ]
 
                 ax.bar(
@@ -451,19 +511,20 @@ def visualize_single_table_detection_metrics_per_table(all_results,
                     yerr=metric_ses,
                     color=colors[j],
                 )
-                # ax.hlines(baseline_means, ind + width*j - width/2, ind + width*j + width/2, color='k')#, linestyle='--')
-                # ax.hlines(baseline_means + baseline_ses, ind + width*j - width/2, ind + width*j + width/2, color='k', linestyle='--')
-                # ax.hlines(baseline_means - baseline_ses, ind + width*j - width/2, ind + width*j + width/2, color='k', linestyle='--')
 
             for j, agg_metric in enumerate(agg_metrics):
                 metric_means = [
-                    all_results[dataset][method]["multi_table_metrics"]
-                    [agg_metric][table]["accuracy"] for method in methods
+                    all_results[dataset][method]['multi_table_metrics'][
+                        agg_metric
+                    ][table]['accuracy']
+                    for method in methods
                 ]
                 min_mean = min(min_mean, min(metric_means))
                 metric_ses = [
-                    all_results[dataset][method]["multi_table_metrics"]
-                    [agg_metric][table]["SE"] for method in methods
+                    all_results[dataset][method]['multi_table_metrics'][
+                        agg_metric
+                    ][table]['SE']
+                    for method in methods
                 ]
 
                 ax.bar(
@@ -474,7 +535,7 @@ def visualize_single_table_detection_metrics_per_table(all_results,
                     color=colors[j + len(metrics)],
                 )
 
-            ax.set_ylabel("Means")
+            ax.set_ylabel('Means')
             x_tick_width_coef = get_x_tick_width_coef(N)
             ax.set_xticks(ind + x_tick_width_coef * width)
             pretty_methods = [
@@ -482,21 +543,20 @@ def visualize_single_table_detection_metrics_per_table(all_results,
             ]
             ax.set_xticklabels(pretty_methods, fontsize=9.4)
 
-            # y_min = 0.4 if min_mean > 0.4 else np.floor((min_mean - 0.1)*10)/10
             y_min = 0.3
             ax.set_ylim(y_min, 1.4)
             ax.set_yticks(np.arange(y_min, 1.01, 0.1))
-            ax.set_ylabel("Classification Accuracy")
+            ax.set_ylabel('Classification Accuracy')
 
             # Create a legend
             custom_lines = [
                 Line2D([0], [0], color=colors[i], lw=4) for i in range(N)
             ]
-            ax.legend(custom_lines,
-                      metric_names + agg_metrics,
-                      loc="upper left")  # move the legend
+            ax.legend(
+                custom_lines, metric_names + agg_metrics, loc='upper left'
+            )  # move the legend
 
-            ax.axhline(y=0.5, color="red", linestyle="--", linewidth=1)
+            ax.axhline(y=0.5, color='red', linestyle='--', linewidth=1)
 
             # make figsize smaller
             fig.set_size_inches(6.5, 4)
@@ -504,10 +564,11 @@ def visualize_single_table_detection_metrics_per_table(all_results,
             # set title
             if title:
                 plt.title(
-                    f"Dataset {prettify_dataset_name(dataset)}, table {table}")
+                    f'Dataset {prettify_dataset_name(dataset)}, table {table}'
+                )
 
             if save_figs:
                 os.makedirs(save_figs_path, exist_ok=True)
                 plt.savefig(
-                    f"{save_figs_path}/{dataset}_{table}_per_table.png",
-                    dpi=300)
+                    f'{save_figs_path}/{dataset}_{table}_per_table.png', dpi=300
+                )
